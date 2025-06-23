@@ -1,10 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Poppins } from "next/font/google";
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["700"],
-});
 
 export default function HeroSection() {
   return (
@@ -12,8 +7,9 @@ export default function HeroSection() {
       <Image
         src='/hero-image.avif'
         alt='NutriDay background'
-        layout='fill'
-        objectFit='cover'
+        fill
+        sizes='100vw'
+        style={{ objectFit: "cover" }}
         priority
         className='absolute z-0'
       />
@@ -21,7 +17,7 @@ export default function HeroSection() {
         <div className='max-w-[780px] lg:max-w-[950px] h-[548px] md:h-[720px] text-start mx-auto flex flex-col justify-center'>
           {" "}
           <h1
-            className={`text-4xl md:text-5xl xl:text-[68px] font-bold mb-6 leading-tight font-roboto ${poppins.className}`}
+            className={`text-4xl md:text-5xl xl:text-[68px] font-bold mb-6 leading-tight font-roboto font-poppins`}
           >
             Швидке меню для здорового харчування — за 1 хвилину
           </h1>
@@ -35,7 +31,7 @@ export default function HeroSection() {
             target='_blank'
             rel='noopener noreferrer'
           >
-            <button className='bg-[#F4B619] hover:bg-[#f48e19] text-black text-lg md:text-2xl py-3 px-6 rounded-full transition duration-300'>
+            <button className='bg-main-button hover:bg-main-button-hover text-black text-lg md:text-2xl py-3 px-6 rounded-full transition-colors duration-300'>
               Спробувати зараз
             </button>
           </Link>

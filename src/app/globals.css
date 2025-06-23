@@ -1,13 +1,22 @@
 @import "tailwindcss";
 
+/* Кастомні кольори */
+@theme {
+  --color-main-button: #f4b619;
+  --color-main-button-hover: #f48e19;
+}
+
+/* CSS змінні для шрифтів */
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #323030;
+  --font-nunito: var(--font-nunito);
+  --font-poppins: var(--font-poppins);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
+    --background: #323030;
     --foreground: #ededed;
   }
 }
@@ -15,4 +24,15 @@
 body {
   background: var(--background);
   color: var(--foreground);
+}
+
+/* Кастомні класи для шрифтів */
+@layer utilities {
+  .font-nunito {
+    font-family: var(--font-nunito);
+  }
+
+  .font-poppins {
+    font-family: var(--font-poppins);
+  }
 }
