@@ -4,6 +4,7 @@ import React from "react";
 import { Star, Quote } from "lucide-react";
 import Link from "next/link";
 import Title from "../Title";
+import Image from "next/image";
 
 const ReviewsSection = () => {
   const reviews = [
@@ -55,36 +56,43 @@ const ReviewsSection = () => {
           {reviews.map((review, index) => (
             <div
               key={review.id}
-              className={`relative bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20 hover:bg-white/15 hover:shadow-2xl transition-all duration-300 ${
+              className={`relative bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20 hover:bg-white/15 hover:shadow-2xl transition-all duration-300 flex flex-col justify-between ${
                 index === 1
                   ? "md:transform md:scale-105 md:shadow-2xl"
                   : "hover:transform hover:scale-105"
               }`}
             >
-              {/* Іконка лапок */}
-              <div className='absolute -top-4 left-8'>
-                <div className='bg-main-button-hover rounded-full p-3'>
-                  <Quote className='w-6 h-6 text-white' />
+              {/* Верхня частина — лапки, рейтинг, текст */}
+              <div>
+                {/* Іконка лапок */}
+                <div className='absolute -top-4 left-8'>
+                  <div className='bg-main-button-hover rounded-full p-3'>
+                    <Quote className='w-6 h-6 text-white' />
+                  </div>
                 </div>
+
+                {/* Рейтинг */}
+                <div className='flex justify-center mb-6 mt-4'>
+                  <div className='flex gap-1'>{renderStars(review.rating)}</div>
+                </div>
+
+                {/* Текст відгуку */}
+                <p className='text-gray-100 text-lg leading-relaxed mb-8 text-center italic'>
+                  "{review.text}"
+                </p>
               </div>
 
-              {/* Рейтинг */}
-              <div className='flex justify-center mb-6 mt-4'>
-                <div className='flex gap-1'>{renderStars(review.rating)}</div>
-              </div>
-
-              {/* Текст відгуку */}
-              <p className='text-gray-100 text-lg leading-relaxed mb-8 text-center italic'>
-                "{review.text}"
-              </p>
-
-              {/* Автор */}
-              <div className='flex items-center justify-center gap-4'>
-                <img
-                  src={review.avatar}
-                  alt={review.author}
-                  className='w-12 h-12 rounded-full object-cover border-2 border-blue-300'
-                />
+              {/* Нижня частина — автор */}
+              <div className='flex items-center justify-center gap-4 mt-auto pt-4'>
+                <div className='relative w-12 h-12'>
+                  <Image
+                    src={review.avatar}
+                    alt={review.author}
+                    fill
+                    className='rounded-full object-cover border-2 border-blue-300'
+                    sizes='48px'
+                  />
+                </div>
                 <div>
                   <p className='font-semibold text-white'>{review.author}</p>
                   <p className='text-sm text-gray-300'>Користувач NutriDay</p>
