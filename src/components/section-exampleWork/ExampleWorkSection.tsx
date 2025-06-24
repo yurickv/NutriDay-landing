@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Play, Pause } from "lucide-react";
 import Title from "../Title";
+import Image from "next/image";
 
 const ExampleWorkSection = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -15,8 +16,7 @@ const ExampleWorkSection = () => {
       title: "Введіть свої дані",
       description:
         "Після команди Start сервіс попросить Вас ввести свої дані: вага, вік, стать. Також бажану ціль: схуднення, підтримка чи набір ваги",
-      image:
-        "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=800&h=600&fit=crop",
+      image: "/example-1.avif",
       category: "Mobile App",
     },
     {
@@ -24,43 +24,31 @@ const ExampleWorkSection = () => {
       title: "Денна потреба в калорійності",
       description:
         "Отримайте розрахунок калорійності денного меню та перевірте свої дані.",
-      image:
-        "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop",
+      image: "/example-2.avif",
       category: "Corporate Website",
     },
     {
       id: 3,
       title: "Створити меню",
-      description: "Після команди /menu АІ сервіс сформує ваше меню",
-      image:
-        "https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=800&h=600&fit=crop",
+      description:
+        "Після команди /menu сервіс сформує денний раціон, враховуючи Ваші уподобання по продуктах і стравах",
+      image: "/example-3.avif",
       category: "Web Application",
     },
     {
       id: 4,
-      title: "Приклад готового меню",
+      title: "Додати/забрати продукти",
       description:
-        "Приклад меню з дотриманням калорійності, що дуже важливо при схудненні чи наборі ваги.",
-      image:
-        "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop",
+        "Приготувати певну страву? Додайте її до списку улюблених! Чи виключіть певні продукти/страви і це врахується при складанні меню.",
+      image: "/example-4.avif",
       category: "Mobile App",
     },
     {
       id: 5,
-      title: "Додати/забрати продукти",
-      description:
-        "Можна додати або виключити певні продукти чи страви, щоб це врахувалось при складанні меню.",
-      image:
-        "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop",
-      category: "Mobile App",
-    },
-    {
-      id: 6,
       title: "Допомога",
       description:
-        "Натисніть на іконку внизу екрану і зявиться перелік доступних команд.",
-      image:
-        "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&h=600&fit=crop",
+        "Натисніть на іконку внизу екрану і з'явиться перелік доступних команд.",
+      image: "/example-5.avif",
       category: "Web Development",
     },
   ];
@@ -113,27 +101,26 @@ const ExampleWorkSection = () => {
             >
               {workExamples.map((work) => (
                 <div key={work.id} className='w-full flex-shrink-0'>
-                  <div className='grid md:grid-cols-2 gap-8 p-8 md:p-12'>
+                  <div className='grid md:grid-cols-2 gap-8 p-0 md:p-12'>
                     {/* Зображення */}
-                    <div className='relative group'>
-                      <img
-                        src={work.image}
-                        alt={work.title}
-                        className='w-full h-80 object-cover rounded-xl shadow-md group-hover:shadow-xl transition-shadow duration-300'
-                      />
-                      {/* <div className='absolute top-4 left-4'>
-                        <span className='bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-medium'>
-                          {work.category}
-                        </span>
-                      </div> */}
+                    <div className='relative w-full h-80 md:h-auto md:rounded-xl overflow-hidden md:p-0'>
+                      <div className='relative w-full h-80 md:h-96'>
+                        <Image
+                          src={work.image}
+                          alt={work.title}
+                          fill
+                          className='object-cover md:rounded-xl'
+                          priority
+                        />
+                      </div>
                     </div>
 
                     {/* Контент */}
-                    <div className='flex flex-col justify-center'>
+                    <div className='flex flex-col justify-center p-8 md:p-0'>
                       <h3 className='text-3xl font-bold text-gray-900 mb-4'>
                         {work.title}
                       </h3>
-                      <p className='text-gray-600 text-lg leading-relaxed mb-6'>
+                      <p className='text-gray-600 text-lg leading-relaxed max-w-[400px]'>
                         {work.description}
                       </p>
                     </div>
@@ -143,19 +130,21 @@ const ExampleWorkSection = () => {
             </div>
 
             {/* Кнопки навігації */}
-            <button
-              onClick={prevSlide}
-              className='absolute left-4 top-1/2 -translate-y-1/2 bg-white border border-gray-300 text-gray-700 p-3 rounded-full hover:bg-gray-50 shadow-md transition-all duration-300 group'
-            >
-              <ChevronLeft className='w-6 h-6 group-hover:scale-110 transition-transform' />
-            </button>
+            <div className='flex justify-between px-4 mt-4'>
+              <button
+                onClick={prevSlide}
+                className='absolute left-4 top-[350px] md:top-1/2 -translate-y-1/2 bg-white border border-gray-300 text-gray-700 p-3 rounded-full hover:bg-gray-50 shadow-md transition-all duration-300 group'
+              >
+                <ChevronLeft className='w-6 h-6 group-hover:scale-110 transition-transform' />
+              </button>
 
-            <button
-              onClick={nextSlide}
-              className='absolute right-4 top-1/2 -translate-y-1/2 bg-white border border-gray-300 text-gray-700 p-3 rounded-full hover:bg-gray-50 shadow-md transition-all duration-300 group'
-            >
-              <ChevronRight className='w-6 h-6 group-hover:scale-110 transition-transform' />
-            </button>
+              <button
+                onClick={nextSlide}
+                className='absolute right-4 top-[350px] md:top-1/2 -translate-y-1/2 bg-white border border-gray-300 text-gray-700 p-3 rounded-full hover:bg-gray-50 shadow-md transition-all duration-300 group'
+              >
+                <ChevronRight className='w-6 h-6 group-hover:scale-110 transition-transform' />
+              </button>
+            </div>
           </div>
 
           {/* Індикатори слайдів */}

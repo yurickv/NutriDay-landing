@@ -28,7 +28,7 @@ export default function AboutUsSection() {
             і корисний раціон.
           </p>
           <Link
-            href='https://web.telegram.org/k/#@Nutri_day_bot'
+            href='https://t.me/Nutri_day_bot'
             target='_blank'
             rel='noopener noreferrer'
             className='inline-block w-fit mx-auto lg:mx-0'
@@ -40,7 +40,7 @@ export default function AboutUsSection() {
         </div>
       </div>
       <div className='h-[75px] md:h-[125px] lg:h-[150px] w-full relative overflow-hidden bg-white -mb-8 xl:-mb-12'>
-        <div className='absolute bottom-0 left-0 w-0 h-0 border-l-[50vw] border-r-[50vw] border-t-[75px] md:border-t-[125px] lg:border-t-[150px] border-l-transparent border-r-transparent border-t-[#323030]'></div>
+        <div className='absolute top-0 left-0 w-0 h-0 border-l-[50vw] border-r-[50vw] border-t-[75px] md:border-t-[125px] lg:border-t-[150px] border-l-transparent border-r-transparent border-t-[#323030]'></div>
       </div>
     </section>
   );

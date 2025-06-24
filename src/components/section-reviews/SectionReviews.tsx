@@ -12,24 +12,21 @@ const ReviewsSection = () => {
       text: "NutriDay — це економія часу і різноманітність! Я отримую нові ідеї для страв щодня і можу легко змінити меню під настрій.",
       author: "Олена К.",
       rating: 5,
-      avatar:
-        "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face",
+      avatar: "/lena-review.avif",
     },
     {
       id: 2,
       text: "Дуже зручно: меню на день за хвилину, список покупок — і все під контролем!",
-      author: "Максим Т.",
+      author: "Інна Т.",
       rating: 5,
-      avatar:
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
+      avatar: "/inna-review.avif",
     },
     {
       id: 3,
       text: "Нарешті не треба рахувати калорії вручну — все вже готово! Худну на автопілоті ",
       author: "Анна М.",
       rating: 4.5,
-      avatar:
-        "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
+      avatar: "/anna-review.avif",
     },
   ];
 
@@ -128,7 +125,7 @@ const ReviewsSection = () => {
             Приєднуйтесь до сотень задоволених користувачів
           </p>
           <Link
-            href='https://web.telegram.org/k/#@Nutri_day_bot'
+            href='https://t.me/Nutri_day_bot'
             target='_blank'
             rel='noopener noreferrer'
             className='inline-block w-fit mx-auto lg:mx-0'

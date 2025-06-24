@@ -27,7 +27,7 @@ export default function HeroSection() {
             швидко, просто, різноманітно.
           </p>
           <Link
-            href='https://web.telegram.org/k/#@Nutri_day_bot'
+            href='https://t.me/Nutri_day_bot'
             target='_blank'
             rel='noopener noreferrer'
           >
