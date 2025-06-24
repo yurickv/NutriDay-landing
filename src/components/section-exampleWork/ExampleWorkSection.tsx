@@ -197,12 +197,12 @@ const ExampleWorkSection = () => {
               <div className='text-3xl md:text-4xl font-bold mb-2'>
                 {stat.number}
               </div>
-              <div className='text-sm md:text-base'>{stat.label}</div>
+              <div className='text-lg'>{stat.label}</div>
             </div>
           ))}
         </div>
       </div>
-      <div className='h-[75px] md:h-[125px] lg:h-[150px] w-full relative overflow-hidden bg-[#323030] -mb-8 xl:-mb-12'>
+      <div className='h-[74px] md:h-[124px] lg:h-[149px] w-full relative overflow-hidden bg-[#323030] -mb-8 xl:-mb-12'>
         <div className='absolute bottom-0 left-0 w-0 h-0 border-l-[50vw] border-r-[50vw] border-t-[75px] md:border-t-[125px] lg:border-t-[150px] border-l-transparent border-r-transparent border-t-white'></div>
       </div>
     </section>
