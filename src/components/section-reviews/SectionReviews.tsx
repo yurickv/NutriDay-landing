@@ -3,6 +3,7 @@
 import React from "react";
 import { Star, Quote } from "lucide-react";
 import Link from "next/link";
+import Title from "../Title";
 
 const ReviewsSection = () => {
   const reviews = [
@@ -47,11 +48,9 @@ const ReviewsSection = () => {
     <section className='py-20' style={{ backgroundColor: "#323030" }}>
       <div className='container mx-auto px-4'>
         {/* Заголовок секції */}
-        <div className='text-center mb-16'>
-          <h2 className='text-4xl md:text-5xl font-bold text-white mb-6'>
-            Що кажуть користувачі
-          </h2>
-          <div className='w-24 h-1 bg-main-button mx-auto mb-8'></div>
+        <div className='text-center mb-16 text-white'>
+          <Title text=' Що кажуть користувачі' />
+          <div className='w-24 h-1 bg-main-button mx-auto my-8 rounded-lg'></div>
         </div>
 
         {/* Сітка відгуків */}
@@ -135,7 +134,7 @@ const ReviewsSection = () => {
             className='inline-block w-fit mx-auto lg:mx-0'
           >
             <button className='bg-main-button hover:bg-main-button-hover text-black text-lg md:text-xl font-semibold py-3 px-3 rounded-lg transition-colors duration-300'>
-              Спробувати зараз
+              Спробувати безкоштовно
             </button>
           </Link>
         </div>
