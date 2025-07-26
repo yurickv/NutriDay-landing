@@ -1,4 +1,4 @@
-import Title from "../Title";
+import Title from "../../Title";
 import AdvantagesCard from "./AdvantagesCard";
 
 export default function AdvantagesSection() {

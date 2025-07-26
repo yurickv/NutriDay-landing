@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Nunito, Poppins } from "next/font/google";
 import "./globals.css";
 import {} from "next/font/google";
+import Header from "@/components/Header";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -28,6 +29,7 @@ export default function RootLayout({
   return (
     <html lang='uk'>
       <body className={`${nunito.className} ${poppins.variable} antialiased`}>
+        <Header />
         {children}
       </body>
     </html>

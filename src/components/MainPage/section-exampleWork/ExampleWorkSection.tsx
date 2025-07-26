@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Play, Pause } from "lucide-react";
-import Title from "../Title";
+import Title from "../../Title";
 import Image from "next/image";
 
 const ExampleWorkSection = () => {

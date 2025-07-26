@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import Title from "../Title";
+import Title from "../../Title";
 
 export default function AboutUsSection() {
   return (

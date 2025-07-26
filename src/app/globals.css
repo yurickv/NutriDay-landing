@@ -4,7 +4,23 @@
 @theme {
   --color-main-button: #f4b619;
   --color-main-button-hover: #f48e19;
+  --color-main: #f97316;
+  --color-hover: #eb3c5a;
+  --color-hover-black: #c2c2c2;
+  --color-main-text: #737373;
+  --color-main-text-black: #d4d4d4;
+  --color-main-title: #171717;
+  --color-main-title-black: #fafafa;
+  --color-background: #ececec;
+  --color-background-black: #5f5c5d;
+  --color-dark-body: #5f5c5d;
+  --color-txt-accent: #0a0a0a;
+  --color-grey-bg: #f5f5f5;
+  --color-error: #e53935;
+  --color-background-form: #676465;
 }
+/* Перемикання теми світла/темна */
+@custom-variant dark (&:where(.dark, .dark *));
 
 /* CSS змінні для шрифтів */
 :root {
@@ -35,4 +51,40 @@ body {
   .font-poppins {
     font-family: var(--font-poppins);
   }
+}
+.div-container {
+  @apply mx-auto px-4 md:px-[40px] lg:px-[66px] xl:px-[132px] xl:max-w-[1919px];
+}
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  input[type="range"]::-webkit-slider-thumb {
+    width: 15px;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 15px;
+    cursor: ew-resize;
+    background: #f67831;
+    box-shadow: -405px 0 0 400px #737373;
+    border-radius: 50%;
+  }
+}
+
+/* Автофіл для інпутів */
+input:-webkit-autofill,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #fff inset !important;
+  box-shadow: 0 0 0 1000px #fff inset !important;
+  -webkit-text-fill-color: var(--color-main-title) !important;
+  color: var(--color-main-title) !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:focus,
+.dark input:-webkit-autofill:hover,
+.dark input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px var(--color-background-form) inset !important;
+  box-shadow: 0 0 0 1000px var(--color-background-form) inset !important;
+  -webkit-text-fill-color: var(--color-main-title-black) !important;
+  color: var(--color-main-title-black) !important;
 }

@@ -1,0 +1,64 @@
+interface Props {
+  text: string;
+  name: string;
+  max: number;
+  min: number;
+  value: string | number;
+  setAny: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onBlur: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  error?: string | null;
+}
+
+export const InputSkeleton = ({
+  text,
+  name,
+  max,
+  min,
+  value,
+  setAny,
+  onBlur,
+  error,
+}: Props) => {
+  return (
+    <div className='flex flex-col gap-2'>
+      <div className='flex gap-7 items-center justify-between'>
+        <label
+          htmlFor={text}
+          className='font-bold md:text-lg text-main-title dark:text-main-title-black'
+        >
+          {text}
+        </label>
+        <div className='relative flex pb-1'>
+          <input
+            max={max}
+            min={min}
+            value={value}
+            name={name}
+            onChange={setAny}
+            type='number'
+            onBlur={onBlur}
+            className='font-bold md:text-lg rounded-xl text-center border-main-text dark:border-main-text-black 
+              dark:bg-[#676465] dark:text-main-title-black border-2 py-2 px-2 max-w-[120px]
+               hover:border-main focus:ring-2 focus:ring-main outline-none'
+          />
+          {error && (
+            <p className='absolute left-1/2 -translate-x-1/2 -bottom-2 whitespace-nowrap text-error text-xs bg-white px-1 rounded-xl text-center pointer-events-none'>
+              {error}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* <input
+        max={max}
+        min={min}
+        name={name}
+        value={value}
+        onChange={setAny}
+        type='range'
+        onBlur={onBlur}
+        className='bg-[#D9D9D9] appearance-none rounded-xl  outline-none overflow-hidden'
+      /> */}
+    </div>
+  );
+};

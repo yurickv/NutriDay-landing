@@ -3,7 +3,7 @@
 import React from "react";
 import { Star, Quote } from "lucide-react";
 import Link from "next/link";
-import Title from "../Title";
+import Title from "../../Title";
 import Image from "next/image";
 
 const ReviewsSection = () => {
