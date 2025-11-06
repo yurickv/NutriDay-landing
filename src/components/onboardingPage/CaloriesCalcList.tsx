@@ -1,34 +1,31 @@
-"use client";
+// components/onboardingPage/CaloriesCalcList.tsx
+'use client';
 
-import React, { useState } from "react";
-import { InputSkeleton } from "./InputSkeleton";
-import * as yup from "yup";
-import { CaloriesCalcFormula } from "./CaloriesCalcFormula";
-import { Button } from "./Button";
-import { setToLocalStorage } from "@/utils/localStorageHelpers";
-import { useRouter } from "next/navigation";
+import React, { useState } from 'react';
+import { InputSkeleton } from './InputSkeleton';
+import * as yup from 'yup';
+import { useRouter } from 'next/navigation';
+import { setOnboardingData } from '@/utils/onboardingHelpers';
 
 const schema = yup.object().shape({
-  age: yup.number().positive().min(14, "Не менше 14").max(130, "Не більше 130"),
-
+  age: yup.number().positive().min(14, 'Не менше 14').max(130, 'Не більше 130'),
   height: yup
     .number()
     .positive()
-    .min(100, "Не менше 100")
-    .max(220, "Не більше 220"),
-
+    .min(100, 'Не менше 100')
+    .max(220, 'Не більше 220'),
   weight: yup
     .number()
     .positive()
-    .min(40, "Не менше 40")
-    .max(130, "Не більше 130"),
+    .min(40, 'Не менше 40')
+    .max(130, 'Не більше 130'),
 });
 
 export const CaloriesCalcList = () => {
   const [sex, setSex] = useState<boolean>(true);
-  const [age, setAge] = useState<string>("");
-  const [weight, setWeight] = useState<string>("");
-  const [height, setHeight] = useState<string>("");
+  const [age, setAge] = useState<string>('');
+  const [weight, setWeight] = useState<string>('');
+  const [height, setHeight] = useState<string>('');
   const [activity, setActivity] = useState<number>(1.2);
 
   const [errors, setErrors] = useState<{
@@ -41,28 +38,32 @@ export const CaloriesCalcList = () => {
 
   const changeAge = (e: React.ChangeEvent<HTMLInputElement>) => {
     setAge(e.target.value);
-    setToLocalStorage("age", e.target.value);
+    setOnboardingData('age', e.target.value);
   };
+
   const changeWeight = (e: React.ChangeEvent<HTMLInputElement>) => {
     setWeight(e.target.value);
-    setToLocalStorage("weight", e.target.value);
+    setOnboardingData('weight', e.target.value);
   };
+
   const changeHeight = (e: React.ChangeEvent<HTMLInputElement>) => {
     setHeight(e.target.value);
-    setToLocalStorage("height", e.target.value);
+    setOnboardingData('height', e.target.value);
   };
+
   const changeSex = (val: boolean) => {
     setSex(val);
-    setToLocalStorage("sex", val ? "Чоловік" : "Жінка");
+    setOnboardingData('sex', val ? 'Чоловік' : 'Жінка');
   };
+
   const changeActivity = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setActivity(Number(e.target.value));
-    setToLocalStorage("activity", e.target.value);
+    setOnboardingData('activity', e.target.value);
   };
 
   const validate = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.value) {
-      setErrors((prev) => ({ ...prev, [e.target.name]: "введіть число" }));
+      setErrors((prev) => ({ ...prev, [e.target.name]: 'введіть число' }));
       return;
     }
     try {
@@ -98,14 +99,34 @@ export const CaloriesCalcList = () => {
       hasError = true;
     }
     if (hasError) return;
-    router.push("/onboarding/goals");
+
+    // Calculate BMR (Basal Metabolic Rate) using Mifflin-St Jeor Equation
+    const weightNum = parseFloat(weight);
+    const heightNum = parseFloat(height);
+    const ageNum = parseFloat(age);
+
+    let bmr: number;
+    if (sex) {
+      // Male
+      bmr = 10 * weightNum + 6.25 * heightNum - 5 * ageNum + 5;
+    } else {
+      // Female
+      bmr = 10 * weightNum + 6.25 * heightNum - 5 * ageNum - 161;
+    }
+
+    // Calculate TDEE (Total Daily Energy Expenditure)
+    const tdee = Math.round(bmr * activity);
+    setOnboardingData('tdee', tdee.toString());
+    setOnboardingData('bmr', Math.round(bmr).toString());
+
+    router.push('/onboarding/goals');
   };
 
   return (
     <form className='flex flex-col gap-7' onSubmit={handleSubmit}>
       <label htmlFor='sex' className='font-bold flex items-center gap-3'>
         <span className='p-2 text-lg text-main-title dark:text-main-title-black'>
-          Стать:{" "}
+          Стать:{' '}
         </span>
         <label
           htmlFor='woman'
@@ -113,11 +134,11 @@ export const CaloriesCalcList = () => {
           dark:hover:bg-[#d4d4d4] dark:hover:text-main-text 
           truncate font-semibold text-lg rounded-xl p-2  hover:bg-[#ECECEC] ${
             !sex
-              ? "bg-[#D9D9D9] dark:bg-[#d4d4d4] text-main"
-              : "dark:text-main-text-black"
+              ? 'bg-[#D9D9D9] dark:bg-[#d4d4d4] text-main'
+              : 'dark:text-main-text-black'
           } `}
         >
-          Жінка{" "}
+          Жінка{' '}
         </label>
         <input
           id='woman'
@@ -134,11 +155,11 @@ export const CaloriesCalcList = () => {
           dark:hover:bg-[#d4d4d4] dark:hover:text-main-text 
           truncate font-semibold text-lg rounded-xl p-2  hover:bg-[#ECECEC] ${
             sex
-              ? "bg-[#D9D9D9] dark:bg-[#d4d4d4] text-main"
-              : "dark:text-main-text-black"
+              ? 'bg-[#D9D9D9] dark:bg-[#d4d4d4] text-main'
+              : 'dark:text-main-text-black'
           } `}
         >
-          Чоловік{" "}
+          Чоловік{' '}
         </label>
         <input
           id='man'
@@ -151,7 +172,7 @@ export const CaloriesCalcList = () => {
         />
       </label>
       <InputSkeleton
-        text={"Вік, років:"}
+        text={'Вік, років:'}
         name='age'
         max={130}
         min={14}
@@ -161,7 +182,7 @@ export const CaloriesCalcList = () => {
         error={errors.age}
       />
       <InputSkeleton
-        text={"Зріст (см):"}
+        text={'Зріст (см):'}
         name='height'
         max={220}
         min={100}
@@ -171,7 +192,7 @@ export const CaloriesCalcList = () => {
         error={errors.height}
       />
       <InputSkeleton
-        text={"Вага (кг):"}
+        text={'Вага (кг):'}
         name='weight'
         max={130}
         min={40}
@@ -213,7 +234,7 @@ export const CaloriesCalcList = () => {
       </select>
       <button
         type='submit'
-        className={`bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 focus:from-red-600 focus:to-orange-600    rounded-xl p-4 text-mainTitleBlack text-center block active:bg-primary-700 hover:shadow-[0_8px_9px_-4px_rgba(59,113,202,0.3),0_4px_18px_0_rgba(59,113,202,0.2)] shadow-[0_4px_9px_-4px_#3b71ca] dark:shadow-none dark:hover:shadow-none w-full transition-all duration-200`}
+        className={`bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 focus:from-red-600 focus:to-orange-600    rounded-xl p-4 text-white text-center block active:bg-primary-700 hover:shadow-[0_8px_9px_-4px_rgba(59,113,202,0.3),0_4px_18px_0_rgba(59,113,202,0.2)] shadow-[0_4px_9px_-4px_#3b71ca] dark:shadow-none dark:hover:shadow-none w-full transition-all duration-200`}
       >
         Далі
       </button>
