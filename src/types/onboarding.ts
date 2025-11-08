@@ -16,4 +16,6 @@ export interface OnboardingData {
   weight?: string;
   height?: string;
   activity?: string;
+  // Contact
+  email?: string;
 }
