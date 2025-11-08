@@ -40,11 +40,13 @@ export async function GET(request: NextRequest) {
       .update(privateKey + data + privateKey)
       .digest('base64');
 
+    // LiqPay expects form-encoded fields: data, signature
+    const form = new URLSearchParams();
+    form.set('data', data);
+    form.set('signature', signature);
     const resp = await fetch('https://www.liqpay.ua/api/request', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ data, signature }),
-      // Next.js: ensure node runtime if needed
+      body: form,
     });
 
     if (!resp.ok) {
@@ -57,11 +59,11 @@ export async function GET(request: NextRequest) {
 
     const liq = (await resp.json()) as any;
     const normalized = (liq?.status || '').toLowerCase();
-    let newStatus: 'active' | 'pending' | 'failed' = 'pending';
-    if (normalized === 'success' || normalized === 'subscribed') newStatus = 'active';
-    else if (['failure', 'error', 'reversed', 'cancelled', 'canceled'].includes(normalized)) newStatus = 'failed';
+    let updateTo: 'active' | 'failed' | null = null;
+    if (normalized === 'success' || normalized === 'subscribed') updateTo = 'active';
+    else if (['failure', 'reversed', 'cancelled', 'canceled'].includes(normalized)) updateTo = 'failed';
 
-    if (mongoUri) {
+    if (mongoUri && updateTo) {
       const { MongoClient } = await import('mongodb');
       const client = await MongoClient.connect(mongoUri);
       const db = client.db(dbName);
@@ -71,7 +73,7 @@ export async function GET(request: NextRequest) {
         { orderId },
         {
           $set: {
-            paymentStatus: newStatus,
+            paymentStatus: updateTo,
             lastPayment: liq,
             updatedAt: new Date(),
           },
@@ -81,7 +83,7 @@ export async function GET(request: NextRequest) {
       await client.close();
     }
 
-    return NextResponse.json({ success: true, liqpay: liq, updatedTo: newStatus });
+    return NextResponse.json({ success: true, liqpay: liq, updatedTo: updateTo || 'none' });
   } catch (error: any) {
     console.error('LiqPay status error:', error);
     return NextResponse.json(
@@ -90,4 +92,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-

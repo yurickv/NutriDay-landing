@@ -63,7 +63,7 @@ function PaymentResultContent() {
             if (!cancelled && liqRes.ok) {
               const lj = await liqRes.json();
               const ns = (lj?.updatedTo || '').toLowerCase();
-              if (ns) setDbStatus(ns);
+              if (ns === 'active' || ns === 'failed') setDbStatus(ns);
             }
           }
         }
