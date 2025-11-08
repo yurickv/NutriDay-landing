@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
     const liq = (await resp.json()) as any;
     const normalized = (liq?.status || '').toLowerCase();
     let updateTo: 'active' | 'failed' | null = null;
-    if (normalized === 'success' || normalized === 'subscribed') updateTo = 'active';
+    if (['success', 'subscribed', 'sandbox'].includes(normalized)) updateTo = 'active';
     else if (['failure', 'reversed', 'cancelled', 'canceled'].includes(normalized)) updateTo = 'failed';
 
     if (mongoUri && updateTo) {

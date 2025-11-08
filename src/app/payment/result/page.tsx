@@ -19,7 +19,8 @@ function PaymentResultContent() {
   const router = useRouter();
 
   // LiqPay may pass order_id or _order_id
-  const statusParam = (params.get('status') || '').toLowerCase();
+  const urlStatusRaw = (params.get('status') || '').toLowerCase();
+  const statusParam = urlStatusRaw === 'sandbox' ? 'active' : urlStatusRaw;
   const orderIdParam = params.get('order_id') || params.get('_order_id') || '';
   const [orderId, setOrderId] = useState<string>(orderIdParam);
   const email = params.get('email') || '';

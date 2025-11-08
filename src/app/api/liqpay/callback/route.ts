@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
       // Determine new payment status
       let newStatus: 'active' | 'pending' | 'failed' = 'pending';
       const normalized = (status || '').toLowerCase();
-      if (normalized === 'success' || normalized === 'subscribed') newStatus = 'active';
+      if (['success', 'subscribed', 'sandbox'].includes(normalized)) newStatus = 'active';
       else if (['failure', 'error', 'reversed', 'cancelled', 'canceled'].includes(normalized)) newStatus = 'failed';
 
       const now = new Date();
@@ -113,4 +113,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
