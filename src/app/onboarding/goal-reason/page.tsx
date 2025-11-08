@@ -1,13 +1,13 @@
 // app/onboarding/goal-reason/page.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { OnboardingLayout } from '@/components/onboardingPage/OnboardingLayout';
 import { RadioButton } from '@/components/onboardingPage/RadioButton';
 import { setOnboardingData } from '@/utils/onboardingHelpers';
 
-export default function GoalReason() {
+function GoalReasonContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const goal = searchParams.get('goal');
@@ -84,5 +84,13 @@ export default function GoalReason() {
         ))}
       </div>
     </OnboardingLayout>
+  );
+}
+
+export default function GoalReason() {
+  return (
+    <Suspense fallback={null}>
+      <GoalReasonContent />
+    </Suspense>
   );
 }

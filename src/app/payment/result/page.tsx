@@ -1,12 +1,20 @@
 // app/payment/result/page.tsx
 "use client";
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { OnboardingLayout } from '@/components/onboardingPage/OnboardingLayout';
 
 export default function PaymentResultPage() {
+  return (
+    <Suspense fallback={null}>
+      <PaymentResultContent />
+    </Suspense>
+  );
+}
+
+function PaymentResultContent() {
   const params = useSearchParams();
   const router = useRouter();
 
