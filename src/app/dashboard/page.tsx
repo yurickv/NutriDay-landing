@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { OnboardingLayout } from '@/components/onboardingPage/OnboardingLayout';
 import {
@@ -45,6 +46,8 @@ export default function DashboardPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'pending'>('idle');
+  const [agreePersonalData, setAgreePersonalData] = useState(false);
+  const [agreeOferta, setAgreeOferta] = useState(false);
 
   useEffect(() => {
     const d = getOnboardingData();
@@ -74,6 +77,10 @@ export default function DashboardPage() {
 
   const onPay = async () => {
     setError(null);
+    if (!agreePersonalData || !agreeOferta) {
+      setError('Будь ласка, підтвердіть згоди перед оплатою.');
+      return;
+    }
     if (!email || !email.includes('@')) {
       setError('Вкажіть коректний email для отримання доступу.');
       return;
@@ -244,6 +251,33 @@ export default function DashboardPage() {
               {error}
             </div>
           )}
+          {/* Consents */}
+          <div className="flex flex-col gap-2 mb-4">
+            <label className="flex items-start gap-3 text-sm text-main-text dark:text-main-text-black">
+              <input
+                type="checkbox"
+                className="mt-1 w-4 h-4 accent-orange-500 cursor-pointer"
+                checked={agreePersonalData}
+                onChange={(e) => setAgreePersonalData(e.target.checked)}
+              />
+              <span>Я надаю згоду на обробку моїх персональних даних</span>
+            </label>
+            <label className="flex items-start gap-3 text-sm text-main-text dark:text-main-text-black">
+              <input
+                type="checkbox"
+                className="mt-1 w-4 h-4 accent-orange-500 cursor-pointer"
+                checked={agreeOferta}
+                onChange={(e) => setAgreeOferta(e.target.checked)}
+              />
+              <span>
+                Я погоджуюсь з умовами та{' '}
+                <Link href="/oferta" className="text-orange-600 hover:text-orange-700 underline">
+                  публічною офертою
+                </Link>
+                .
+              </span>
+            </label>
+          </div>
           {paymentStatus === 'pending' && (
             <div className="mb-3 inline-flex items-center gap-2 text-xs font-medium px-2 py-1 rounded bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
               <span className="inline-block w-2 h-2 rounded-full bg-yellow-500"></span>
