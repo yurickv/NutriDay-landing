@@ -1,6 +1,9 @@
 // app/api/liqpay/callback/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { getDb } from '@/lib/db';
+import { issueMagicLinkToken } from '@/lib/auth/magic';
+import { sendMagicLinkEmail } from '@/lib/email';
 
 type LiqpayCallback = {
   order_id?: string;
@@ -24,8 +27,6 @@ const buildSignature = (privateKey: string, data: string) =>
 export async function POST(request: NextRequest) {
   try {
     const privateKey = process.env.LIQPAY_PRIVATE_KEY;
-    const mongoUri = process.env.MONGODB_URI;
-    const dbName = process.env.MONGODB_DB || 'nutridb';
 
     if (!privateKey) {
       return NextResponse.json(
@@ -71,37 +72,69 @@ export async function POST(request: NextRequest) {
     }
 
     const payload = decodeBase64Json(data);
-    const { order_id: orderId, status, email, sender_email: senderEmail } = payload;
+    const {
+      order_id: orderId,
+      status,
+      email,
+      sender_email: senderEmail,
+      info: planId,
+    } = payload;
 
-    // Optionally persist to Mongo
-    if (mongoUri) {
-      const { MongoClient } = await import('mongodb');
-      const client = await MongoClient.connect(mongoUri);
-      const db = client.db(dbName);
-      const users = db.collection('users');
+    const db = await getDb();
+    const users = db.collection('users');
+    const subs = db.collection('subscriptions');
 
-      // Determine new payment status
-      let newStatus: 'active' | 'pending' | 'failed' = 'pending';
-      const normalized = (status || '').toLowerCase();
-      if (['success', 'subscribed', 'sandbox'].includes(normalized)) newStatus = 'active';
-      else if (['failure', 'error', 'reversed', 'cancelled', 'canceled'].includes(normalized)) newStatus = 'failed';
+    // Determine new payment status
+    let paymentStatus: 'active' | 'pending' | 'failed' = 'pending';
+    const normalized = (status || '').toLowerCase();
+    if (['success', 'subscribed', 'sandbox'].includes(normalized)) paymentStatus = 'active';
+    else if (['failure', 'error', 'reversed', 'cancelled', 'canceled'].includes(normalized)) paymentStatus = 'failed';
 
-      const now = new Date();
-      const matcher = orderId ? { orderId } : { email: email || senderEmail };
+    const now = new Date();
+    const matcher = orderId ? { orderId } : { email: email || senderEmail };
+
+    const user = await users.findOne(matcher);
+    if (user) {
+      const previousPaymentStatus = (user as any).paymentStatus;
 
       await users.updateOne(
-        matcher,
+        { _id: user._id },
         {
           $set: {
-            paymentStatus: newStatus,
+            paymentStatus,
+            status: paymentStatus === 'active' ? 'paid' : (user as any).status || 'pending',
             lastPayment: payload,
             updatedAt: now,
+            planId: planId || (user as any).planId || null,
           },
-        },
-        { upsert: false }
+        }
       );
 
-      await client.close();
+      if (paymentStatus === 'active') {
+        await subs.updateOne(
+          { userId: user._id },
+          {
+            $set: {
+              userId: user._id,
+              planId: planId || (user as any).planId || null,
+              status: 'active',
+              updatedAt: now,
+            },
+            $setOnInsert: {
+              createdAt: now,
+            },
+          },
+          { upsert: true }
+        );
+
+        if (previousPaymentStatus !== 'active') {
+          const loginEmail = (user as any).email || email || senderEmail;
+          if (loginEmail) {
+            const { token } = await issueMagicLinkToken(loginEmail);
+            await sendMagicLinkEmail(loginEmail, token);
+          }
+        }
+      }
     }
 
     return NextResponse.json({ success: true });
@@ -113,3 +146,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+

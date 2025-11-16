@@ -1,6 +1,7 @@
 // app/api/liqpay/status/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { getDb } from '@/lib/db';
 
 const base64 = (str: string) => Buffer.from(str).toString('base64');
 
@@ -8,8 +9,6 @@ export async function GET(request: NextRequest) {
   try {
     const publicKey = process.env.LIQPAY_PUBLIC_KEY;
     const privateKey = process.env.LIQPAY_PRIVATE_KEY;
-    const mongoUri = process.env.MONGODB_URI;
-    const dbName = process.env.MONGODB_DB || 'nutridb';
 
     if (!publicKey || !privateKey) {
       return NextResponse.json(
@@ -19,7 +18,10 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const orderId = searchParams.get('orderId') || searchParams.get('order_id') || searchParams.get('_order_id');
+    const orderId =
+      searchParams.get('orderId') ||
+      searchParams.get('order_id') ||
+      searchParams.get('_order_id');
     if (!orderId) {
       return NextResponse.json(
         { success: false, message: 'Missing orderId' },
@@ -63,27 +65,35 @@ export async function GET(request: NextRequest) {
     if (['success', 'subscribed', 'sandbox'].includes(normalized)) updateTo = 'active';
     else if (['failure', 'reversed', 'cancelled', 'canceled'].includes(normalized)) updateTo = 'failed';
 
-    if (mongoUri && updateTo) {
-      const { MongoClient } = await import('mongodb');
-      const client = await MongoClient.connect(mongoUri);
-      const db = client.db(dbName);
+    if (updateTo) {
+      const db = await getDb();
       const users = db.collection('users');
+
+      const baseSet: Record<string, any> = {
+        paymentStatus: updateTo,
+        lastPayment: liq,
+        updatedAt: new Date(),
+      };
+
+      if (updateTo === 'active') {
+        baseSet.status = 'paid';
+      } else if (updateTo === 'failed') {
+        baseSet.status = 'failed';
+      }
 
       await users.updateOne(
         { orderId },
         {
-          $set: {
-            paymentStatus: updateTo,
-            lastPayment: liq,
-            updatedAt: new Date(),
-          },
+          $set: baseSet,
         }
       );
-
-      await client.close();
     }
 
-    return NextResponse.json({ success: true, liqpay: liq, updatedTo: updateTo || 'none' });
+    return NextResponse.json({
+      success: true,
+      liqpay: liq,
+      updatedTo: updateTo || 'none',
+    });
   } catch (error: any) {
     console.error('LiqPay status error:', error);
     return NextResponse.json(

@@ -1,5 +1,6 @@
 // app/api/subscription/init/route.ts
 import { NextRequest, NextResponse } from 'next/server';
+import { getDb } from '@/lib/db';
 
 type PlanId = 'week' | 'month';
 
@@ -22,35 +23,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Ensure Mongo config exists
-    const uri = process.env.MONGODB_URI;
-    const dbName = process.env.MONGODB_DB || 'nutridb';
-    if (!uri) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            'MongoDB not configured. Set MONGODB_URI (and optional MONGODB_DB).',
-        },
-        { status: 500 }
-      );
-    }
-
-    // Import lazily to avoid build-time hard dependency
-    const { MongoClient } = await import('mongodb');
-    const client = await MongoClient.connect(uri);
-    const db = client.db(dbName);
+    const db = await getDb();
     const users = db.collection('users');
 
-    // Find by email
+    const now = new Date();
     const existing = await users.findOne<{ paymentStatus?: string }>({ email });
 
-    const now = new Date();
     if (!existing) {
+      // Shadow account: pending user, payment pending until LiqPay webhook
       await users.insertOne({
         email,
         planId: planId || null,
         orderId: orderId || null,
+        status: 'pending',
         paymentStatus: 'pending',
         onboarding: onboardingData || {},
         createdAt: now,
@@ -69,6 +54,7 @@ export async function POST(request: NextRequest) {
         $set: {
           planId: planId || null,
           orderId: orderId || null,
+          status: 'pending',
           paymentStatus: 'pending',
           onboarding: onboardingData || {},
           updatedAt: now,
