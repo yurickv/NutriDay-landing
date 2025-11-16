@@ -31,7 +31,7 @@ export default function CreatingPlan() {
             // clearOnboardingData(); // Uncomment when ready
 
             // Redirect to dashboard or results page
-            router.push('/dashboard'); // Update with your actual route
+            router.push('/payment/plan');
           }
         } catch (error) {
           console.error('Error submitting data:', error);
@@ -44,35 +44,35 @@ export default function CreatingPlan() {
   }, [router]);
 
   return (
-    <OnboardingLayout title='Створюємо ваш індивідуальний план'>
-      <div className='flex flex-col items-center justify-center gap-6 py-8'>
+    <OnboardingLayout title="Створюємо ваш індивідуальний план">
+      <div className="flex flex-col items-center justify-center gap-6 py-8">
         {isLoading ? (
           <>
-            <div className='relative w-24 h-24'>
-              <div className='absolute top-0 left-0 w-full h-full border-4 border-gray-200 rounded-full'></div>
-              <div className='absolute top-0 left-0 w-full h-full border-4 border-t-orange-500 rounded-full animate-spin'></div>
+            <div className="relative w-24 h-24">
+              <div className="absolute top-0 left-0 w-full h-full border-4 border-gray-200 rounded-full"></div>
+              <div className="absolute top-0 left-0 w-full h-full border-4 border-t-orange-500 rounded-full animate-spin"></div>
             </div>
-            <p className='text-lg text-main-text dark:text-main-text-black text-center'>
+            <p className="text-lg text-main-text dark:text-main-text-black text-center">
               Аналізуємо ваші відповіді та створюємо персоналізований план
               харчування...
             </p>
-            <div className='flex gap-2'>
+            <div className="flex gap-2">
               <span
-                className='w-2 h-2 bg-orange-500 rounded-full animate-bounce'
+                className="w-2 h-2 bg-orange-500 rounded-full animate-bounce"
                 style={{ animationDelay: '0ms' }}
               ></span>
               <span
-                className='w-2 h-2 bg-orange-500 rounded-full animate-bounce'
+                className="w-2 h-2 bg-orange-500 rounded-full animate-bounce"
                 style={{ animationDelay: '150ms' }}
               ></span>
               <span
-                className='w-2 h-2 bg-orange-500 rounded-full animate-bounce'
+                className="w-2 h-2 bg-orange-500 rounded-full animate-bounce"
                 style={{ animationDelay: '300ms' }}
               ></span>
             </div>
           </>
         ) : (
-          <p className='text-lg text-red-500'>
+          <p className="text-lg text-red-500">
             Щось пішло не так. Спробуйте ще раз.
           </p>
         )}

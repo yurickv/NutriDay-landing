@@ -1,4 +1,4 @@
-// app/dashboard/page.tsx
+// app/payment/plan/page.tsx
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
@@ -45,7 +45,9 @@ export default function DashboardPage() {
   const [selectedPlan, setSelectedPlan] = useState<PlanId>('week');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'pending'>('idle');
+  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'pending'>(
+    'idle'
+  );
   const [agreePersonalData, setAgreePersonalData] = useState(false);
   const [agreeOferta, setAgreeOferta] = useState(false);
 
@@ -90,7 +92,9 @@ export default function DashboardPage() {
     try {
       const plan = PLANS[selectedPlan];
       const orderId = `ND-${selectedPlan}-${Date.now()}`;
-      try { localStorage.setItem('lastOrderId', orderId); } catch {}
+      try {
+        localStorage.setItem('lastOrderId', orderId);
+      } catch {}
       const description = `${plan.title} | ${goalHeadline(data)}`;
 
       // Initialize subscription in DB with payment status pending
@@ -271,7 +275,10 @@ export default function DashboardPage() {
               />
               <span>
                 Я погоджуюсь з умовами та{' '}
-                <Link href="/oferta" className="text-orange-600 hover:text-orange-700 underline">
+                <Link
+                  href="/oferta"
+                  className="text-orange-600 hover:text-orange-700 underline"
+                >
                   публічною офертою
                 </Link>
                 .

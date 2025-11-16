@@ -1,5 +1,5 @@
 // app/payment/result/page.tsx
-"use client";
+'use client';
 
 import React, { useEffect, useMemo, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -40,8 +40,17 @@ function PaymentResultContent() {
 
   useEffect(() => {
     // If we don’t have success/failure in the URL, poll backend by orderId to get real status
-    const shouldPoll = !['success', 'subscribed', 'failure', 'error', 'reversed', 'cancelled', 'canceled', 'active']
-      .includes(effectiveStatus) && !!orderId;
+    const shouldPoll =
+      ![
+        'success',
+        'subscribed',
+        'failure',
+        'error',
+        'reversed',
+        'cancelled',
+        'canceled',
+        'active',
+      ].includes(effectiveStatus) && !!orderId;
     if (!shouldPoll) return;
 
     let cancelled = false;
@@ -60,7 +69,9 @@ function PaymentResultContent() {
           if (s) setDbStatus(s);
           // If still pending, ask LiqPay directly (server makes the request and updates DB)
           if (!['active', 'failed'].includes(s) && orderId) {
-            const liqRes = await fetch(`/api/liqpay/status?orderId=${encodeURIComponent(orderId)}`);
+            const liqRes = await fetch(
+              `/api/liqpay/status?orderId=${encodeURIComponent(orderId)}`
+            );
             if (!cancelled && liqRes.ok) {
               const lj = await liqRes.json();
               const ns = (lj?.updatedTo || '').toLowerCase();
@@ -98,7 +109,10 @@ function PaymentResultContent() {
   }, [effectiveStatus]);
 
   return (
-    <OnboardingLayout title="Статус оплати" subtitle="Результат транзакції LiqPay">
+    <OnboardingLayout
+      title="Статус оплати"
+      subtitle="Результат транзакції LiqPay"
+    >
       <div className="flex flex-col gap-6">
         <section className="bg-white dark:bg-dark-body rounded-lg p-5 shadow">
           <div className="text-sm text-gray-600 dark:text-gray-300 mb-2">
@@ -111,7 +125,16 @@ function PaymentResultContent() {
               Поточний статус:{' '}
               <span className="font-semibold">
                 {effectiveStatus || 'невідомо'}
-                {polling && !['success', 'subscribed', 'failure', 'error', 'active'].includes(effectiveStatus) ? ' (оновлюємо…) ' : ''}
+                {polling &&
+                ![
+                  'success',
+                  'subscribed',
+                  'failure',
+                  'error',
+                  'active',
+                ].includes(effectiveStatus)
+                  ? ' (оновлюємо…) '
+                  : ''}
               </span>
             </div>
           </div>
@@ -121,9 +144,9 @@ function PaymentResultContent() {
         <div className="flex gap-3">
           <button
             className="rounded-lg px-4 py-2 bg-orange-500 text-white hover:bg-orange-600 transition"
-            onClick={() => router.push('/dashboard')}
+            onClick={() => router.push('/payment/plan')}
           >
-            Повернутися до дашборду
+            Повернутися до оплати
           </button>
           <Link
             href="/menu"
