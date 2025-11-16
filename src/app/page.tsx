@@ -1,8 +1,8 @@
-import AboutUsSection from "@/components/section-about-us/SectionAboutUs";
-import AdvantagesSection from "@/components/section-advanteges/SectionAdvantages";
-import ExampleWorkSection from "@/components/section-exampleWork/ExampleWorkSection";
-import HeroSection from "@/components/section-hero/HeroSection";
-import ReviewsSection from "@/components/section-reviews/SectionReviews";
+import AboutUsSection from "@/components/MainPage/section-about-us/SectionAboutUs";
+import AdvantagesSection from "@/components/MainPage/section-advanteges/SectionAdvantages";
+import ExampleWorkSection from "@/components/MainPage/section-exampleWork/ExampleWorkSection";
+import HeroSection from "@/components/MainPage/section-hero/HeroSection";
+import ReviewsSection from "@/components/MainPage/section-reviews/SectionReviews";
 
 export default function Home() {
   return (
