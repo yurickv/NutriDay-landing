@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getDb } from '@/lib/db';
+import { computeSubscriptionExpiry } from '@/lib/subscription';
 
 const base64 = (str: string) => Buffer.from(str).toString('base64');
 
@@ -68,15 +69,18 @@ export async function GET(request: NextRequest) {
     if (updateTo) {
       const db = await getDb();
       const users = db.collection('users');
+      const now = new Date();
 
       const baseSet: Record<string, any> = {
         paymentStatus: updateTo,
         lastPayment: liq,
-        updatedAt: new Date(),
+        updatedAt: now,
       };
 
       if (updateTo === 'active') {
         baseSet.status = 'paid';
+        const existing = await users.findOne<{ planId?: string }>({ orderId });
+        baseSet.subscriptionExpiresAt = computeSubscriptionExpiry(existing?.planId ?? null, now);
       } else if (updateTo === 'failed') {
         baseSet.status = 'failed';
       }

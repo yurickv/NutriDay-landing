@@ -1,6 +1,7 @@
 // app/api/subscription/init/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
+import { hasActiveSubscription } from '@/lib/subscription';
 
 type PlanId = 'week' | 'month';
 
@@ -27,7 +28,7 @@ export async function POST(request: NextRequest) {
     const users = db.collection('users');
 
     const now = new Date();
-    const existing = await users.findOne<{ paymentStatus?: string }>({ email });
+    const existing = await users.findOne<{ paymentStatus?: string; subscriptionExpiresAt?: Date }>({ email });
 
     if (!existing) {
       // Shadow account: pending user, payment pending until LiqPay webhook
@@ -44,7 +45,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, status: 'pending-created' });
     }
 
-    if (existing.paymentStatus === 'active') {
+    // Only short-circuit to /menu if the subscription is genuinely still valid.
+    // An expired (paymentStatus 'active' but past expiry) user must be able to pay again.
+    if (hasActiveSubscription(existing)) {
       return NextResponse.json({ success: true, status: 'active' });
     }
 

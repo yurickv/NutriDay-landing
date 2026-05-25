@@ -12,7 +12,10 @@ async function getClient(): Promise<MongoClient> {
 
   if (!clientPromise) {
     client = new MongoClient(uri);
-    clientPromise = client.connect();
+    clientPromise = client.connect().catch((err) => {
+      clientPromise = null;
+      throw err;
+    });
   }
 
   return clientPromise;

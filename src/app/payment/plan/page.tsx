@@ -55,6 +55,27 @@ export default function DashboardPage() {
     const d = getOnboardingData();
     setData(d);
     if ((d as any).email) setEmail((d as any).email);
+
+    // Prefill from the DB record for returning/logged-in users (localStorage wins
+    // when it has a value, so a fresh onboarding isn't overwritten).
+    let cancelled = false;
+    fetch('/api/subscription/me')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((acc: { email?: string | null; planId?: string | null; onboarding?: OnboardingData } | null) => {
+        if (cancelled || !acc || !acc.email) return;
+        if (acc.onboarding) {
+          setData((prev) => ({ ...(acc.onboarding as OnboardingData), ...prev }));
+        }
+        setEmail((prev) => prev || acc.email || '');
+        if (acc.planId === 'week' || acc.planId === 'month') {
+          setSelectedPlan(acc.planId);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Persist email with a light debounce

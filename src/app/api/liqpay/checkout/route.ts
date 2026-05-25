@@ -14,6 +14,28 @@ type CheckoutRequest = {
 
 const base64 = (str: string) => Buffer.from(str).toString('base64');
 
+// LiqPay's server→server `server_url` must be a public host. localhost/private
+// addresses are unreachable from LiqPay and make checkout fail with `main_error`.
+// In local/sandbox dev we simply omit it — subscription activation still works via
+// the result page polling /api/liqpay/status (server-to-server).
+function toPublicCallbackUrl(url?: string): string | undefined {
+  if (!url) return undefined;
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    const isLocalOrPrivate =
+      host === 'localhost' ||
+      host === '127.0.0.1' ||
+      host === '::1' ||
+      host.endsWith('.local') ||
+      host.startsWith('192.168.') ||
+      host.startsWith('10.') ||
+      /^172\.(1[6-9]|2\d|3[01])\./.test(host);
+    return isLocalOrPrivate ? undefined : url;
+  } catch {
+    return undefined;
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as CheckoutRequest;
@@ -68,7 +90,7 @@ export async function POST(request: NextRequest) {
       // Optional URLs – can be configured via env
       result_url:
         process.env.NEXT_PUBLIC_LIQPAY_RESULT_URL || process.env.LIQPAY_RESULT_URL,
-      server_url: process.env.LIQPAY_SERVER_URL,
+      server_url: toPublicCallbackUrl(process.env.LIQPAY_SERVER_URL),
       // Pass plan id for your own bookkeeping
       info: planId,
       // For sandbox testing set via env

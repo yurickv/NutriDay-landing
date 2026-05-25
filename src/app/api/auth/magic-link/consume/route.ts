@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import { consumeMagicLinkToken } from '@/lib/auth/magic';
 import { createSession } from '@/lib/auth/session';
 import { getDb } from '@/lib/db';
+import { computeSubscriptionExpiry, checkSessionSubscription, inactiveRedirectTarget } from '@/lib/subscription';
 
 const base64 = (str: string) => Buffer.from(str).toString('base64');
 
@@ -69,13 +70,17 @@ export async function GET(req: NextRequest) {
               updateTo = 'failed';
 
             if (updateTo) {
+              const now = new Date();
               await db.collection('users').updateOne(
                 { email: user.email },
                 {
                   $set: {
                     paymentStatus: updateTo,
                     lastPayment: liq,
-                    updatedAt: new Date(),
+                    updatedAt: now,
+                    ...(updateTo === 'active'
+                      ? { subscriptionExpiresAt: computeSubscriptionExpiry(latestUser?.planId ?? null, now) }
+                      : {}),
                   },
                 }
               );
@@ -93,19 +98,66 @@ export async function GET(req: NextRequest) {
 
     await createSession(String(user.email));
 
-    if ((paymentStatus || '').toLowerCase() === 'active') {
+    // Auto-initialize user_profiles from onboarding data (runs once on first login)
+    try {
+      const profileCol = db.collection('user_profiles');
+      const existingProfile = await profileCol.findOne({ userEmail: user.email });
+      if (!existingProfile && latestUser?.onboarding) {
+        const od = latestUser.onboarding as Record<string, string>;
+        const weightKg = parseFloat(od.weight ?? '60');
+        const heightCm = parseFloat(od.height ?? '165');
+        const ageYears = parseInt(od.age ?? '25', 10);
+        // Normalize sex: "Чоловік" (Ukrainian from CaloriesCalcList) → "male"
+        const rawSex = String(od.sex ?? '');
+        const sex = (rawSex === 'Чоловік' || rawSex === 'male') ? 'male' : 'female';
+        const activityLevel = parseFloat(od.activity ?? '1.375');
+
+        const bmr = sex === 'male'
+          ? Math.round(10 * weightKg + 6.25 * heightCm - 5 * ageYears + 5)
+          : Math.round(10 * weightKg + 6.25 * heightCm - 5 * ageYears - 161);
+        const tdee = Math.round(bmr * activityLevel);
+        const minCalories = sex === 'male' ? 1500 : 1200;
+        const goalCalories = Math.max(minCalories, tdee - 500);
+
+        await profileCol.insertOne({
+          userEmail: String(user.email),
+          sex,
+          age: od.age,
+          weight: od.weight,
+          height: od.height,
+          activity: od.activity,
+          weightKg,
+          heightCm,
+          ageYears,
+          activityLevel,
+          bmr,
+          tdee,
+          goalCalories,
+          favoriteFoods: [],
+          dislikedFoods: [],
+          dietaryPreferences: [],
+          allergies: [],
+          waterGoalMl: 2000,
+          menuGenerationsThisWeek: 0,
+          lastGenerationWeekStart: null,
+          mainGoal: od.mainGoal,
+          updatedAt: new Date(),
+        } as any);
+      }
+    } catch (profileErr) {
+      console.error('Failed to auto-create user_profiles:', profileErr);
+    }
+
+    // Grant access only if the subscription is active AND not expired
+    // (checkSessionSubscription also backfills expiry for legacy paid users).
+    const { active: subscriptionActive, userExists } = await checkSessionSubscription();
+    if (subscriptionActive) {
       const redirectUrl = new URL('/menu', req.url);
       return NextResponse.redirect(redirectUrl);
     }
 
-    const fallbackUrl = new URL('/payment/result', req.url);
-    if (latestUser?.orderId) {
-      fallbackUrl.searchParams.set('order_id', String(latestUser.orderId));
-      if (paymentStatus) {
-        fallbackUrl.searchParams.set('status', paymentStatus);
-      }
-    }
-    return NextResponse.redirect(fallbackUrl);
+    // No valid subscription: returning user → payment page, unknown user → onboarding.
+    return NextResponse.redirect(new URL(inactiveRedirectTarget(userExists), req.url));
   } catch (error: any) {
     console.error('Magic-link consume error:', error);
     const url = new URL('/auth/login?e=server_error', req.url);

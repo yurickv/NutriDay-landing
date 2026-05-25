@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import { getDb } from '@/lib/db';
 import { issueMagicLinkToken } from '@/lib/auth/magic';
 import { sendMagicLinkEmail } from '@/lib/email';
+import { computeSubscriptionExpiry } from '@/lib/subscription';
 
 type LiqpayCallback = {
   order_id?: string;
@@ -96,6 +97,9 @@ export async function POST(request: NextRequest) {
     const user = await users.findOne(matcher);
     if (user) {
       const previousPaymentStatus = (user as any).paymentStatus;
+      const effectivePlanId = planId || (user as any).planId || null;
+      const expiresAt =
+        paymentStatus === 'active' ? computeSubscriptionExpiry(effectivePlanId, now) : null;
 
       await users.updateOne(
         { _id: user._id },
@@ -105,7 +109,8 @@ export async function POST(request: NextRequest) {
             status: paymentStatus === 'active' ? 'paid' : (user as any).status || 'pending',
             lastPayment: payload,
             updatedAt: now,
-            planId: planId || (user as any).planId || null,
+            planId: effectivePlanId,
+            ...(paymentStatus === 'active' ? { subscriptionExpiresAt: expiresAt } : {}),
           },
         }
       );
@@ -116,8 +121,9 @@ export async function POST(request: NextRequest) {
           {
             $set: {
               userId: user._id,
-              planId: planId || (user as any).planId || null,
+              planId: effectivePlanId,
               status: 'active',
+              expiresAt,
               updatedAt: now,
             },
             $setOnInsert: {

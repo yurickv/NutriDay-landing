@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const PROTECTED_PREFIXES = ['/menu'];
+const PROTECTED_PREFIXES = ['/menu', '/shopping-list', '/profile'];
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -22,6 +22,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/menu/:path*'],
+  matcher: ['/menu/:path*', '/shopping-list/:path*', '/profile/:path*'],
 };
-

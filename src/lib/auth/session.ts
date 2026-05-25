@@ -42,7 +42,14 @@ export async function readSessionUserId(): Promise<string | null> {
   if (!session) return null;
   if (new Date(session.expiresAt) < new Date()) {
     await db.collection('sessions').deleteOne({ id: sessionId });
-    cookieStore.delete(COOKIE_NAME);
+    // Cookie mutation throws when called during a Server Component render
+    // (now reachable via the subscription guards in protected layouts).
+    // The session is already gone, so it's safe to skip the cookie cleanup here.
+    try {
+      cookieStore.delete(COOKIE_NAME);
+    } catch {
+      /* cleared on the next route-handler request */
+    }
     return null;
   }
 
