@@ -43,6 +43,17 @@ export function IngredientsTab({ meal }: IngredientsTabProps) {
         </div>
       </div>
 
+      {/* Total dish weight */}
+      {meal.servingSize > 0 && (
+        <p className="text-xs text-neutral-500 text-center -mt-1">
+          Вага страви:{' '}
+          <span className="font-semibold text-neutral-700 dark:text-neutral-300">
+            {Math.round(meal.servingSize * servings)} г
+          </span>
+          {servings > 1 && ` (${meal.servingSize} г × ${servings})`}
+        </p>
+      )}
+
       {/* Ingredients list */}
       <ul className="space-y-2">
         {meal.ingredients.map((ing, i) => (

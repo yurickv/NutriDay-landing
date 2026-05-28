@@ -44,10 +44,10 @@ function buildPrompt(profile: UserProfile, highRated: string[], lowRated: string
 
   return `Склади 7-денне меню (сніданок, обід, вечеря, 1 перекус) для:
 Стать: ${profile.sex === 'male' ? 'чоловік' : 'жінка'}, Вік: ${profile.ageYears}, Вага: ${profile.weightKg}кг, Зріст: ${profile.heightCm}см
-Цільова калорійність: ~${profile.goalCalories} ккал/день (±10%)
+Цільова калорійність раціону: ${profile.goalCalories} ккал/день — дотримуйся ТОЧНО (підлаштовуй вагу порцій, щоб сумарна калорійність дня = цьому значенню)
 БЖВ цілі: ~${macros.protein}г білків / ~${macros.fat}г жирів / ~${macros.carbs}г вуглеводів
 Мета: ${profile.mainGoal || 'схуднення'}
-Поточний місяць: ${monthName} — пріоритизуй сезонні продукти для України: ${seasonalHint}
+Поточний місяць: ${monthName} — пріоритизуй сезонні, недорогі продукти для України: ${seasonalHint}
 ${profile.favoriteFoods?.length ? `Улюблені продукти: ${profile.favoriteFoods.join(', ')}` : ''}
 ${profile.dislikedFoods?.length ? `НЕ включати: ${profile.dislikedFoods.join(', ')}` : ''}
 ${profile.dietaryPreferences?.length ? `Обмеження: ${profile.dietaryPreferences.join(', ')}` : ''}
@@ -55,15 +55,45 @@ ${profile.allergies?.length ? `Алергії: ${profile.allergies.join(', ')}` 
 ${highRated.length ? `Страви з хорошим рейтингом (повтори подібні): ${highRated.join(', ')}` : ''}
 ${lowRated.length ? `Страви з поганим рейтингом (не повторювати): ${lowRated.join(', ')}` : ''}
 Якщо страва готується на 2-3 дні — позначити isMultiDayPrep: true, multiDayPrepDays: N.
+Для кожної страви обов'язково вкажи servingSize (вагу однієї порції в грамах); калорійність і БЖВ мають відповідати саме цій вазі, а сума ваг інгредієнтів ≈ servingSize.
 
 ВАЖЛИВО: Поверни РІВНО 7 днів (Понеділок–Неділя). Відповідь — ТІЛЬКИ валідний JSON без markdown-обгортки та пояснень. Суворо дотримуйся наданої схеми.`;
 }
 
-const SYSTEM_PROMPT = `Ти — досвідчений дієтолог-нутриціолог. Складаєш персоналізовані меню для схуднення.
-Мова відповіді: ВИКЛЮЧНО українська.
-Дотримуйся принципу безпечного схуднення: різноманітне харчування, реальні страви, мінімум 1200 ккал/день.
-Завжди повертай РІВНО 7 днів тижня (Понеділок–Неділя).
-Відповідай ТІЛЬКИ валідним JSON рівно такої схеми:
+// Persona + nutrition rules, shared by the weekly-menu and meal-alternatives calls.
+// Kept in English (proven base prompt); the model still must output Ukrainian text.
+const DIETITIAN_PERSONA = `You are an AI dietitian. Build a healthy, balanced menu tailored to the user's data and preferences supplied in the user message.
+
+CALORIES (most important):
+- The user message states the target daily calorie intake. Hit that number for the whole day.
+- Distribute calories so that about 80% fall in the first half of the day (breakfast + lunch + daytime snack) and about 20% on dinner.
+- Strictly respect the daily calorie target, do not drift. If a draft day totals too many calories, redo the SAME day with smaller portions; if too few, increase the portions — until the day's total matches the target.
+- Never plan below 1200 kcal/day.
+
+PORTION WEIGHT (critical for calorie accuracy):
+- For every dish set "servingSize" to the cooked weight of ONE portion in grams.
+- "calories", "protein", "fat", "carbs" MUST correspond to eating exactly that servingSize — more grams means more calories. Keep them mutually consistent.
+- Each ingredient "quantity" is its weight (or count) for one portion; the ingredient weights must add up to the dish servingSize.
+
+NUTRITION:
+- Varied menu covering all food groups (proteins, fats, carbohydrates, vitamins, minerals).
+- Prefer inexpensive products typical for Ukraine; prioritize the seasonal products named in the user message.
+- Never put incompatible foods in the same meal (e.g. milk + cucumber).
+
+DISHES:
+- Every dish "name" must be 30 characters or fewer.
+- Give each dish a fitting food "emoji".
+- For complex lunch and dinner dishes (3+ ingredients) put a clear, step-by-step chef-style recipe in "description"; for simple dishes a short description is enough.
+
+OUTPUT LANGUAGE:
+- ALL text values (name, description, ingredient name) MUST be written in Ukrainian.
+- Do not ask the user questions and do not add alternatives, notes or commentary outside the JSON.`;
+
+const SYSTEM_PROMPT = `${DIETITIAN_PERSONA}
+
+WEEKLY MENU TASK:
+- Always return EXACTLY 7 days of the week (Понеділок–Неділя), each with breakfast, lunch, dinner and 1 snack.
+- Reply with ONLY valid JSON, no markdown wrapper and no explanations, exactly matching this schema:
 {
   "days": [
     {
@@ -79,6 +109,11 @@ const SYSTEM_PROMPT = `Ти — досвідчений дієтолог-нутр
 }
 shoppingCategory values: vegetables|fruits|meat|fish|dairy|grains|legumes|oils|spices|other
 difficulty values: easy|medium|hard`;
+
+const ALT_SYSTEM_PROMPT = `${DIETITIAN_PERSONA}
+
+SINGLE-MEAL TASK:
+- You will be asked for a few alternative dishes for ONE meal slot. Reply with ONLY valid JSON of the exact shape requested in the user message, no markdown wrapper and no commentary.`;
 
 async function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
@@ -239,14 +274,15 @@ export async function generateMealAlternatives(
     profile.allergies?.length ? `Алергії: ${profile.allergies.join(', ')}` : '',
   ].filter(Boolean).join('\n');
 
-  const prompt = `Запропонуй ${count} альтернативні страви на заміну "${meal.name}" (${meal.calories} ккал).
+  const prompt = `Запропонуй ${count} альтернативні страви на заміну "${meal.name}" (${meal.calories} ккал, ${meal.servingSize} г).
 Та сама категорія прийому їжі, калорійність у межах ±10% (${Math.round(meal.calories * 0.9)}–${Math.round(meal.calories * 1.1)} ккал).
+Для кожної страви вкажи servingSize (вагу порції в г); калорійність має відповідати цій вазі.
 Мова: українська. Реальні, різноманітні страви.
 ${constraints}
 Відповідь — ТІЛЬКИ валідний JSON: { "alternatives": [ <AIMeal>, ... ] } з ${count} елементами.`;
 
   const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-    { role: 'system', content: SYSTEM_PROMPT },
+    { role: 'system', content: ALT_SYSTEM_PROMPT },
     { role: 'user', content: prompt },
   ];
 

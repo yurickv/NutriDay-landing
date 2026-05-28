@@ -88,6 +88,12 @@ export function MealCard({
         </p>
         <div className="flex items-center gap-2 mt-0.5">
           <span className="text-xs font-semibold text-main">{meal.calories} ккал</span>
+          {meal.servingSize > 0 && (
+            <>
+              <span className="text-xs text-neutral-400">·</span>
+              <span className="text-xs text-neutral-400">{meal.servingSize} г</span>
+            </>
+          )}
           <span className="text-xs text-neutral-400">·</span>
           <span className="text-xs text-neutral-400">{meal.protein}г Б</span>
           {meal.prepTimeMinutes > 0 && (

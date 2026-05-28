@@ -30,7 +30,7 @@ export function MealDetailSheet({ meal, isOpen, onClose }: MealDetailSheetProps)
               {meal.name}
             </h2>
             <p className="text-xs text-neutral-500 mt-0.5">
-              {meal.calories} ккал · {meal.protein}г Б · {meal.fat}г Ж · {meal.carbs}г В
+              {meal.calories} ккал{meal.servingSize > 0 ? ` · ${meal.servingSize} г` : ''} · {meal.protein}г Б · {meal.fat}г Ж · {meal.carbs}г В
             </p>
           </div>
           <button
