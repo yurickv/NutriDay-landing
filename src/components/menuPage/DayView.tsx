@@ -11,9 +11,20 @@ import { Clock, Zap } from 'lucide-react';
 interface DayViewProps {
   day: MenuDay;
   goalCalories: number;
-  onConsume: (dayLabel: string, mealType: MealCategory, snackIndex?: number, isConsumed?: boolean) => Promise<void>;
+  onConsume: (dayLabel: string, mealType: MealCategory, snackIndex?: number, isConsumed?: boolean, consumedWeight?: number | null) => Promise<void>;
+  onOpenConsume: (meal: AIMeal, mealType: MealCategory, snackIndex?: number) => void;
   onOpenDetail: (meal: AIMeal) => void;
   onOpenSwap: (meal: AIMeal, mealType: MealCategory, snackIndex?: number) => void;
+}
+
+// Multiplier applied to a meal's per-serving macros for what the user actually ate.
+// With a recorded consumedWeight we scale by grams (calories refer to one servingSize);
+// otherwise fall back to the full planned portion (servings).
+function consumedFactor(m: AIMeal): number {
+  if (m.consumedWeight != null && m.consumedWeight > 0 && m.servingSize > 0) {
+    return m.consumedWeight / m.servingSize;
+  }
+  return m.servings;
 }
 
 function calcConsumedMacros(day: MenuDay) {
@@ -26,12 +37,15 @@ function calcConsumedMacros(day: MenuDay) {
   return meals
     .filter((m) => m.isConsumed)
     .reduce(
-      (acc, m) => ({
-        calories: acc.calories + m.calories * m.servings,
-        protein: acc.protein + m.protein * m.servings,
-        fat: acc.fat + m.fat * m.servings,
-        carbs: acc.carbs + m.carbs * m.servings,
-      }),
+      (acc, m) => {
+        const f = consumedFactor(m);
+        return {
+          calories: acc.calories + m.calories * f,
+          protein: acc.protein + m.protein * f,
+          fat: acc.fat + m.fat * f,
+          carbs: acc.carbs + m.carbs * f,
+        };
+      },
       { calories: 0, protein: 0, fat: 0, carbs: 0 },
     );
 }
@@ -44,10 +58,16 @@ function calcGoalMacros(goalCalories: number) {
   };
 }
 
-export function DayView({ day, goalCalories, onConsume, onOpenDetail, onOpenSwap }: DayViewProps) {
+export function DayView({ day, goalCalories, onConsume, onOpenConsume, onOpenDetail, onOpenSwap }: DayViewProps) {
   const allMeals: AIMeal[] = [day.meals.breakfast, day.meals.lunch, day.meals.dinner, ...day.meals.snacks];
   const consumedCount = allMeals.filter((m) => m.isConsumed).length;
-  const macros = calcConsumedMacros(day);
+  const raw = calcConsumedMacros(day);
+  const macros = {
+    calories: Math.round(raw.calories),
+    protein: Math.round(raw.protein),
+    fat: Math.round(raw.fat),
+    carbs: Math.round(raw.carbs),
+  };
   const goalMacros = calcGoalMacros(goalCalories);
   const isQuickDay = day.totalPrepMinutes <= 60;
 
@@ -105,6 +125,7 @@ export function DayView({ day, goalCalories, onConsume, onOpenDetail, onOpenSwap
             mealType="breakfast"
             dayLabel={day.dayLabel}
             onConsume={onConsume}
+            onOpenConsume={onOpenConsume}
             onOpenDetail={onOpenDetail}
             onOpenSwap={onOpenSwap}
           />
@@ -119,6 +140,7 @@ export function DayView({ day, goalCalories, onConsume, onOpenDetail, onOpenSwap
             mealType="lunch"
             dayLabel={day.dayLabel}
             onConsume={onConsume}
+            onOpenConsume={onOpenConsume}
             onOpenDetail={onOpenDetail}
             onOpenSwap={onOpenSwap}
           />
@@ -133,6 +155,7 @@ export function DayView({ day, goalCalories, onConsume, onOpenDetail, onOpenSwap
             mealType="dinner"
             dayLabel={day.dayLabel}
             onConsume={onConsume}
+            onOpenConsume={onOpenConsume}
             onOpenDetail={onOpenDetail}
             onOpenSwap={onOpenSwap}
           />
@@ -151,6 +174,7 @@ export function DayView({ day, goalCalories, onConsume, onOpenDetail, onOpenSwap
                 dayLabel={day.dayLabel}
                 snackIndex={i}
                 onConsume={onConsume}
+                onOpenConsume={onOpenConsume}
                 onOpenDetail={onOpenDetail}
                 onOpenSwap={onOpenSwap}
               />

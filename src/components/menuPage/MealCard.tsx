@@ -9,7 +9,8 @@ interface MealCardProps {
   mealType: MealCategory;
   dayLabel: string;
   snackIndex?: number;
-  onConsume: (dayLabel: string, mealType: MealCategory, snackIndex?: number, isConsumed?: boolean) => Promise<void>;
+  onConsume: (dayLabel: string, mealType: MealCategory, snackIndex?: number, isConsumed?: boolean, consumedWeight?: number | null) => Promise<void>;
+  onOpenConsume: (meal: AIMeal, mealType: MealCategory, snackIndex?: number) => void;
   onOpenDetail: (meal: AIMeal) => void;
   onOpenSwap: (meal: AIMeal, mealType: MealCategory, snackIndex?: number) => void;
 }
@@ -27,6 +28,7 @@ export function MealCard({
   dayLabel,
   snackIndex,
   onConsume,
+  onOpenConsume,
   onOpenDetail,
   onOpenSwap,
 }: MealCardProps) {
@@ -35,13 +37,28 @@ export function MealCard({
 
   const handleConsume = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    setLoading(true);
-    try {
-      await onConsume(dayLabel, mealType, snackIndex, !meal.isConsumed);
-      // Haptic feedback
-      if ('vibrate' in navigator) navigator.vibrate(30);
-    } finally {
-      setLoading(false);
+    if (meal.isConsumed) {
+      // Toggle off directly
+      setLoading(true);
+      try {
+        await onConsume(dayLabel, mealType, snackIndex, false);
+        if ('vibrate' in navigator) navigator.vibrate(30);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+    // Mark as eaten → ask for the actual portion weight first
+    if (meal.servingSize > 0) {
+      onOpenConsume(meal, mealType, snackIndex);
+    } else {
+      setLoading(true);
+      try {
+        await onConsume(dayLabel, mealType, snackIndex, true);
+        if ('vibrate' in navigator) navigator.vibrate(30);
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -104,11 +121,18 @@ export function MealCard({
             </>
           )}
         </div>
-        {meal.isSwapped && (
-          <span className="inline-block mt-0.5 text-[10px] font-semibold text-amber-600 bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0.5 rounded-full">
-            замінено
-          </span>
-        )}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {meal.isSwapped && (
+            <span className="inline-block mt-0.5 text-[10px] font-semibold text-amber-600 bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0.5 rounded-full">
+              замінено
+            </span>
+          )}
+          {meal.isConsumed && meal.consumedWeight != null && (
+            <span className="inline-block mt-0.5 text-[10px] font-semibold text-green-600 bg-green-50 dark:bg-green-900/20 px-1.5 py-0.5 rounded-full">
+              з&apos;їдено {meal.consumedWeight} г
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Actions */}

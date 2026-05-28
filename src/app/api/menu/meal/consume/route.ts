@@ -11,6 +11,7 @@ interface ConsumeBody {
   mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
   snackIndex?: number;
   isConsumed: boolean;
+  consumedWeight?: number | null;
 }
 
 export async function PATCH(req: NextRequest) {
@@ -20,7 +21,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   const body = await req.json() as ConsumeBody;
-  const { dayLabel, mealType, snackIndex, isConsumed } = body;
+  const { dayLabel, mealType, snackIndex, isConsumed, consumedWeight } = body;
 
   const db = await getDb();
   const col = db.collection('weekly_menus');
@@ -52,6 +53,10 @@ export async function PATCH(req: NextRequest) {
       $set: {
         [`${updatePath}.isConsumed`]: isConsumed,
         [`${updatePath}.consumedAt`]: isConsumed ? now : null,
+        [`${updatePath}.consumedWeight`]:
+          isConsumed && typeof consumedWeight === 'number' && consumedWeight > 0
+            ? Math.round(consumedWeight)
+            : null,
         updatedAt: now,
       },
     },

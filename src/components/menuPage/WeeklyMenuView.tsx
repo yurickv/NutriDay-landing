@@ -6,6 +6,7 @@ import { AIMeal, MealCategory } from '@/types/meals';
 import { DayTabBar } from './DayTabBar';
 import { DayView } from './DayView';
 import { MealDetailSheet } from './MealDetailSheet';
+import { ConsumePortionSheet } from './ConsumePortionSheet';
 import { SwapMealPanel } from './SwapMealPanel';
 import { MealRatingWidget } from './MealRatingWidget';
 import { ToastContainer, ToastData } from '@/components/common/Toast';
@@ -37,6 +38,12 @@ export function WeeklyMenuView({ menu, goalCalories, onMenuUpdate }: WeeklyMenuV
 
   const [activeDay, setActiveDay] = useState(findTodayIndex);
   const [detailMeal, setDetailMeal] = useState<AIMeal | null>(null);
+  const [consumeContext, setConsumeContext] = useState<{
+    meal: AIMeal;
+    mealType: MealCategory;
+    dayLabel: string;
+    snackIndex?: number;
+  } | null>(null);
   const [swapContext, setSwapContext] = useState<{
     meal: AIMeal;
     mealType: MealCategory;
@@ -59,11 +66,12 @@ export function WeeklyMenuView({ menu, goalCalories, onMenuUpdate }: WeeklyMenuV
     mealType: MealCategory,
     snackIndex?: number,
     isConsumed = true,
+    consumedWeight: number | null = null,
   ) => {
     const res = await fetch('/api/menu/meal/consume', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dayLabel, mealType, snackIndex, isConsumed }),
+      body: JSON.stringify({ dayLabel, mealType, snackIndex, isConsumed, consumedWeight }),
     });
     if (!res.ok) return;
 
@@ -135,6 +143,9 @@ export function WeeklyMenuView({ menu, goalCalories, onMenuUpdate }: WeeklyMenuV
             day={currentDay}
             goalCalories={goalCalories}
             onConsume={handleConsume}
+            onOpenConsume={(meal, mealType, snackIndex) =>
+              setConsumeContext({ meal, mealType, dayLabel: currentDay.dayLabel, snackIndex })
+            }
             onOpenDetail={(meal) => setDetailMeal(meal)}
             onOpenSwap={(meal, mealType, snackIndex) =>
               setSwapContext({ meal, mealType, snackIndex })
@@ -148,6 +159,20 @@ export function WeeklyMenuView({ menu, goalCalories, onMenuUpdate }: WeeklyMenuV
         meal={detailMeal}
         isOpen={!!detailMeal}
         onClose={() => setDetailMeal(null)}
+      />
+
+      {/* Consume portion sheet */}
+      <ConsumePortionSheet
+        meal={consumeContext?.meal ?? null}
+        isOpen={!!consumeContext}
+        onClose={() => setConsumeContext(null)}
+        onConfirm={(consumedWeight) => {
+          if (consumeContext) {
+            const { dayLabel, mealType, snackIndex } = consumeContext;
+            handleConsume(dayLabel, mealType, snackIndex, true, consumedWeight);
+          }
+          setConsumeContext(null);
+        }}
       />
 
       {/* Swap panel */}

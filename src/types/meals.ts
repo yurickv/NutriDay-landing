@@ -43,6 +43,7 @@ export interface AIMeal {
 
   isConsumed: boolean;
   consumedAt: Date | null;
+  consumedWeight: number | null;
 
   rating: 1 | 2 | 3 | null;
   ratedAt: Date | null;

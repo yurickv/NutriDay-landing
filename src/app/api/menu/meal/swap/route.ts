@@ -61,6 +61,7 @@ export async function POST(req: NextRequest) {
     originalMealSnapshot: { ...originalMeal, quickAlternatives: [] },
     isConsumed: false,
     consumedAt: null,
+    consumedWeight: null,
     rating: null,
     ratedAt: null,
   };

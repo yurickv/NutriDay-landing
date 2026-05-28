@@ -171,6 +171,7 @@ function normalizeMeal(raw: Record<string, unknown>, defaults: Partial<AIMeal> =
       : [],
     isConsumed: false,
     consumedAt: null,
+    consumedWeight: null,
     rating: null,
     ratedAt: null,
     ...defaults,
