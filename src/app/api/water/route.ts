@@ -9,21 +9,30 @@ function todayMidnightUTC(): Date {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 }
 
-// GET /api/water — today's water log
-export async function GET() {
+// Resolve a YYYY-MM-DD param to a UTC-midnight Date; fall back to today.
+function midnightUTCFromISO(s?: string | null): Date {
+  if (s && /^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    const [y, m, d] = s.split('-').map(Number);
+    return new Date(Date.UTC(y, m - 1, d));
+  }
+  return todayMidnightUTC();
+}
+
+// GET /api/water?date=YYYY-MM-DD — water log for a specific day (default today)
+export async function GET(req: NextRequest) {
   const userEmail = await readSessionUserId();
   if (!userEmail) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const db = await getDb();
-  const today = todayMidnightUTC();
+  const date = midnightUTCFromISO(req.nextUrl.searchParams.get('date'));
 
-  const log = await db.collection('water_logs').findOne<WaterLog>({ userEmail, date: today });
+  const log = await db.collection('water_logs').findOne<WaterLog>({ userEmail, date });
 
   if (!log) {
     const profile = await db.collection('user_profiles').findOne<UserProfile>({ userEmail });
     return NextResponse.json({
       userEmail,
-      date: today,
+      date,
       amountMl: 0,
       goalMl: profile?.waterGoalMl ?? 2000,
       logs: [],
@@ -38,24 +47,24 @@ export async function POST(req: NextRequest) {
   const userEmail = await readSessionUserId();
   if (!userEmail) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const body = await req.json() as { amountMl: number };
+  const body = await req.json() as { amountMl: number; date?: string };
   if (!body.amountMl || body.amountMl <= 0 || body.amountMl > 2000) {
     return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
   }
 
   const db = await getDb();
-  const today = todayMidnightUTC();
+  const date = midnightUTCFromISO(body.date);
   const now = new Date();
 
   const profile = await db.collection('user_profiles').findOne<UserProfile>({ userEmail });
   const goalMl = profile?.waterGoalMl ?? 2000;
 
-  const existing = await db.collection('water_logs').findOne<WaterLog>({ userEmail, date: today });
+  const existing = await db.collection('water_logs').findOne<WaterLog>({ userEmail, date });
 
   if (!existing) {
     await (db.collection('water_logs') as any).insertOne({ // eslint-disable-line @typescript-eslint/no-explicit-any
       userEmail,
-      date: today,
+      date,
       amountMl: body.amountMl,
       goalMl,
       logs: [{ amountMl: body.amountMl, loggedAt: now }],
@@ -66,7 +75,7 @@ export async function POST(req: NextRequest) {
   const newTotal = existing.amountMl + body.amountMl;
 
   await (db.collection('water_logs') as any).updateOne( // eslint-disable-line @typescript-eslint/no-explicit-any
-    { userEmail, date: today },
+    { userEmail, date },
     {
       $set: { amountMl: newTotal, goalMl },
       $push: { logs: { amountMl: body.amountMl, loggedAt: now } },

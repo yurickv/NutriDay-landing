@@ -171,6 +171,7 @@ export function WeeklyMenuView({ menu, goalCalories, onMenuUpdate }: WeeklyMenuV
         {currentDay && (
           <DayView
             day={currentDay}
+            dayDate={new Date(currentDay.date).toISOString().slice(0, 10)}
             goalCalories={goalCalories}
             onConsume={handleConsume}
             onOpenConsume={(meal, mealType, snackIndex) =>

@@ -6,7 +6,6 @@ import { UserProfile } from '@/types/userProfile';
 import { WeeklyMenuView } from '@/components/menuPage/WeeklyMenuView';
 import { GenerateMenuLoader } from '@/components/menuPage/GenerateMenuLoader';
 import { StreakBanner } from '@/components/menuPage/StreakBanner';
-import { WaterTracker } from '@/components/menuPage/WaterTracker';
 import { WeightProgressCard } from '@/components/menuPage/WeightProgressCard';
 import { DailyTipCard } from '@/components/menuPage/DailyTipCard';
 import { useStreak } from '@/hooks/useStreak';
@@ -212,9 +211,6 @@ export default function MenuPage() {
         </div>
 
         {/* Engagement widgets */}
-        {streak && streak.currentStreak > 0 && <StreakBanner streak={streak} />}
-        <WaterTracker />
-        <WeightProgressCard />
         <DailyTipCard />
 
         <WeeklyMenuView
@@ -222,6 +218,10 @@ export default function MenuPage() {
           goalCalories={profile?.goalCalories ?? 1500}
           onMenuUpdate={handleRefreshMenu}
         />
+
+        {/* Streak + weight moved to the very bottom of the screen */}
+        {streak && streak.currentStreak > 0 && <StreakBanner streak={streak} />}
+        <WeightProgressCard />
       </>
     );
   }

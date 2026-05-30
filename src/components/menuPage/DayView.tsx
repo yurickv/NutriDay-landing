@@ -4,6 +4,7 @@ import { MenuDay } from '@/types/weeklyMenu';
 import { AIMeal, MealCategory } from '@/types/meals';
 import { MealCard } from './MealCard';
 import { CustomEntryCard } from './CustomEntryCard';
+import { WaterTracker } from './WaterTracker';
 import { DayMealProgress } from './DayMealProgress';
 import { CalorieProgressBar } from './CalorieProgressBar';
 import { MacroProgressBar } from './MacroProgressBar';
@@ -11,6 +12,7 @@ import { Clock, Zap, Plus } from 'lucide-react';
 
 interface DayViewProps {
   day: MenuDay;
+  dayDate: string;
   goalCalories: number;
   onConsume: (dayLabel: string, mealType: MealCategory, snackIndex?: number, isConsumed?: boolean, consumedWeight?: number | null) => Promise<void>;
   onOpenConsume: (meal: AIMeal, mealType: MealCategory, snackIndex?: number) => void;
@@ -71,7 +73,7 @@ function calcGoalMacros(goalCalories: number) {
   };
 }
 
-export function DayView({ day, goalCalories, onConsume, onOpenConsume, onOpenDetail, onOpenSwap, onOpenAddCustom, onDeleteCustom }: DayViewProps) {
+export function DayView({ day, dayDate, goalCalories, onConsume, onOpenConsume, onOpenDetail, onOpenSwap, onOpenAddCustom, onDeleteCustom }: DayViewProps) {
   const allMeals: AIMeal[] = [day.meals.breakfast, day.meals.lunch, day.meals.dinner, ...day.meals.snacks];
   const customEntries = day.customEntries ?? [];
   // Custom entries count both toward eaten calories and as "meals" for day progress.
@@ -220,6 +222,9 @@ export function DayView({ day, goalCalories, onConsume, onOpenConsume, onOpenDet
             </button>
           </div>
         </section>
+
+        {/* Water tracker — per selected day */}
+        <WaterTracker date={dayDate} />
       </div>
     </div>
   );

@@ -5,12 +5,12 @@ import { track } from '@/lib/analytics';
 
 const PORTIONS = [200, 250, 350, 500] as const;
 
-export function WaterTracker() {
-  const { water, loading, adding, addWater } = useWaterTracker();
+export function WaterTracker({ date }: { date?: string }) {
+  const { water, loading, adding, addWater } = useWaterTracker(date);
 
   if (loading) {
     return (
-      <div className="mx-4 my-3 h-24 bg-neutral-100 dark:bg-neutral-800 rounded-2xl animate-pulse" />
+      <div className="h-24 bg-neutral-100 dark:bg-neutral-800 rounded-2xl animate-pulse" />
     );
   }
 
@@ -29,7 +29,7 @@ export function WaterTracker() {
   };
 
   return (
-    <div className="mx-4 my-3 rounded-2xl bg-gradient-to-r from-sky-50 to-blue-50 dark:from-sky-950/40 dark:to-blue-950/30 border border-sky-100 dark:border-sky-900/40 p-4">
+    <div className="rounded-2xl bg-gradient-to-r from-sky-50 to-blue-50 dark:from-sky-950/40 dark:to-blue-950/30 border border-sky-100 dark:border-sky-900/40 p-4">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
