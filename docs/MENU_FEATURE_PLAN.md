@@ -1,6 +1,6 @@
 # NutriDay — План розробки: Тижневе меню, Список покупок та PWA
 
-> **Статус**: Фаза 1 ✅ | Фаза 2 ✅ | Фаза 3 ✅ | Фаза 4 ✅ | Фаза 5 ✅ | Власні страви ✅ | Фаза 6–7 — в черзі
+> **Статус**: Фаза 1 ✅ | Фаза 2 ✅ | Фаза 3 ✅ | Фаза 4 ✅ | Фаза 5 ✅ | Власні страви ✅ | Масштабованість & безпека ✅ | Фаза 6–7 — в черзі
 > **Пріоритет**: Висока
 > **Ціль**: Побудувати персоналізований кабінет для схуднення з AI-меню, списком покупок та елементами залучення, оптимізований для мобільних (PWA).
 
@@ -85,7 +85,8 @@
     }
   ],
   createdAt: Date,
-  updatedAt: Date
+  updatedAt: Date,
+  archivedAt: Date | null    // ставиться при status:"archived" → драйвер TTL-видалення (60 днів)
 }
 ```
 
@@ -145,9 +146,9 @@
 }
 ```
 
-**Індекс**: `{ userEmail: 1, weekStartDate: -1 }` (compound unique)
+**Індекси** (див. `src/lib/ensureIndexes.ts` — єдине джерело правди): `{ userEmail: 1, status: 1, createdAt: -1 }` (вибірка активного меню) + TTL `{ archivedAt: 1 }` `expireAfterSeconds: 60 днів`.
 
-> **Важливо**: Окремої колекції `meals` немає — страви вбудовані в `weekly_menus`. При перегенерації старий документ архівується, новий зберігається.
+> **Важливо**: Окремої колекції `meals` немає — страви вбудовані в `weekly_menus`. При перегенерації старий документ архівується (`status:"archived"` + `archivedAt`), новий зберігається. Архівні авто-видаляються через TTL за 60 днів; активні поля `archivedAt` не мають, тож TTL їх не чіпає.
 
 ---
 
@@ -179,7 +180,7 @@
 
 `ShoppingCategory`: `"vegetables" | "fruits" | "meat" | "fish" | "dairy" | "grains" | "legumes" | "oils" | "spices" | "other"`
 
-**Індекс**: `{ userEmail: 1, weeklyMenuId: 1 }` (unique)
+**Індекс**: `{ userEmail: 1, weekStartDate: -1 }`. При генерації нового меню старі списки видаляються (`deleteMany({ userEmail })`) — у користувача лишається лише поточний.
 
 ---
 
@@ -262,17 +263,20 @@
 
 ---
 
-### `water_logs`
+### `water_logs` (append-only)
 
 ```js
+// Один документ на КОЖНУ залогіновану порцію. Раніше був один документ на день
+// із масивом logs[] (ріс безмежно через $push) — змінено на append-only.
+// Денний обсяг = $sum по (userEmail, date); goalMl береться з user_profiles.
 {
   userEmail: string,
   date: Date,             // midnight UTC
-  amountMl: number,
-  goalMl: number,
-  logs: [{ amountMl: number, loggedAt: Date }]
+  amountMl: number,       // обсяг саме цієї порції
+  loggedAt: Date
 }
 ```
+**Індекс**: `{ userEmail: 1, date: 1 }`
 
 ---
 
@@ -832,6 +836,42 @@ track('weekly_summary_viewed');
 
 ---
 
+## Масштабованість та безпека (аудит) ✅
+
+Окремий аудит схеми зберігання даних/акаунтів/оплат і підготовка до 1000–10000
+користувачів. Деплой-таргет: Vercel / serverless.
+
+### Фаза A — критична інфраструктура
+- **Індекси MongoDB** — `src/lib/ensureIndexes.ts` (єдине джерело правди), авто-створення
+  раз на інстанс із `getDb()`; ідемпотентне. Покриває гарячий шлях (`sessions.id`,
+  `users.email`, `*.userEmail` тощо) + TTL на `sessions.expiresAt` і `magic_links.expiresAt`.
+- **`maxPoolSize`** у `src/lib/db.ts` (env `MONGODB_MAX_POOL_SIZE`, default 10) — пул з'єднань Atlas.
+- **Rate-limiting** — `src/lib/rateLimit.ts` (MongoDB fixed-window, fail-open) на
+  `magic-link/request`, `subscription/init`, `liqpay/checkout`.
+- **Ідемпотентність платежів** — `liqpay/callback` пише в `payment_events` з unique-індексом
+  за `signature` (дедуп ретраїв/гонок + аудит-лог).
+
+### Фаза B — продуктивність
+- **Прибрано N+1** у `meal/consume` і `meal/custom` — completion дня рахується локально
+  з уже завантаженого меню, без повторного читання (≈4-6 → 2-3 запити).
+- **`water_logs` append-only** (див. модель вище) — усунуто безмежне зростання масиву
+  та race read-modify-write (total через `$sum`).
+- **Авто-архівація** — `weekly_menus.archivedAt` + TTL 60 днів; `shopping_lists` тримаємо
+  лише поточний (`deleteMany`).
+
+### Фаза C — безпека акаунтів
+- **Ковзний TTL сесій** + `clearAllSessions()` (`src/lib/auth/session.ts`); роути
+  `/api/auth/logout` і `/api/auth/logout-all` + кнопки «Вийти»/«Вийти на всіх пристроях» у профілі.
+- **Email із сесії в `subscription/init`** — залогінений користувач не може писати в чужий акаунт.
+- **POST-підтвердження magic-link** — лист веде на сторінку `/auth/confirm`; токен
+  витрачається лише за кліком (POST), тож GET-префетчери/сканери його не «з'їдають».
+  GET-роут consume лишений як редірект на confirm (бек-сумісність).
+- **Гігієна секретів** — `.env` у `.gitignore`, в історії git ніколи не було; витоку немає.
+- **Redis-кеш сесій** — свідомо відкладено (індекси вже зробили пошук швидким; повернутись
+  при реальному навантаженні через Upstash/Vercel KV).
+
+---
+
 ## Критичні файли для змін
 
 | Файл | Зміна | Статус |
@@ -840,7 +880,7 @@ track('weekly_summary_viewed');
 | `src/middleware.ts` | Додати `/shopping-list/*`, `/profile/*` | ✅ Виконано |
 | `src/app/layout.tsx` | PWA мета-теги | ⏳ Фаза 5 |
 | `src/lib/db.ts` | Паттерн для всіх нових API маршрутів | ✅ Використовується |
-| `src/lib/auth/session.ts` | `readSessionUserId()` → email | ✅ Без змін (вже повертає email) |
+| `src/lib/auth/session.ts` | `readSessionUserId()` → email; + ковзний TTL та `clearAllSessions()` | ✅ |
 | `src/types/onboarding.ts` | Джерело для `UserProfile` | ✅ UserProfile extends OnboardingData |
 | `next.config.ts` | next-pwa конфіг | ⏳ Фаза 5 |
 | `.env` | `OPENAI_API_KEY`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | ⚠️ OPENAI_API_KEY — потрібно заповнити |

@@ -12,14 +12,18 @@ export async function sendMagicLinkEmail(to: string, token: string) {
     console.warn(
       '[email] Missing RESEND_API_KEY / EMAIL_FROM / APP_URL, falling back to console log.'
     );
-    const url = `${appUrl || ''}/api/auth/magic-link/consume?token=${encodeURIComponent(
+    const url = `${appUrl || ''}/auth/confirm?token=${encodeURIComponent(
       token
     )}`;
     console.log(`Magic link for ${to}: ${url}`);
     return false;
   }
 
-  const magicLinkUrl = `${appUrl}/api/auth/magic-link/consume?token=${encodeURIComponent(
+  // Point at a confirmation PAGE (GET, no side effects) rather than the consume
+  // API. The token is only spent when the user clicks the button there, which
+  // fires a POST — so email scanners / link prefetchers that issue a GET can no
+  // longer silently consume the one-time token before the user arrives.
+  const magicLinkUrl = `${appUrl}/auth/confirm?token=${encodeURIComponent(
     token
   )}`;
 

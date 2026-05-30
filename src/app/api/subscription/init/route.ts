@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { hasActiveSubscription } from '@/lib/subscription';
+import { readSessionUserId } from '@/lib/auth/session';
 import { checkRateLimit, getClientIp, tooManyRequestsResponse } from '@/lib/rateLimit';
 
 type PlanId = 'week' | 'month';
@@ -18,7 +19,14 @@ interface InitSubscriptionBody {
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as InitSubscriptionBody;
-    const { email, onboardingData, planId, orderId } = body || {};
+    const { onboardingData, planId, orderId } = body || {};
+
+    // Prefer the authenticated session email when present (e.g. an expired
+    // subscriber re-paying) so a logged-in user can never write to another
+    // account; new users in the onboarding/payment flow have no session yet
+    // and fall back to the email from the request body.
+    const sessionEmail = await readSessionUserId();
+    const email = (sessionEmail || body?.email || '').trim().toLowerCase();
 
     if (!email || !email.includes('@')) {
       return NextResponse.json(

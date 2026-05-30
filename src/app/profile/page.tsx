@@ -40,6 +40,18 @@ export default function ProfilePage() {
 
   useEffect(() => { void fetchProfile(); }, [fetchProfile]);
 
+  const [loggingOut, setLoggingOut] = useState(false);
+  const handleLogout = async (allDevices: boolean) => {
+    setLoggingOut(true);
+    try {
+      await fetch(allDevices ? '/api/auth/logout-all' : '/api/auth/logout', { method: 'POST' });
+    } catch {
+      // ignore — navigate away regardless
+    } finally {
+      window.location.href = '/auth/login';
+    }
+  };
+
   const handleSetupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!setupForm.age || !setupForm.weight || !setupForm.height) {
@@ -238,6 +250,31 @@ export default function ProfilePage() {
           <span>🔔</span> Нагадування
         </h2>
         <NotificationSettings />
+      </section>
+
+      {/* Account / session */}
+      <section className="px-4 pb-4">
+        <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100 mb-3 flex items-center gap-2">
+          <span>🔐</span> Акаунт
+        </h2>
+        <div className="space-y-2">
+          <button
+            type="button"
+            disabled={loggingOut}
+            onClick={() => void handleLogout(false)}
+            className="w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 py-3 text-sm font-semibold text-neutral-700 dark:text-neutral-300 disabled:opacity-60"
+          >
+            Вийти
+          </button>
+          <button
+            type="button"
+            disabled={loggingOut}
+            onClick={() => void handleLogout(true)}
+            className="w-full rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 py-3 text-sm font-semibold text-red-600 dark:text-red-400 disabled:opacity-60"
+          >
+            Вийти на всіх пристроях
+          </button>
+        </div>
       </section>
 
       {/* Coming soon */}
