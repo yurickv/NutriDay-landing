@@ -1,6 +1,6 @@
 # NutriDay — План розробки: Тижневе меню, Список покупок та PWA
 
-> **Статус**: Фаза 1 ✅ | Фаза 2 ✅ | Фаза 3 ✅ | Фаза 4 ✅ | Фаза 5 ✅ | Фаза 6–7 — в черзі
+> **Статус**: Фаза 1 ✅ | Фаза 2 ✅ | Фаза 3 ✅ | Фаза 4 ✅ | Фаза 5 ✅ | Власні страви ✅ | Фаза 6–7 — в черзі
 > **Пріоритет**: Висока
 > **Ціль**: Побудувати персоналізований кабінет для схуднення з AI-меню, списком покупок та елементами залучення, оптимізований для мобільних (PWA).
 
@@ -79,8 +79,9 @@
       },
       totalCalories: number,
       totalPrepMinutes: number,     // сума prepTime всіх страв дня
-      isCompleted: boolean,         // auto-true коли ≥3 з 4 прийомів consumed
-      completedAt: Date | null
+      isCompleted: boolean,         // auto-true коли ≥3 прийомів (меню + власні) consumed
+      completedAt: Date | null,
+      customEntries: CustomEntry[]  // власні з'їдені страви поза меню (LLM/ручний ввід)
     }
   ],
   createdAt: Date,
@@ -124,6 +125,23 @@
   // Зворотній зв'язок:
   rating: 1 | 2 | 3 | null,       // 😍=3 / 😐=2 / 👎=1
   ratedAt: Date | null
+}
+```
+
+**CustomEntry** (власна з'їдена страва, `src/types/meals.ts`):
+```js
+{
+  id: string,                       // UUID (серверний)
+  name: string,
+  emoji: string,
+  calories: number,                 // АБСОЛЮТНІ, за фактично з'їдену вагу
+  protein: number,
+  fat: number,
+  carbs: number,
+  grams: number | null,             // фактична вага порції
+  per100: { calories, protein, fat, carbs } | null,  // склад на 100 г — для re-scale у формі
+  source: "ai" | "manual",
+  createdAt: Date
 }
 ```
 
@@ -380,7 +398,10 @@ src/
 │       │   ├── meal/
 │       │   │   ├── swap/route.ts       ← POST
 │       │   │   ├── consume/route.ts    ← PATCH isConsumed
-│       │   │   └── rate/route.ts       ← PATCH rating
+│       │   │   ├── rate/route.ts       ← PATCH rating
+│       │   │   └── custom/route.ts     ← POST/DELETE власні з'їдені страви
+│       │   ├── food/
+│       │   │   └── parse/route.ts      ← POST LLM-оцінка калорій/БЖВ
 │       │   └── complete-day/route.ts
 │       ├── shopping-list/route.ts      ← GET/PATCH/POST
 │       ├── water/route.ts              ← GET/POST
@@ -419,6 +440,8 @@ src/
 │   │   ├── StreakBanner.tsx
 │   │   ├── WaterTracker.tsx
 │   │   ├── WeightProgressCard.tsx      ← міні-графік ваги на головній
+│   │   ├── AddCustomFoodSheet.tsx      ← власна страва: назва+вага → LLM → правка
+│   │   ├── CustomEntryCard.tsx         ← картка власної страви (видалення)
 │   │   └── GenerateMenuLoader.tsx
 │   ├── shoppingListPage/
 │   │   ├── ShoppingListView.tsx
@@ -453,6 +476,7 @@ src/
 └── lib/
     ├── menu/
     │   ├── generateMenuWithAI.ts       ← OpenAI + retry + rate limit
+    │   ├── parseCustomFood.ts          ← gpt-4o-mini: назва+вага → per100 → БЖВ
     │   ├── shoppingListBuilder.ts      ← агрегація + forDays
     │   └── streakUpdater.ts
     ├── analytics.ts                    ← track() функція
@@ -472,6 +496,8 @@ src/
 | PATCH | `/api/menu/meal/consume` | Відмітити страву з'їденою |
 | PATCH | `/api/menu/meal/rate` | Рейтинг страви (1/2/3) |
 | POST | `/api/menu/complete-day` | Відмітити день |
+| POST | `/api/menu/food/parse` | LLM-оцінка калорій/БЖВ за назвою+вагою (на 100 г → масштаб) |
+| POST/DELETE | `/api/menu/meal/custom` | Додати/видалити власну з'їдену страву (inline у weekly_menus) |
 | GET | `/api/shopping-list` | Список покупок |
 | PATCH | `/api/shopping-list` | Toggle куплено |
 | POST | `/api/shopping-list` | Додати свій товар |
@@ -594,6 +620,24 @@ src/
 - Щонеділі: днів дотримання, середні ккал vs ціль, топ-3 страви, динаміка ваги
 - Мотиваційне повідомлення від AI
 - Шерінг картинки для Instagram Stories
+
+---
+
+## Власні з'їдені страви (LLM-оцінка)
+
+Користувач може додати з'їдене **поза AI-меню** (домашня страва, продукт, перекус у кафе), і воно враховується в денних калоріях/БЖВ та в логіці стріку.
+
+**Рішення**: оцінка через **LLM `gpt-4o-mini`**, а не зовнішнє nutrition-API — англомовні бази (Nutritionix/Edamam/USDA) погано підходять для україномовних домашніх страв. Вага **обов'язкова**: користувач вводить назву + вагу (г), LLM оцінює склад **на 100 г** (його сильна сторона), а абсолютні калорії/БЖВ рахуються `per100 × grams/100`. Значення завжди можна підправити вручну перед збереженням.
+
+- **Зберігання**: inline у `weekly_menus.days[].customEntries[]` (без окремої колекції). `CustomEntry` тримає абсолютні калорії/БЖВ + `per100`/`grams` для перерахунку у формі.
+- **Підрахунок**: `calcConsumedMacros()` у `DayView` додає суму `customEntries` до з'їдених страв меню; лічильник «N з M прийомів» і завершення дня (≥3) теж їх враховують.
+- **`parseCustomFood(text, grams)`** (`src/lib/menu/parseCustomFood.ts`): окремий OpenAI-клієнт, `gpt-4o-mini`, `json_object`, 2 спроби; повертає `{ error }` лише для не-їжі → UI робить fallback на ручний ввід (вага вже введена).
+- **API**: `POST /api/menu/food/parse` (оцінка, не зберігає), `POST/DELETE /api/menu/meal/custom` ($push/$pull + дублює логіку завершення дня з consume route).
+- **UI**: `AddCustomFoodSheet` (крок 1: назва+вага → крок 2: редаговані поля зі степером ваги, що перераховує через `per100`), `CustomEntryCard` (видалення), секція «Мої страви» в `DayView`.
+
+> **Gotcha (dev)**: не запускати `next build`, поки активний `next dev` — build перезаписує `.next/`, після чого dev-сервер віддає 500 на всі роути. Для перевірки типів під час dev — `npx tsc --noEmit`.
+
+> **Артефакти PWA**: `public/sw.js` і `public/workbox-*.js` генеруються білдом і додані в `.gitignore` (не комітити).
 
 ---
 
@@ -817,6 +861,7 @@ track('weekly_summary_viewed');
 10. `goalCalories` ніколи не нижче 1200 ккал
 11. Chrome: "Install App" → `display: standalone`
 12. iOS: "Додати на головний екран" → без браузерного UI
+13. "Додати свою страву" → назва + вага → LLM повертає калорії/БЖВ → зберегти → денні підсумки й лічильник прийомів зростають; видалення зменшує; F5 зберігає (inline у `weekly_menus`)
 
 ---
 

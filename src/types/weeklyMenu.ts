@@ -1,4 +1,4 @@
-import { DayMeals } from './meals';
+import { DayMeals, CustomEntry } from './meals';
 
 export interface MenuDay {
   date: Date;
@@ -8,6 +8,7 @@ export interface MenuDay {
   totalPrepMinutes: number;
   isCompleted: boolean;
   completedAt: Date | null;
+  customEntries?: CustomEntry[]; // user-added eaten foods outside the AI menu
 }
 
 export interface WeeklyMenu {

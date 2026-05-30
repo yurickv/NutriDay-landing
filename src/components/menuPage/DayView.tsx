@@ -3,10 +3,11 @@
 import { MenuDay } from '@/types/weeklyMenu';
 import { AIMeal, MealCategory } from '@/types/meals';
 import { MealCard } from './MealCard';
+import { CustomEntryCard } from './CustomEntryCard';
 import { DayMealProgress } from './DayMealProgress';
 import { CalorieProgressBar } from './CalorieProgressBar';
 import { MacroProgressBar } from './MacroProgressBar';
-import { Clock, Zap } from 'lucide-react';
+import { Clock, Zap, Plus } from 'lucide-react';
 
 interface DayViewProps {
   day: MenuDay;
@@ -15,6 +16,8 @@ interface DayViewProps {
   onOpenConsume: (meal: AIMeal, mealType: MealCategory, snackIndex?: number) => void;
   onOpenDetail: (meal: AIMeal) => void;
   onOpenSwap: (meal: AIMeal, mealType: MealCategory, snackIndex?: number) => void;
+  onOpenAddCustom: (dayLabel: string) => void;
+  onDeleteCustom: (dayLabel: string, entryId: string) => Promise<void>;
 }
 
 // Multiplier applied to a meal's per-serving macros for what the user actually ate.
@@ -34,7 +37,7 @@ function calcConsumedMacros(day: MenuDay) {
     day.meals.dinner,
     ...day.meals.snacks,
   ];
-  return meals
+  const fromMeals = meals
     .filter((m) => m.isConsumed)
     .reduce(
       (acc, m) => {
@@ -48,6 +51,16 @@ function calcConsumedMacros(day: MenuDay) {
       },
       { calories: 0, protein: 0, fat: 0, carbs: 0 },
     );
+  // Custom entries store absolute eaten values — add them directly, no factor.
+  return (day.customEntries ?? []).reduce(
+    (acc, e) => ({
+      calories: acc.calories + e.calories,
+      protein: acc.protein + e.protein,
+      fat: acc.fat + e.fat,
+      carbs: acc.carbs + e.carbs,
+    }),
+    fromMeals,
+  );
 }
 
 function calcGoalMacros(goalCalories: number) {
@@ -58,9 +71,12 @@ function calcGoalMacros(goalCalories: number) {
   };
 }
 
-export function DayView({ day, goalCalories, onConsume, onOpenConsume, onOpenDetail, onOpenSwap }: DayViewProps) {
+export function DayView({ day, goalCalories, onConsume, onOpenConsume, onOpenDetail, onOpenSwap, onOpenAddCustom, onDeleteCustom }: DayViewProps) {
   const allMeals: AIMeal[] = [day.meals.breakfast, day.meals.lunch, day.meals.dinner, ...day.meals.snacks];
-  const consumedCount = allMeals.filter((m) => m.isConsumed).length;
+  const customEntries = day.customEntries ?? [];
+  // Custom entries count both toward eaten calories and as "meals" for day progress.
+  const consumedCount = allMeals.filter((m) => m.isConsumed).length + customEntries.length;
+  const totalSlots = allMeals.length + customEntries.length;
   const raw = calcConsumedMacros(day);
   const macros = {
     calories: Math.round(raw.calories),
@@ -91,7 +107,7 @@ export function DayView({ day, goalCalories, onConsume, onOpenConsume, onOpenDet
             </h2>
             <DayMealProgress
               consumed={consumedCount}
-              total={allMeals.length}
+              total={totalSlots}
               isCompleted={day.isCompleted}
             />
           </div>
@@ -181,6 +197,29 @@ export function DayView({ day, goalCalories, onConsume, onOpenConsume, onOpenDet
             ))}
           </section>
         )}
+
+        {/* Custom eaten foods (outside the AI menu) */}
+        <section aria-label="Мої страви">
+          <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-wide mb-2">
+            Мої страви
+          </h3>
+          <div className="space-y-2">
+            {customEntries.map((entry) => (
+              <CustomEntryCard
+                key={entry.id}
+                entry={entry}
+                onDelete={(entryId) => onDeleteCustom(day.dayLabel, entryId)}
+              />
+            ))}
+            <button
+              onClick={() => onOpenAddCustom(day.dayLabel)}
+              className="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-2xl border-2 border-dashed border-neutral-200 dark:border-neutral-700 text-neutral-400 dark:text-neutral-500 text-sm font-medium hover:border-orange-300 hover:text-orange-400 transition-colors"
+            >
+              <Plus size={16} />
+              Додати свою страву
+            </button>
+          </div>
+        </section>
       </div>
     </div>
   );

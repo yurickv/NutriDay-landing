@@ -2,11 +2,12 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { WeeklyMenu } from '@/types/weeklyMenu';
-import { AIMeal, MealCategory } from '@/types/meals';
+import { AIMeal, MealCategory, CustomEntry } from '@/types/meals';
 import { DayTabBar } from './DayTabBar';
 import { DayView } from './DayView';
 import { MealDetailSheet } from './MealDetailSheet';
 import { ConsumePortionSheet } from './ConsumePortionSheet';
+import { AddCustomFoodSheet } from './AddCustomFoodSheet';
 import { SwapMealPanel } from './SwapMealPanel';
 import { MealRatingWidget } from './MealRatingWidget';
 import { ToastContainer, ToastData } from '@/components/common/Toast';
@@ -50,6 +51,7 @@ export function WeeklyMenuView({ menu, goalCalories, onMenuUpdate }: WeeklyMenuV
     snackIndex?: number;
   } | null>(null);
   const [pendingRating, setPendingRating] = useState<PendingRating | null>(null);
+  const [addCustomDay, setAddCustomDay] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastData[]>([]);
 
   const addToast = useCallback((message: string, emoji?: string, type: ToastData['type'] = 'success') => {
@@ -125,6 +127,34 @@ export function WeeklyMenuView({ menu, goalCalories, onMenuUpdate }: WeeklyMenuV
     addToast('Страву замінено!', '🔄');
   }, [onMenuUpdate, addToast]);
 
+  const handleAddCustom = useCallback(async (
+    dayLabel: string,
+    entry: Omit<CustomEntry, 'id' | 'createdAt'>,
+  ) => {
+    const res = await fetch('/api/menu/meal/custom', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dayLabel, entry }),
+    });
+    if (!res.ok) {
+      addToast('Не вдалося додати страву', '⚠️', 'error');
+      return;
+    }
+    onMenuUpdate();
+    addToast('Страву додано', '📝');
+  }, [onMenuUpdate, addToast]);
+
+  const handleDeleteCustom = useCallback(async (dayLabel: string, entryId: string) => {
+    const res = await fetch('/api/menu/meal/custom', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dayLabel, entryId }),
+    });
+    if (!res.ok) return;
+    onMenuUpdate();
+    addToast('Видалено', '🗑️');
+  }, [onMenuUpdate, addToast]);
+
   const currentDay = menu.days[activeDay];
 
   return (
@@ -150,6 +180,8 @@ export function WeeklyMenuView({ menu, goalCalories, onMenuUpdate }: WeeklyMenuV
             onOpenSwap={(meal, mealType, snackIndex) =>
               setSwapContext({ meal, mealType, snackIndex })
             }
+            onOpenAddCustom={(dayLabel) => setAddCustomDay(dayLabel)}
+            onDeleteCustom={handleDeleteCustom}
           />
         )}
       </div>
@@ -172,6 +204,17 @@ export function WeeklyMenuView({ menu, goalCalories, onMenuUpdate }: WeeklyMenuV
             handleConsume(dayLabel, mealType, snackIndex, true, consumedWeight);
           }
           setConsumeContext(null);
+        }}
+      />
+
+      {/* Add custom food sheet */}
+      <AddCustomFoodSheet
+        isOpen={!!addCustomDay}
+        onClose={() => setAddCustomDay(null)}
+        onAdd={(entry) => {
+          const dayLabel = addCustomDay;
+          if (!dayLabel) return Promise.resolve();
+          return handleAddCustom(dayLabel, entry);
         }}
       />
 
