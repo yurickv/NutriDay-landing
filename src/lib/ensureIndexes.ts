@@ -30,6 +30,13 @@ const INDEXES: IndexSpec[] = [
   { collection: 'user_profiles', keys: { userEmail: 1 }, options: { unique: true } },
   { collection: 'user_streaks', keys: { userEmail: 1 }, options: { unique: true } },
   { collection: 'weekly_menus', keys: { userEmail: 1, status: 1, createdAt: -1 } },
+  // TTL: archived menus carry `archivedAt`; purge them 60 days after archival.
+  // Active menus have no `archivedAt`, so the TTL monitor never touches them.
+  {
+    collection: 'weekly_menus',
+    keys: { archivedAt: 1 },
+    options: { expireAfterSeconds: 60 * 24 * 60 * 60 },
+  },
   { collection: 'shopping_lists', keys: { userEmail: 1, weekStartDate: -1 } },
   { collection: 'weight_logs', keys: { userEmail: 1, date: -1 } },
   { collection: 'water_logs', keys: { userEmail: 1, date: 1 } },

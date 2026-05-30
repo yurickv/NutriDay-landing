@@ -21,38 +21,6 @@ function num(v: unknown): number {
   return Number.isFinite(n) && n >= 0 ? n : 0;
 }
 
-// Mirrors the auto-completion logic in /api/menu/meal/consume, but custom entries
-// also count as eaten "meals" toward the ≥3 threshold.
-async function maybeCompleteDay(
-  col: ReturnType<Awaited<ReturnType<typeof getDb>>['collection']>,
-  menuId: ObjectId,
-  dayIndex: number,
-  userEmail: string,
-) {
-  const updated = await col.findOne<WeeklyMenu & { _id: ObjectId }>({ _id: menuId });
-  if (!updated) return;
-
-  const day = updated.days[dayIndex];
-  const menuMeals = [day.meals.breakfast, day.meals.lunch, day.meals.dinner, ...day.meals.snacks];
-  const consumedCount =
-    menuMeals.filter((m) => m.isConsumed).length + (day.customEntries?.length ?? 0);
-
-  if (!day.isCompleted && consumedCount >= 3) {
-    const now = new Date();
-    await col.updateOne(
-      { _id: menuId },
-      {
-        $set: {
-          [`days.${dayIndex}.isCompleted`]: true,
-          [`days.${dayIndex}.completedAt`]: now,
-          updatedAt: now,
-        },
-      },
-    );
-    await updateStreak(userEmail);
-  }
-}
-
 export async function POST(req: NextRequest) {
   const userEmail = await readSessionUserId();
   if (!userEmail) {
@@ -105,15 +73,33 @@ export async function POST(req: NextRequest) {
     createdAt: new Date(),
   };
 
+  // Compute completion locally from the loaded menu + the entry we're adding,
+  // so the push and the (optional) completion happen in one update — no re-read.
+  // Custom entries count as eaten meals toward the ≥3 threshold.
+  const day = menu.days[dayIndex];
+  const menuMeals = [day.meals.breakfast, day.meals.lunch, day.meals.dinner, ...day.meals.snacks];
+  const consumedAfter =
+    menuMeals.filter((m) => m.isConsumed).length + (day.customEntries?.length ?? 0) + 1;
+  const shouldComplete = !day.isCompleted && consumedAfter >= 3;
+
+  const now = new Date();
+  const set: Record<string, unknown> = { updatedAt: now };
+  if (shouldComplete) {
+    set[`days.${dayIndex}.isCompleted`] = true;
+    set[`days.${dayIndex}.completedAt`] = now;
+  }
+
   await col.updateOne(
     { _id: menu._id },
     {
       $push: { [`days.${dayIndex}.customEntries`]: newEntry },
-      $set: { updatedAt: new Date() },
+      $set: set,
     } as Record<string, unknown>,
   );
 
-  await maybeCompleteDay(col, menu._id, dayIndex, userEmail);
+  if (shouldComplete) {
+    await updateStreak(userEmail);
+  }
 
   return NextResponse.json({ success: true, entry: newEntry });
 }

@@ -84,10 +84,12 @@ export async function POST() {
         if (meal.rating === 1) lowRated.push(meal.name);
       }
     }
-    // Archive old menu
+    // Archive old menu. `archivedAt` drives a TTL index (see ensureIndexes.ts)
+    // so archived menus are purged automatically after the retention window;
+    // active menus have no archivedAt and are never auto-deleted.
     await db.collection('weekly_menus').updateOne(
       { _id: lastMenu._id as unknown as import('mongodb').ObjectId },
-      { $set: { status: 'archived', updatedAt: new Date() } },
+      { $set: { status: 'archived', archivedAt: new Date(), updatedAt: new Date() } },
     );
   }
 
@@ -109,9 +111,10 @@ export async function POST() {
   const result = await db.collection('weekly_menus').insertOne(newMenu);
   const menuId = result.insertedId;
 
-  // Build shopping list
+  // Build shopping list. Only the current week's list is useful, so drop any
+  // prior lists for this user instead of letting them accumulate per week.
   const shoppingItems = buildShoppingList(days);
-  await db.collection('shopping_lists').deleteOne({ userEmail, weeklyMenuId: menuId });
+  await db.collection('shopping_lists').deleteMany({ userEmail });
   await db.collection('shopping_lists').insertOne({
     userEmail,
     weeklyMenuId: menuId,

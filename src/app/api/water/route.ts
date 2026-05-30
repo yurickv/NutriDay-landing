@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { readSessionUserId } from '@/lib/auth/session';
 import { getDb } from '@/lib/db';
-import { WaterLog } from '@/types/engagement';
 import { UserProfile } from '@/types/userProfile';
+
+// Append-only model: each logged portion is its own tiny document
+// { userEmail, date, amountMl, loggedAt }. The daily total is derived by
+// summing portions, so documents never grow unbounded (previously every
+// portion was $push-ed into a single document's `logs[]` array). The
+// { userEmail, date } index supports both the lookup and the aggregation.
 
 function todayMidnightUTC(): Date {
   const now = new Date();
@@ -18,7 +23,22 @@ function midnightUTCFromISO(s?: string | null): Date {
   return todayMidnightUTC();
 }
 
-// GET /api/water?date=YYYY-MM-DD — water log for a specific day (default today)
+async function sumForDay(
+  db: Awaited<ReturnType<typeof getDb>>,
+  userEmail: string,
+  date: Date,
+): Promise<number> {
+  const rows = await db
+    .collection('water_logs')
+    .aggregate<{ total: number }>([
+      { $match: { userEmail, date } },
+      { $group: { _id: null, total: { $sum: '$amountMl' } } },
+    ])
+    .toArray();
+  return rows[0]?.total ?? 0;
+}
+
+// GET /api/water?date=YYYY-MM-DD — water total for a specific day (default today)
 export async function GET(req: NextRequest) {
   const userEmail = await readSessionUserId();
   if (!userEmail) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -26,20 +46,11 @@ export async function GET(req: NextRequest) {
   const db = await getDb();
   const date = midnightUTCFromISO(req.nextUrl.searchParams.get('date'));
 
-  const log = await db.collection('water_logs').findOne<WaterLog>({ userEmail, date });
+  const profile = await db.collection('user_profiles').findOne<UserProfile>({ userEmail });
+  const goalMl = profile?.waterGoalMl ?? 2000;
+  const amountMl = await sumForDay(db, userEmail, date);
 
-  if (!log) {
-    const profile = await db.collection('user_profiles').findOne<UserProfile>({ userEmail });
-    return NextResponse.json({
-      userEmail,
-      date,
-      amountMl: 0,
-      goalMl: profile?.waterGoalMl ?? 2000,
-      logs: [],
-    });
-  }
-
-  return NextResponse.json(log);
+  return NextResponse.json({ userEmail, date, amountMl, goalMl, logs: [] });
 }
 
 // POST /api/water — log a water portion
@@ -59,28 +70,16 @@ export async function POST(req: NextRequest) {
   const profile = await db.collection('user_profiles').findOne<UserProfile>({ userEmail });
   const goalMl = profile?.waterGoalMl ?? 2000;
 
-  const existing = await db.collection('water_logs').findOne<WaterLog>({ userEmail, date });
+  await (db.collection('water_logs') as any).insertOne({ // eslint-disable-line @typescript-eslint/no-explicit-any
+    userEmail,
+    date,
+    amountMl: body.amountMl,
+    loggedAt: now,
+  });
 
-  if (!existing) {
-    await (db.collection('water_logs') as any).insertOne({ // eslint-disable-line @typescript-eslint/no-explicit-any
-      userEmail,
-      date,
-      amountMl: body.amountMl,
-      goalMl,
-      logs: [{ amountMl: body.amountMl, loggedAt: now }],
-    });
-    return NextResponse.json({ amountMl: body.amountMl, goalMl });
-  }
+  // Aggregate the authoritative total (avoids the read-modify-write race of
+  // incrementing a stored running total).
+  const amountMl = await sumForDay(db, userEmail, date);
 
-  const newTotal = existing.amountMl + body.amountMl;
-
-  await (db.collection('water_logs') as any).updateOne( // eslint-disable-line @typescript-eslint/no-explicit-any
-    { userEmail, date },
-    {
-      $set: { amountMl: newTotal, goalMl },
-      $push: { logs: { amountMl: body.amountMl, loggedAt: now } },
-    },
-  );
-
-  return NextResponse.json({ amountMl: newTotal, goalMl });
+  return NextResponse.json({ amountMl, goalMl });
 }
