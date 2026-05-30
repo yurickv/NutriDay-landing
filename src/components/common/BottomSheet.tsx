@@ -16,10 +16,10 @@ export function BottomSheet({ isOpen, onClose, title, children }: BottomSheetPro
       <DialogBackdrop
         className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-200"
       />
-      <div className="fixed inset-0 flex items-end justify-center">
-        <DialogPanel className="w-full max-w-lg bg-white dark:bg-neutral-900 rounded-t-3xl max-h-[85vh] flex flex-col shadow-2xl transform transition-transform duration-300">
-          {/* Handle bar */}
-          <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
+      <div className="fixed inset-0 flex items-end justify-center sm:items-center sm:p-4">
+        <DialogPanel className="w-full max-w-lg bg-white dark:bg-neutral-900 rounded-t-3xl sm:rounded-3xl max-h-[85vh] sm:max-h-[90vh] flex flex-col shadow-2xl overflow-hidden transform transition-transform duration-300">
+          {/* Handle bar (mobile only) */}
+          <div className="flex justify-center pt-3 pb-1 flex-shrink-0 sm:hidden">
             <div className="w-10 h-1 bg-neutral-300 dark:bg-neutral-600 rounded-full" />
           </div>
 

@@ -15,7 +15,7 @@ export function BottomNavBar() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-700 pb-safe">
-      <div className="flex items-stretch justify-around">
+      <div className="flex items-stretch justify-around max-w-[1400px] mx-auto">
         {navItems.map(({ href, label, icon: Icon }) => {
           const isActive = pathname.startsWith(href);
           return (
