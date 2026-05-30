@@ -2,6 +2,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { issueMagicLinkToken } from '@/lib/auth/magic';
 import { sendMagicLinkEmail } from '@/lib/email';
+import { checkRateLimit, getClientIp, tooManyRequestsResponse } from '@/lib/rateLimit';
+
+const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,6 +19,14 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Throttle: per (ip,email) to stop bombing one address, and per ip to stop
+    // enumerating many addresses from one source.
+    const ip = getClientIp(req);
+    const perEmail = await checkRateLimit(`ml:${ip}:${email}`, 5, WINDOW_MS);
+    if (!perEmail.allowed) return tooManyRequestsResponse(perEmail.retryAfterSeconds);
+    const perIp = await checkRateLimit(`ml-ip:${ip}`, 20, WINDOW_MS);
+    if (!perIp.allowed) return tooManyRequestsResponse(perIp.retryAfterSeconds);
 
     const { token } = await issueMagicLinkToken(email);
 

@@ -1,6 +1,9 @@
 // app/api/liqpay/checkout/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { checkRateLimit, getClientIp, tooManyRequestsResponse } from '@/lib/rateLimit';
+
+const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 
 type CheckoutRequest = {
   amount: number;
@@ -38,6 +41,10 @@ function toPublicCallbackUrl(url?: string): string | undefined {
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request);
+    const perIp = await checkRateLimit(`checkout-ip:${ip}`, 20, WINDOW_MS);
+    if (!perIp.allowed) return tooManyRequestsResponse(perIp.retryAfterSeconds);
+
     const body = (await request.json()) as CheckoutRequest;
 
     const publicKey = process.env.LIQPAY_PUBLIC_KEY;

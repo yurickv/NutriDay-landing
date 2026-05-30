@@ -85,6 +85,26 @@ export async function POST(request: NextRequest) {
     const users = db.collection('users');
     const subs = db.collection('subscriptions');
 
+    // Idempotency + audit log. LiqPay retries webhooks; identical callbacks
+    // share the same signature, so the unique index on `signature` both
+    // deduplicates retries and serialises concurrent races (only one insert
+    // wins; the rest get a duplicate-key error and exit before any side effect
+    // such as sending a magic-link email).
+    try {
+      await db.collection('payment_events').insertOne({
+        signature,
+        orderId: orderId ?? null,
+        status: status ?? null,
+        payload,
+        createdAt: new Date(),
+      });
+    } catch (err: any) {
+      if (err?.code === 11000) {
+        return NextResponse.json({ success: true, duplicate: true });
+      }
+      throw err;
+    }
+
     // Determine new payment status
     let paymentStatus: 'active' | 'pending' | 'failed' = 'pending';
     const normalized = (status || '').toLowerCase();

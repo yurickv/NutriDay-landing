@@ -2,8 +2,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { hasActiveSubscription } from '@/lib/subscription';
+import { checkRateLimit, getClientIp, tooManyRequestsResponse } from '@/lib/rateLimit';
 
 type PlanId = 'week' | 'month';
+
+const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 
 interface InitSubscriptionBody {
   email?: string;
@@ -23,6 +26,12 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    const ip = getClientIp(request);
+    const perEmail = await checkRateLimit(`init:${ip}:${email}`, 10, WINDOW_MS);
+    if (!perEmail.allowed) return tooManyRequestsResponse(perEmail.retryAfterSeconds);
+    const perIp = await checkRateLimit(`init-ip:${ip}`, 30, WINDOW_MS);
+    if (!perIp.allowed) return tooManyRequestsResponse(perIp.retryAfterSeconds);
 
     const db = await getDb();
     const users = db.collection('users');
