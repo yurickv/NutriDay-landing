@@ -23,7 +23,7 @@ export default function Goals() {
   }, [router]);
 
   return (
-    <div className='min-h-screen bg-amber-50 dark:bg-dark-body flex items-center justify-center'>
+    <div className='min-h-screen bg-white dark:bg-dark-body flex items-center justify-center'>
       <div className='text-center'>
         <div className='relative w-16 h-16 mx-auto'>
           <div className='absolute top-0 left-0 w-full h-full border-4 border-gray-200 rounded-full'></div>

@@ -2,8 +2,8 @@ import CaloriesCalc from "@/components/onboardingPage/calcComponent";
 
 export default function Onboarding() {
   return (
-    <div className=''>
-      <main className='text-[#21201C] dark:bg-dark-body'>
+    <div className='min-h-screen bg-white dark:bg-dark-body'>
+      <main className='text-[#21201C] dark:text-main-title-black'>
         <CaloriesCalc />
       </main>
       <footer className=''></footer>

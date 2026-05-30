@@ -13,7 +13,7 @@ export const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
   subtitle,
 }) => {
   return (
-    <div className='min-h-screen bg-amber-50 dark:bg-dark-body'>
+    <div className='min-h-screen bg-white dark:bg-dark-body'>
       <main className='text-[#21201C] dark:text-main-title-black'>
         <section className='relative'>
           <div className='div-container py-[44px] mx-auto text-center flex flex-col gap-5 md:gap-10 z-10 relative bg-white dark:bg-dark-body'>
