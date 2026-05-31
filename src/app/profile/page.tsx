@@ -51,8 +51,26 @@ export default function ProfilePage() {
   return (
     <AppShell>
       {/* Header */}
-      <div className="px-4 py-4 border-b border-neutral-100 dark:border-neutral-800">
+      <div className="px-4 py-3 border-b border-neutral-100 dark:border-neutral-800 flex items-center justify-between gap-2">
         <h1 className="text-base font-bold text-neutral-900 dark:text-neutral-100">Профіль</h1>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            type="button"
+            disabled={loggingOut}
+            onClick={() => void handleLogout(false)}
+            className="rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-2.5 py-1 text-xs font-semibold text-neutral-700 dark:text-neutral-300 disabled:opacity-60"
+          >
+            Вийти
+          </button>
+          <button
+            type="button"
+            disabled={loggingOut}
+            onClick={() => void handleLogout(true)}
+            className="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 px-2.5 py-1 text-xs font-semibold text-red-600 dark:text-red-400 disabled:opacity-60"
+          >
+            Вийти всюди
+          </button>
+        </div>
       </div>
 
       {/* Profile summary */}
@@ -77,20 +95,6 @@ export default function ProfilePage() {
               </p>
               <p className="text-xs text-neutral-400">🔥 стрік</p>
             </div>
-          </div>
-
-          {/* Macro summary */}
-          <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-            {[
-              { label: 'BMR', value: profile.bmr ? `${profile.bmr} ккал` : '—' },
-              { label: 'TDEE', value: profile.tdee ? `${profile.tdee} ккал` : '—' },
-              { label: 'Вода', value: profile.waterGoalMl ? `${profile.waterGoalMl} мл` : '2000 мл' },
-            ].map(({ label, value }) => (
-              <div key={label} className="bg-white/60 dark:bg-neutral-900/40 rounded-xl py-2 px-1">
-                <p className="text-xs text-neutral-400">{label}</p>
-                <p className="text-xs font-bold text-neutral-700 dark:text-neutral-300">{value}</p>
-              </div>
-            ))}
           </div>
         </div>
       )}
@@ -147,31 +151,6 @@ export default function ProfilePage() {
           <span>🔔</span> Нагадування
         </h2>
         <NotificationSettings />
-      </section>
-
-      {/* Account / session */}
-      <section className="px-4 pb-4">
-        <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100 mb-3 flex items-center gap-2">
-          <span>🔐</span> Акаунт
-        </h2>
-        <div className="space-y-2">
-          <button
-            type="button"
-            disabled={loggingOut}
-            onClick={() => void handleLogout(false)}
-            className="w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 py-3 text-sm font-semibold text-neutral-700 dark:text-neutral-300 disabled:opacity-60"
-          >
-            Вийти
-          </button>
-          <button
-            type="button"
-            disabled={loggingOut}
-            onClick={() => void handleLogout(true)}
-            className="w-full rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 py-3 text-sm font-semibold text-red-600 dark:text-red-400 disabled:opacity-60"
-          >
-            Вийти на всіх пристроях
-          </button>
-        </div>
       </section>
 
       {/* Coming soon */}

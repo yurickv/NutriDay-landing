@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { useWeightLog } from '@/hooks/useWeightLog';
 import { track } from '@/lib/analytics';
 import { WeightLog } from '@/types/engagement';
@@ -14,6 +15,7 @@ export function WeightLogSection() {
   const [inputWeight, setInputWeight] = useState('');
   const [note, setNote] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   const handleSave = async () => {
     const w = parseFloat(inputWeight);
@@ -121,44 +123,65 @@ export function WeightLogSection() {
         </div>
       )}
 
-      {/* Log list */}
+      {/* Log list (accordion) */}
       {!loading && logs.length > 0 && (
-        <div className="space-y-2">
-          {[...logs].reverse().slice(0, 15).map((log: WeightLog, i) => {
-            const prev = [...logs].reverse()[i + 1];
-            const delta = prev ? Math.round((log.weight - prev.weight) * 10) / 10 : null;
-            const dColor = delta === null
-              ? ''
-              : delta < 0
-              ? 'text-green-600 dark:text-green-400'
-              : delta > 0
-              ? 'text-orange-500'
-              : 'text-neutral-400';
+        <div>
+          <button
+            onClick={() => setShowHistory((v) => !v)}
+            aria-expanded={showHistory}
+            className="w-full flex items-center justify-between px-4 py-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-xl text-sm font-semibold text-neutral-700 dark:text-neutral-200"
+          >
+            <span>Історія зважувань ({logs.length})</span>
+            <ChevronDown
+              size={18}
+              className={`text-neutral-400 transition-transform ${showHistory ? 'rotate-180' : ''}`}
+            />
+          </button>
 
-            return (
-              <div
-                key={i}
-                className="flex items-center justify-between bg-neutral-50 dark:bg-neutral-800/50 rounded-xl px-4 py-3"
-              >
-                <div>
-                  <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-100">
-                    {log.weight} кг
-                  </p>
-                  {log.note && (
-                    <p className="text-xs text-neutral-400">{log.note}</p>
-                  )}
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-neutral-400">{formatDate(log.date)}</p>
-                  {delta !== null && (
-                    <p className={`text-xs font-semibold ${dColor}`}>
-                      {delta > 0 ? '+' : ''}{delta} кг
-                    </p>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+          {showHistory && (
+            <div className="space-y-2 mt-2">
+              {[...logs].reverse().slice(0, 20).map((log: WeightLog, i) => {
+                const prev = [...logs].reverse()[i + 1];
+                const delta = prev ? Math.round((log.weight - prev.weight) * 10) / 10 : null;
+                const dColor = delta === null
+                  ? ''
+                  : delta < 0
+                  ? 'text-green-600 dark:text-green-400'
+                  : delta > 0
+                  ? 'text-orange-500'
+                  : 'text-neutral-400';
+
+                return (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between bg-neutral-50 dark:bg-neutral-800/50 rounded-xl px-4 py-3"
+                  >
+                    <div>
+                      <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-100">
+                        {log.weight} кг
+                      </p>
+                      {log.note && (
+                        <p className="text-xs text-neutral-400">{log.note}</p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-neutral-400">{formatDate(log.date)}</p>
+                      {delta !== null && (
+                        <p className={`text-xs font-semibold ${dColor}`}>
+                          {delta > 0 ? '+' : ''}{delta} кг
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+              {logs.length > 20 && (
+                <p className="text-center text-xs text-neutral-400 pt-1">
+                  Показано останні 20 із {logs.length}
+                </p>
+              )}
+            </div>
+          )}
         </div>
       )}
     </section>
