@@ -4,6 +4,8 @@ import { readSessionUserId } from '@/lib/auth/session';
 import { getDb } from '@/lib/db';
 import { WeeklyMenu } from '@/types/weeklyMenu';
 import { AIMeal } from '@/types/meals';
+import { ShoppingListItem } from '@/types/shoppingList';
+import { buildShoppingList, mergeShoppingItems } from '@/lib/menu/shoppingListBuilder';
 
 interface SwapBody {
   dayLabel: string;
@@ -82,6 +84,30 @@ export async function POST(req: NextRequest) {
       },
     },
   );
+
+  // Reflect the swap in the in-memory menu so the shopping list can be rebuilt
+  // from the updated days without re-fetching.
+  if (mealType === 'snack') {
+    menu.days[dayIndex].meals.snacks[snackIndex ?? 0] = swappedMeal;
+  } else {
+    menu.days[dayIndex].meals[mealType] = swappedMeal;
+  }
+
+  // Keep the shopping list in sync with the menu: a swap changes the meal's
+  // ingredients, so rebuild it (otherwise the old meal's products linger and
+  // the new meal's are missing). Purchased checkmarks and manual custom items
+  // are preserved across the rebuild.
+  const shoppingCol = db.collection('shopping_lists');
+  const existingList = await shoppingCol.findOne<{ _id: ObjectId; items: ShoppingListItem[] }>(
+    { userEmail },
+  );
+  if (existingList) {
+    const merged = mergeShoppingItems(existingList.items, buildShoppingList(menu.days));
+    await shoppingCol.updateOne(
+      { _id: existingList._id },
+      { $set: { items: merged, updatedAt: now } },
+    );
+  }
 
   return NextResponse.json({ success: true, meal: swappedMeal });
 }

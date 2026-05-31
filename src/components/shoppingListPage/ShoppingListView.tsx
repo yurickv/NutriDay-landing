@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { ShoppingList, ShoppingListItem } from '@/types/shoppingList';
 import { ShoppingCategory } from '@/types/meals';
 import { CategorySection } from './CategorySection';
-import { DayFilterTabs, DayFilter, matchesDayFilter } from './DayFilterTabs';
+import { DayFilterTabs, DayFilter, periodQuantity, isVisibleInPeriod } from './DayFilterTabs';
 import { AddCustomItemForm } from './AddCustomItemForm';
 import { OfflineIndicator } from './OfflineIndicator';
 import { CheckCircle } from 'lucide-react';
@@ -122,8 +122,11 @@ export function ShoppingListView({ initialList }: ShoppingListViewProps) {
     }
   }, []);
 
-  // Filter items by day
-  const filteredItems = items.filter((item) => matchesDayFilter(item.forDays, filter));
+  // Filter items by period, and show each item's quantity for that period
+  // (summed from its per-day breakdown — see periodQuantity).
+  const filteredItems = items
+    .filter((item) => isVisibleInPeriod(item, filter))
+    .map((item) => ({ ...item, quantity: periodQuantity(item, filter) }));
 
   // Group by category
   const grouped = CATEGORY_ORDER.reduce<Record<ShoppingCategory, ShoppingListItem[]>>(
