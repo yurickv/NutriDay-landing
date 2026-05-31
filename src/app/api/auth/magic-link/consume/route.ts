@@ -5,6 +5,7 @@ import { consumeMagicLinkToken } from '@/lib/auth/magic';
 import { createSession } from '@/lib/auth/session';
 import { getDb } from '@/lib/db';
 import { computeSubscriptionExpiry, checkSessionSubscription, inactiveRedirectTarget } from '@/lib/subscription';
+import { calcCalories, normalizeSex } from '@/lib/calories';
 
 const base64 = (str: string) => Buffer.from(str).toString('base64');
 
@@ -106,17 +107,17 @@ async function processMagicToken(token: string): Promise<ConsumeResult> {
       const weightKg = parseFloat(od.weight ?? '60');
       const heightCm = parseFloat(od.height ?? '165');
       const ageYears = parseInt(od.age ?? '25', 10);
-      // Normalize sex: "Чоловік" (Ukrainian from CaloriesCalcList) → "male"
-      const rawSex = String(od.sex ?? '');
-      const sex = (rawSex === 'Чоловік' || rawSex === 'male') ? 'male' : 'female';
+      const sex = normalizeSex(od.sex);
       const activityLevel = parseFloat(od.activity ?? '1.375');
 
-      const bmr = sex === 'male'
-        ? Math.round(10 * weightKg + 6.25 * heightCm - 5 * ageYears + 5)
-        : Math.round(10 * weightKg + 6.25 * heightCm - 5 * ageYears - 161);
-      const tdee = Math.round(bmr * activityLevel);
-      const minCalories = sex === 'male' ? 1500 : 1200;
-      const goalCalories = Math.max(minCalories, tdee - 500);
+      const { bmr, tdee, goalCalories } = calcCalories({
+        weightKg,
+        heightCm,
+        ageYears,
+        sex,
+        activityLevel,
+        mainGoal: od.mainGoal,
+      });
 
       await profileCol.insertOne({
         userEmail: String(user.email),

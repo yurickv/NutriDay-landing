@@ -6,6 +6,7 @@ import { InputSkeleton } from './InputSkeleton';
 import * as yup from 'yup';
 import { useRouter } from 'next/navigation';
 import { setOnboardingData } from '@/utils/onboardingHelpers';
+import { calcBmr } from '@/lib/calories';
 
 const schema = yup.object().shape({
   age: yup.number().positive().min(14, 'Не менше 14').max(130, 'Не більше 130'),
@@ -100,24 +101,17 @@ export const CaloriesCalcList = () => {
     }
     if (hasError) return;
 
-    // Calculate BMR (Basal Metabolic Rate) using Mifflin-St Jeor Equation
-    const weightNum = parseFloat(weight);
-    const heightNum = parseFloat(height);
-    const ageNum = parseFloat(age);
-
-    let bmr: number;
-    if (sex) {
-      // Male
-      bmr = 10 * weightNum + 6.25 * heightNum - 5 * ageNum + 5;
-    } else {
-      // Female
-      bmr = 10 * weightNum + 6.25 * heightNum - 5 * ageNum - 161;
-    }
-
-    // Calculate TDEE (Total Daily Energy Expenditure)
+    // Preview BMR/TDEE for the user; the server recomputes authoritatively
+    // (with goal correction) from the raw values on profile creation.
+    const bmr = calcBmr(
+      parseFloat(weight),
+      parseFloat(height),
+      parseFloat(age),
+      sex ? 'male' : 'female',
+    );
     const tdee = Math.round(bmr * activity);
     setOnboardingData('tdee', tdee.toString());
-    setOnboardingData('bmr', Math.round(bmr).toString());
+    setOnboardingData('bmr', bmr.toString());
 
     router.push('/onboarding/goals');
   };
