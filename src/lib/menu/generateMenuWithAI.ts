@@ -129,7 +129,8 @@ async function callOpenAI(
   maxTokens: number,
 ): Promise<{ content: string; finishReason: string | null }> {
   const response = await openai.chat.completions.create({
-    model: 'gpt-4o',
+    // gpt-4.1-mini: faster + cheaper than gpt-4o, comparable quality for this task.
+    model: 'gpt-4.1-mini',
     messages,
     max_tokens: maxTokens,
     temperature: 0.7,
