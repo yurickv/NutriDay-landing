@@ -111,8 +111,8 @@ export function MealCard({
       onClick={() => onOpenDetail(meal)}
       className={`rounded-xl border px-3 py-[11px] flex items-center gap-2.5 cursor-pointer active:scale-[0.98] transition-all select-none ${
         meal.isConsumed
-          ? 'bg-green-50 border-green-200 shadow-[0_2px_8px_rgba(0,0,0,0.08)] dark:bg-green-900/20 dark:border-green-900 dark:shadow-[0_2px_10px_rgba(0,0,0,0.5)]'
-          : 'bg-white border-neutral-200 shadow-[0_2px_8px_rgba(0,0,0,0.08)] dark:bg-neutral-900 dark:border-neutral-700 dark:shadow-[0_2px_10px_rgba(0,0,0,0.5)]'
+          ? 'bg-green-50 border-green-200 shadow-[0_2px_8px_rgba(0,0,0,0.08)] dark:bg-green-900/20 dark:border-green-900 dark:shadow-[0_0_0_1px_rgba(255,255,255,0.07),_0_6px_24px_rgba(120,120,120,0.25)]'
+          : 'bg-white border-neutral-200 shadow-[0_2px_8px_rgba(0,0,0,0.08)] dark:bg-neutral-900 dark:border-neutral-700 dark:shadow-[0_0_0_1px_rgba(255,255,255,0.07),_0_6px_24px_rgba(120,120,120,0.25)]'
       }`}
       aria-label={`${MEAL_LABELS[mealType]}: ${meal.name}`}
     >

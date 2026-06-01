@@ -9,6 +9,7 @@ import { useStreak } from '@/hooks/useStreak';
 import { UserProfile } from '@/types/userProfile';
 import { ChevronRight } from 'lucide-react';
 import NotificationSettings from '@/components/profilePage/NotificationSettings';
+import { ThemeToggle } from '@/components/common/ThemeToggle';
 
 const GOAL_LABELS: Record<string, string> = {
   lose_weight: 'Схуднути',
@@ -54,6 +55,7 @@ export default function ProfilePage() {
       <div className="px-4 py-3 border-b border-neutral-100 dark:border-neutral-800 flex items-center justify-between gap-2">
         <h1 className="text-base font-bold text-neutral-900 dark:text-neutral-100">Профіль</h1>
         <div className="flex items-center gap-1.5 shrink-0">
+          <ThemeToggle />
           <button
             type="button"
             disabled={loggingOut}

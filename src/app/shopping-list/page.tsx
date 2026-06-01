@@ -6,6 +6,7 @@ import { ShoppingListView } from '@/components/shoppingListPage/ShoppingListView
 import { ShoppingList } from '@/types/shoppingList';
 import { ShoppingCart, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
+import { ThemeToggle } from '@/components/common/ThemeToggle';
 
 type PageState = 'loading' | 'no-list' | 'has-list' | 'error';
 
@@ -32,6 +33,11 @@ export default function ShoppingListPage() {
 
   return (
     <AppShell>
+      <div className="flex items-center justify-between px-4 py-3 bg-white dark:bg-neutral-900 border-b border-neutral-100 dark:border-neutral-800">
+        <h1 className="text-base font-bold text-neutral-900 dark:text-neutral-100">Список покупок</h1>
+        <ThemeToggle />
+      </div>
+
       {state === 'loading' && (
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center space-y-3">
