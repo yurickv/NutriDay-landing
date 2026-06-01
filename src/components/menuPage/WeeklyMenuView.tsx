@@ -9,20 +9,12 @@ import { MealDetailSheet } from './MealDetailSheet';
 import { ConsumePortionSheet } from './ConsumePortionSheet';
 import { AddCustomFoodSheet } from './AddCustomFoodSheet';
 import { SwapMealPanel } from './SwapMealPanel';
-import { MealRatingWidget } from './MealRatingWidget';
 import { ToastContainer, ToastData } from '@/components/common/Toast';
 
 interface WeeklyMenuViewProps {
   menu: WeeklyMenu;
   goalCalories: number;
   onMenuUpdate: () => void;
-}
-
-interface PendingRating {
-  meal: AIMeal;
-  mealType: MealCategory;
-  dayLabel: string;
-  itemIndex?: number;
 }
 
 export function WeeklyMenuView({ menu, goalCalories, onMenuUpdate }: WeeklyMenuViewProps) {
@@ -50,7 +42,6 @@ export function WeeklyMenuView({ menu, goalCalories, onMenuUpdate }: WeeklyMenuV
     mealType: MealCategory;
     itemIndex?: number;
   } | null>(null);
-  const [pendingRating, setPendingRating] = useState<PendingRating | null>(null);
   const [addCustomDay, setAddCustomDay] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastData[]>([]);
 
@@ -81,17 +72,6 @@ export function WeeklyMenuView({ menu, goalCalories, onMenuUpdate }: WeeklyMenuV
 
     if (isConsumed) {
       addToast('Відмічено!', '✅');
-      // Find meal to offer rating
-      const day = menu.days.find((d) => d.dayLabel === dayLabel);
-      if (day) {
-        let meal: AIMeal | null = null;
-        const mealArr = mealType === 'snack' ? day.meals.snacks : day.meals[mealType];
-        meal = mealArr[itemIndex ?? 0] ?? null;
-        if (meal && !meal.rating) {
-          // Show rating after a short delay
-          setTimeout(() => setPendingRating({ meal, mealType, dayLabel, itemIndex }), 500);
-        }
-      }
     }
   }, [menu, onMenuUpdate, addToast]);
 
@@ -183,6 +163,7 @@ export function WeeklyMenuView({ menu, goalCalories, onMenuUpdate }: WeeklyMenuV
             }
             onOpenAddCustom={(dayLabel) => setAddCustomDay(dayLabel)}
             onDeleteCustom={handleDeleteCustom}
+            onRate={handleRate}
           />
         )}
       </div>
@@ -229,18 +210,6 @@ export function WeeklyMenuView({ menu, goalCalories, onMenuUpdate }: WeeklyMenuV
         onClose={() => setSwapContext(null)}
         onSwap={handleSwap}
       />
-
-      {/* Rating widget */}
-      {pendingRating && (
-        <MealRatingWidget
-          meal={pendingRating.meal}
-          dayLabel={pendingRating.dayLabel}
-          mealType={pendingRating.mealType}
-          itemIndex={pendingRating.itemIndex}
-          onRate={handleRate}
-          onClose={() => setPendingRating(null)}
-        />
-      )}
 
       {/* Toast notifications */}
       <ToastContainer toasts={toasts} onRemove={removeToast} />

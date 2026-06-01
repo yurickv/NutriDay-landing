@@ -20,6 +20,7 @@ interface DayViewProps {
   onOpenSwap: (meal: AIMeal, mealType: MealCategory, itemIndex?: number) => void;
   onOpenAddCustom: (dayLabel: string) => void;
   onDeleteCustom: (dayLabel: string, entryId: string) => Promise<void>;
+  onRate: (dayLabel: string, mealType: MealCategory, rating: 1 | 2 | 3, itemIndex?: number) => Promise<void>;
 }
 
 // Multiplier applied to a meal's per-serving macros for what the user actually ate.
@@ -73,7 +74,7 @@ function calcGoalMacros(goalCalories: number) {
   };
 }
 
-export function DayView({ day, dayDate, goalCalories, onConsume, onOpenConsume, onOpenDetail, onOpenSwap, onOpenAddCustom, onDeleteCustom }: DayViewProps) {
+export function DayView({ day, dayDate, goalCalories, onConsume, onOpenConsume, onOpenDetail, onOpenSwap, onOpenAddCustom, onDeleteCustom, onRate }: DayViewProps) {
   const allMeals: AIMeal[] = [...day.meals.breakfast, ...day.meals.lunch, ...day.meals.dinner, ...day.meals.snacks];
   const customEntries = day.customEntries ?? [];
   // Custom entries count both toward eaten calories and as "meals" for day progress.
@@ -151,6 +152,7 @@ export function DayView({ day, dayDate, goalCalories, onConsume, onOpenConsume, 
                   onOpenConsume={onOpenConsume}
                   onOpenDetail={onOpenDetail}
                   onOpenSwap={onOpenSwap}
+                  onRate={onRate}
                 />
               ))}
             </div>
@@ -174,6 +176,7 @@ export function DayView({ day, dayDate, goalCalories, onConsume, onOpenConsume, 
                   onOpenConsume={onOpenConsume}
                   onOpenDetail={onOpenDetail}
                   onOpenSwap={onOpenSwap}
+                  onRate={onRate}
                 />
               ))}
             </div>
@@ -197,6 +200,7 @@ export function DayView({ day, dayDate, goalCalories, onConsume, onOpenConsume, 
                   onOpenConsume={onOpenConsume}
                   onOpenDetail={onOpenDetail}
                   onOpenSwap={onOpenSwap}
+                  onRate={onRate}
                 />
               ))}
             </div>
@@ -220,6 +224,7 @@ export function DayView({ day, dayDate, goalCalories, onConsume, onOpenConsume, 
                   onOpenConsume={onOpenConsume}
                   onOpenDetail={onOpenDetail}
                   onOpenSwap={onOpenSwap}
+                  onRate={onRate}
                 />
               ))}
             </div>

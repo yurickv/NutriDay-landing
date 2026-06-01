@@ -435,7 +435,7 @@ src/
 │   │   ├── IngredientsTab.tsx          ← + ServingsSelector
 │   │   ├── RecipeTab.tsx
 │   │   ├── SwapMealPanel.tsx           ← quickAlternatives першими, AI як fallback
-│   │   ├── MealRatingWidget.tsx        ← 3 емодзі після consume
+│   │   ├── MealRatingWidget.tsx        ← (не використовується — замінено inline-picker у MealCard)
 │   │   ├── CalorieProgressBar.tsx      ← sticky
 │   │   ├── MacroProgressBar.tsx        ← Б / Ж / В прогрес
 │   │   ├── DayMealProgress.tsx         ← "2 з 4 прийомів ✓"
@@ -533,7 +533,7 @@ src/
 | **CalorieProgressBar** | Sticky зверху, колір: зелений/жовтий/червоний |
 | **MacroProgressBar** | Б: Xг/Xг · Ж: Xг/Xг · В: Xг/Xг |
 | **WeightProgressCard** | Міні-спарклайн "-1.2 кг за 3 тижні" (тижневий тренд!) |
-| **MealRatingWidget** | 😍/😐/👎 — з'являється після відмітки "з'їла" |
+| **MealCard rating** | Кнопка 😊 на картці поруч зі swap — з'являється коли страва з'їдена; тап розкриває inline-ряд 👎 😐 😍; після вибору показується обрана емодзі |
 | **ServingsSelector** | +/- кнопки в IngredientsTab, пропорційний перерахунок |
 | **DayFilterTabs** | Shopping list: "Пн-Ср" / "Чт-Нд" / "Весь тиждень" |
 | **OfflineIndicator** | Помаранчева смужка зверху у офлайн-режимі |
@@ -589,7 +589,8 @@ src/
 - **Не показувати** різку зміну як "провал"
 
 ### Рейтинг страв → персоналізація AI
-- 😍/😐/👎 з'являється після відмітки "з'їла" (один тап)
+- Кнопка 😊 на `MealCard` (поруч зі swap) — видима коли страва з'їдена і ще не оцінена; тап розкриває inline-ряд 👎 😐 😍 прямо на картці (без модалки)
+- Після вибору — обрана емодзі залишається на картці як індикатор
 - Передається в промпт наступної генерації:
   - Високий рейтинг → "повтори подібні"
   - Низький рейтинг → "не повторювати"
@@ -892,7 +893,7 @@ track('weekly_summary_viewed');
 
 1. Авторизуватись → `/menu` → AI генерує меню → перевірити `weekly_menus` в MongoDB
 2. Тапнути страву → BottomSheet з рецептом, інгредієнтами, ServingsSelector
-3. Swipe right на MealCard → `isConsumed: true`, рейтинг-попап
+3. Swipe right на MealCard → `isConsumed: true`; тапнути кнопку 😊 → inline-ряд оцінки 👎 😐 😍 на картці
 4. Замінити страву → quickAlternatives (без AI), опція AI fallback
 5. Multi-day страва → swap попередження з вибором
 6. `/shopping-list` → фільтр по днях, offline: відмітити куплено без інтернету → sync при поверненні
