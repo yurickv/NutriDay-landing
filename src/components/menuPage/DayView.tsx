@@ -10,6 +10,13 @@ import { CalorieProgressBar } from './CalorieProgressBar';
 import { MacroProgressBar } from './MacroProgressBar';
 import { Clock, Zap, Plus } from 'lucide-react';
 
+const SECTION_COLORS: Record<string, string> = {
+  breakfast: '#3B82F6',
+  lunch: '#F97316',
+  dinner: '#8B5CF6',
+  snack: '#10B981',
+};
+
 interface DayViewProps {
   day: MenuDay;
   dayDate: string;
@@ -72,6 +79,30 @@ function calcGoalMacros(goalCalories: number) {
     fat: Math.round(goalCalories * 0.25 / 9),
     carbs: Math.round(goalCalories * 0.45 / 4),
   };
+}
+
+function SectionHeader({
+  label,
+  color,
+  kcal,
+  allEaten,
+}: {
+  label: string;
+  color: string;
+  kcal: number;
+  allEaten: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-2 mb-2 px-0.5">
+      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+      <span className="text-sm font-bold" style={{ color }}>
+        {label}
+      </span>
+      <span className="text-xs text-neutral-400 dark:text-neutral-500 ml-auto">
+        {kcal} ккал{allEaten ? ' · з\'їдено ✓' : ''}
+      </span>
+    </div>
+  );
 }
 
 export function DayView({ day, dayDate, goalCalories, onConsume, onOpenConsume, onOpenDetail, onOpenSwap, onOpenAddCustom, onDeleteCustom, onRate }: DayViewProps) {
@@ -137,10 +168,13 @@ export function DayView({ day, dayDate, goalCalories, onConsume, onOpenConsume, 
         {/* Meals */}
         {day.meals.breakfast.length > 0 && (
           <section aria-label="Сніданок">
-            <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-wide mb-2">
-              Сніданок
-            </h3>
-            <div className="space-y-2">
+            <SectionHeader
+              label="Сніданок"
+              color={SECTION_COLORS.breakfast}
+              kcal={day.meals.breakfast.reduce((s, m) => s + m.calories * m.servings, 0)}
+              allEaten={day.meals.breakfast.every(m => m.isConsumed)}
+            />
+            <div className="space-y-1.5">
               {day.meals.breakfast.map((meal, i) => (
                 <MealCard
                   key={i}
@@ -161,10 +195,13 @@ export function DayView({ day, dayDate, goalCalories, onConsume, onOpenConsume, 
 
         {day.meals.lunch.length > 0 && (
           <section aria-label="Обід">
-            <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-wide mb-2">
-              Обід
-            </h3>
-            <div className="space-y-2">
+            <SectionHeader
+              label="Обід"
+              color={SECTION_COLORS.lunch}
+              kcal={day.meals.lunch.reduce((s, m) => s + m.calories * m.servings, 0)}
+              allEaten={day.meals.lunch.every(m => m.isConsumed)}
+            />
+            <div className="space-y-1.5">
               {day.meals.lunch.map((meal, i) => (
                 <MealCard
                   key={i}
@@ -185,10 +222,13 @@ export function DayView({ day, dayDate, goalCalories, onConsume, onOpenConsume, 
 
         {day.meals.dinner.length > 0 && (
           <section aria-label="Вечеря">
-            <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-wide mb-2">
-              Вечеря
-            </h3>
-            <div className="space-y-2">
+            <SectionHeader
+              label="Вечеря"
+              color={SECTION_COLORS.dinner}
+              kcal={day.meals.dinner.reduce((s, m) => s + m.calories * m.servings, 0)}
+              allEaten={day.meals.dinner.every(m => m.isConsumed)}
+            />
+            <div className="space-y-1.5">
               {day.meals.dinner.map((meal, i) => (
                 <MealCard
                   key={i}
@@ -209,10 +249,13 @@ export function DayView({ day, dayDate, goalCalories, onConsume, onOpenConsume, 
 
         {day.meals.snacks.length > 0 && (
           <section aria-label="Перекус">
-            <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-wide mb-2">
-              Перекус
-            </h3>
-            <div className="space-y-2">
+            <SectionHeader
+              label="Перекус"
+              color={SECTION_COLORS.snack}
+              kcal={day.meals.snacks.reduce((s, m) => s + m.calories * m.servings, 0)}
+              allEaten={day.meals.snacks.every(m => m.isConsumed)}
+            />
+            <div className="space-y-1.5">
               {day.meals.snacks.map((snack, i) => (
                 <MealCard
                   key={i}
@@ -233,9 +276,12 @@ export function DayView({ day, dayDate, goalCalories, onConsume, onOpenConsume, 
 
         {/* Custom eaten foods (outside the AI menu) */}
         <section aria-label="Мої страви">
-          <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-wide mb-2">
-            Мої страви
-          </h3>
+          <div className="flex items-center gap-2 mb-2 px-0.5">
+            <span className="w-2 h-2 rounded-full flex-shrink-0 bg-neutral-300 dark:bg-neutral-600" />
+            <span className="text-[10px] font-semibold uppercase tracking-[.07em] text-neutral-400 dark:text-neutral-500">
+              Мої страви
+            </span>
+          </div>
           <div className="space-y-2">
             {customEntries.map((entry) => (
               <CustomEntryCard

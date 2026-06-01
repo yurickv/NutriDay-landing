@@ -28,6 +28,26 @@
   --foreground: #323030;
   --font-nunito: var(--font-nunito);
   --font-poppins: var(--font-poppins);
+
+  --color-meal-breakfast: #3B82F6;
+  --color-meal-lunch: #F97316;
+  --color-meal-dinner: #8B5CF6;
+  --color-meal-snack: #10B981;
+  --color-kcal: #F97316;
+  --color-rating-bg: #FFFBEB;
+  --color-rating-border: #FDE68A;
+  --color-eaten-bg: #DCFCE7;
+  --color-eaten-text: #15803D;
+  --color-eaten-border: #22C55E;
+}
+
+.dark {
+  --color-kcal: #FB923C;
+  --color-rating-bg: #1C1800;
+  --color-rating-border: #3D3000;
+  --color-eaten-bg: #052E16;
+  --color-eaten-text: #86EFAC;
+  --color-eaten-border: #4ADE80;
 }
 
 @media (prefers-color-scheme: dark) {

@@ -64,18 +64,17 @@ export function DayTabBar({ days, activeIndex, onSelect }: DayTabBarProps) {
                 : isCompleted
                 ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
                 : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700'
-            }`}
+            } ${isToday && !isActive ? 'ring-2 ring-green-500 dark:ring-green-400' : ''}`}
             aria-label={`${day.dayLabel}${isToday ? ', сьогодні' : ''}${isCompleted ? ', виконано' : ''}`}
             aria-pressed={isActive}
           >
-            <span className="text-[10px] font-semibold">{formatShort(day.dayLabel)}</span>
+            <span className="text-[10px] font-semibold flex items-center gap-0.5">
+              {isCompleted && (
+                <span className={isActive ? 'text-white' : 'text-green-500 dark:text-green-400'}>✓</span>
+              )}
+              {formatShort(day.dayLabel)}
+            </span>
             <span className="text-base font-bold leading-none mt-0.5">{getDayNumber(day.date)}</span>
-            {isCompleted && !isActive && (
-              <span className="text-[9px] mt-0.5">✓</span>
-            )}
-            {isToday && !isActive && (
-              <div className="w-1 h-1 rounded-full bg-main mt-0.5" />
-            )}
           </button>
         );
       })}
