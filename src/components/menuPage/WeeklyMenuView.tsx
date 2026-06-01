@@ -22,7 +22,7 @@ interface PendingRating {
   meal: AIMeal;
   mealType: MealCategory;
   dayLabel: string;
-  snackIndex?: number;
+  itemIndex?: number;
 }
 
 export function WeeklyMenuView({ menu, goalCalories, onMenuUpdate }: WeeklyMenuViewProps) {
@@ -43,12 +43,12 @@ export function WeeklyMenuView({ menu, goalCalories, onMenuUpdate }: WeeklyMenuV
     meal: AIMeal;
     mealType: MealCategory;
     dayLabel: string;
-    snackIndex?: number;
+    itemIndex?: number;
   } | null>(null);
   const [swapContext, setSwapContext] = useState<{
     meal: AIMeal;
     mealType: MealCategory;
-    snackIndex?: number;
+    itemIndex?: number;
   } | null>(null);
   const [pendingRating, setPendingRating] = useState<PendingRating | null>(null);
   const [addCustomDay, setAddCustomDay] = useState<string | null>(null);
@@ -66,14 +66,14 @@ export function WeeklyMenuView({ menu, goalCalories, onMenuUpdate }: WeeklyMenuV
   const handleConsume = useCallback(async (
     dayLabel: string,
     mealType: MealCategory,
-    snackIndex?: number,
+    itemIndex?: number,
     isConsumed = true,
     consumedWeight: number | null = null,
   ) => {
     const res = await fetch('/api/menu/meal/consume', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dayLabel, mealType, snackIndex, isConsumed, consumedWeight }),
+      body: JSON.stringify({ dayLabel, mealType, itemIndex, isConsumed, consumedWeight }),
     });
     if (!res.ok) return;
 
@@ -85,11 +85,11 @@ export function WeeklyMenuView({ menu, goalCalories, onMenuUpdate }: WeeklyMenuV
       const day = menu.days.find((d) => d.dayLabel === dayLabel);
       if (day) {
         let meal: AIMeal | null = null;
-        if (mealType === 'snack') meal = day.meals.snacks[snackIndex ?? 0];
-        else meal = day.meals[mealType];
+        const mealArr = mealType === 'snack' ? day.meals.snacks : day.meals[mealType];
+        meal = mealArr[itemIndex ?? 0] ?? null;
         if (meal && !meal.rating) {
           // Show rating after a short delay
-          setTimeout(() => setPendingRating({ meal, mealType, dayLabel, snackIndex }), 500);
+          setTimeout(() => setPendingRating({ meal, mealType, dayLabel, itemIndex }), 500);
         }
       }
     }
@@ -99,12 +99,12 @@ export function WeeklyMenuView({ menu, goalCalories, onMenuUpdate }: WeeklyMenuV
     dayLabel: string,
     mealType: MealCategory,
     rating: 1 | 2 | 3,
-    snackIndex?: number,
+    itemIndex?: number,
   ) => {
     await fetch('/api/menu/meal/rate', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dayLabel, mealType, snackIndex, rating }),
+      body: JSON.stringify({ dayLabel, mealType, itemIndex, rating }),
     });
     onMenuUpdate();
     const emojis = { 1: '👎', 2: '😐', 3: '😍' };
@@ -115,12 +115,12 @@ export function WeeklyMenuView({ menu, goalCalories, onMenuUpdate }: WeeklyMenuV
     dayLabel: string,
     mealType: MealCategory,
     alternativeIndex: number,
-    snackIndex?: number,
+    itemIndex?: number,
   ) => {
     const res = await fetch('/api/menu/meal/swap', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dayLabel, mealType, snackIndex, alternativeIndex }),
+      body: JSON.stringify({ dayLabel, mealType, itemIndex, alternativeIndex }),
     });
     if (!res.ok) return;
     onMenuUpdate();
@@ -174,12 +174,12 @@ export function WeeklyMenuView({ menu, goalCalories, onMenuUpdate }: WeeklyMenuV
             dayDate={new Date(currentDay.date).toISOString().slice(0, 10)}
             goalCalories={goalCalories}
             onConsume={handleConsume}
-            onOpenConsume={(meal, mealType, snackIndex) =>
-              setConsumeContext({ meal, mealType, dayLabel: currentDay.dayLabel, snackIndex })
+            onOpenConsume={(meal, mealType, itemIndex) =>
+              setConsumeContext({ meal, mealType, dayLabel: currentDay.dayLabel, itemIndex })
             }
             onOpenDetail={(meal) => setDetailMeal(meal)}
-            onOpenSwap={(meal, mealType, snackIndex) =>
-              setSwapContext({ meal, mealType, snackIndex })
+            onOpenSwap={(meal, mealType, itemIndex) =>
+              setSwapContext({ meal, mealType, itemIndex })
             }
             onOpenAddCustom={(dayLabel) => setAddCustomDay(dayLabel)}
             onDeleteCustom={handleDeleteCustom}
@@ -201,8 +201,8 @@ export function WeeklyMenuView({ menu, goalCalories, onMenuUpdate }: WeeklyMenuV
         onClose={() => setConsumeContext(null)}
         onConfirm={(consumedWeight) => {
           if (consumeContext) {
-            const { dayLabel, mealType, snackIndex } = consumeContext;
-            handleConsume(dayLabel, mealType, snackIndex, true, consumedWeight);
+            const { dayLabel, mealType, itemIndex } = consumeContext;
+            handleConsume(dayLabel, mealType, itemIndex, true, consumedWeight);
           }
           setConsumeContext(null);
         }}
@@ -223,7 +223,7 @@ export function WeeklyMenuView({ menu, goalCalories, onMenuUpdate }: WeeklyMenuV
       <SwapMealPanel
         meal={swapContext?.meal ?? null}
         mealType={swapContext?.mealType ?? null}
-        snackIndex={swapContext?.snackIndex}
+        itemIndex={swapContext?.itemIndex}
         dayLabel={currentDay?.dayLabel ?? ''}
         isOpen={!!swapContext}
         onClose={() => setSwapContext(null)}
@@ -236,7 +236,7 @@ export function WeeklyMenuView({ menu, goalCalories, onMenuUpdate }: WeeklyMenuV
           meal={pendingRating.meal}
           dayLabel={pendingRating.dayLabel}
           mealType={pendingRating.mealType}
-          snackIndex={pendingRating.snackIndex}
+          itemIndex={pendingRating.itemIndex}
           onRate={handleRate}
           onClose={() => setPendingRating(null)}
         />

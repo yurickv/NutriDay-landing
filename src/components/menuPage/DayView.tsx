@@ -14,10 +14,10 @@ interface DayViewProps {
   day: MenuDay;
   dayDate: string;
   goalCalories: number;
-  onConsume: (dayLabel: string, mealType: MealCategory, snackIndex?: number, isConsumed?: boolean, consumedWeight?: number | null) => Promise<void>;
-  onOpenConsume: (meal: AIMeal, mealType: MealCategory, snackIndex?: number) => void;
+  onConsume: (dayLabel: string, mealType: MealCategory, itemIndex?: number, isConsumed?: boolean, consumedWeight?: number | null) => Promise<void>;
+  onOpenConsume: (meal: AIMeal, mealType: MealCategory, itemIndex?: number) => void;
   onOpenDetail: (meal: AIMeal) => void;
-  onOpenSwap: (meal: AIMeal, mealType: MealCategory, snackIndex?: number) => void;
+  onOpenSwap: (meal: AIMeal, mealType: MealCategory, itemIndex?: number) => void;
   onOpenAddCustom: (dayLabel: string) => void;
   onDeleteCustom: (dayLabel: string, entryId: string) => Promise<void>;
 }
@@ -34,9 +34,9 @@ function consumedFactor(m: AIMeal): number {
 
 function calcConsumedMacros(day: MenuDay) {
   const meals: AIMeal[] = [
-    day.meals.breakfast,
-    day.meals.lunch,
-    day.meals.dinner,
+    ...day.meals.breakfast,
+    ...day.meals.lunch,
+    ...day.meals.dinner,
     ...day.meals.snacks,
   ];
   const fromMeals = meals
@@ -74,7 +74,7 @@ function calcGoalMacros(goalCalories: number) {
 }
 
 export function DayView({ day, dayDate, goalCalories, onConsume, onOpenConsume, onOpenDetail, onOpenSwap, onOpenAddCustom, onDeleteCustom }: DayViewProps) {
-  const allMeals: AIMeal[] = [day.meals.breakfast, day.meals.lunch, day.meals.dinner, ...day.meals.snacks];
+  const allMeals: AIMeal[] = [...day.meals.breakfast, ...day.meals.lunch, ...day.meals.dinner, ...day.meals.snacks];
   const customEntries = day.customEntries ?? [];
   // Custom entries count both toward eaten calories and as "meals" for day progress.
   const consumedCount = allMeals.filter((m) => m.isConsumed).length + customEntries.length;
@@ -134,69 +134,95 @@ export function DayView({ day, dayDate, goalCalories, onConsume, onOpenConsume, 
         </div>
 
         {/* Meals */}
-        <section aria-label="Сніданок">
-          <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-wide mb-2">
-            Сніданок
-          </h3>
-          <MealCard
-            meal={day.meals.breakfast}
-            mealType="breakfast"
-            dayLabel={day.dayLabel}
-            onConsume={onConsume}
-            onOpenConsume={onOpenConsume}
-            onOpenDetail={onOpenDetail}
-            onOpenSwap={onOpenSwap}
-          />
-        </section>
+        {day.meals.breakfast.length > 0 && (
+          <section aria-label="Сніданок">
+            <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-wide mb-2">
+              Сніданок
+            </h3>
+            <div className="space-y-2">
+              {day.meals.breakfast.map((meal, i) => (
+                <MealCard
+                  key={i}
+                  meal={meal}
+                  mealType="breakfast"
+                  dayLabel={day.dayLabel}
+                  itemIndex={i}
+                  onConsume={onConsume}
+                  onOpenConsume={onOpenConsume}
+                  onOpenDetail={onOpenDetail}
+                  onOpenSwap={onOpenSwap}
+                />
+              ))}
+            </div>
+          </section>
+        )}
 
-        <section aria-label="Обід">
-          <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-wide mb-2">
-            Обід
-          </h3>
-          <MealCard
-            meal={day.meals.lunch}
-            mealType="lunch"
-            dayLabel={day.dayLabel}
-            onConsume={onConsume}
-            onOpenConsume={onOpenConsume}
-            onOpenDetail={onOpenDetail}
-            onOpenSwap={onOpenSwap}
-          />
-        </section>
+        {day.meals.lunch.length > 0 && (
+          <section aria-label="Обід">
+            <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-wide mb-2">
+              Обід
+            </h3>
+            <div className="space-y-2">
+              {day.meals.lunch.map((meal, i) => (
+                <MealCard
+                  key={i}
+                  meal={meal}
+                  mealType="lunch"
+                  dayLabel={day.dayLabel}
+                  itemIndex={i}
+                  onConsume={onConsume}
+                  onOpenConsume={onOpenConsume}
+                  onOpenDetail={onOpenDetail}
+                  onOpenSwap={onOpenSwap}
+                />
+              ))}
+            </div>
+          </section>
+        )}
 
-        <section aria-label="Вечеря">
-          <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-wide mb-2">
-            Вечеря
-          </h3>
-          <MealCard
-            meal={day.meals.dinner}
-            mealType="dinner"
-            dayLabel={day.dayLabel}
-            onConsume={onConsume}
-            onOpenConsume={onOpenConsume}
-            onOpenDetail={onOpenDetail}
-            onOpenSwap={onOpenSwap}
-          />
-        </section>
+        {day.meals.dinner.length > 0 && (
+          <section aria-label="Вечеря">
+            <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-wide mb-2">
+              Вечеря
+            </h3>
+            <div className="space-y-2">
+              {day.meals.dinner.map((meal, i) => (
+                <MealCard
+                  key={i}
+                  meal={meal}
+                  mealType="dinner"
+                  dayLabel={day.dayLabel}
+                  itemIndex={i}
+                  onConsume={onConsume}
+                  onOpenConsume={onOpenConsume}
+                  onOpenDetail={onOpenDetail}
+                  onOpenSwap={onOpenSwap}
+                />
+              ))}
+            </div>
+          </section>
+        )}
 
         {day.meals.snacks.length > 0 && (
           <section aria-label="Перекус">
             <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-wide mb-2">
               Перекус
             </h3>
-            {day.meals.snacks.map((snack, i) => (
-              <MealCard
-                key={i}
-                meal={snack}
-                mealType="snack"
-                dayLabel={day.dayLabel}
-                snackIndex={i}
-                onConsume={onConsume}
-                onOpenConsume={onOpenConsume}
-                onOpenDetail={onOpenDetail}
-                onOpenSwap={onOpenSwap}
-              />
-            ))}
+            <div className="space-y-2">
+              {day.meals.snacks.map((snack, i) => (
+                <MealCard
+                  key={i}
+                  meal={snack}
+                  mealType="snack"
+                  dayLabel={day.dayLabel}
+                  itemIndex={i}
+                  onConsume={onConsume}
+                  onOpenConsume={onOpenConsume}
+                  onOpenDetail={onOpenDetail}
+                  onOpenSwap={onOpenSwap}
+                />
+              ))}
+            </div>
           </section>
         )}
 

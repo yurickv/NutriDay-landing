@@ -7,7 +7,7 @@ import { UserProfile } from '@/types/userProfile';
 import { WeeklyMenu } from '@/types/weeklyMenu';
 import { AIMeal } from '@/types/meals';
 
-const MAX_GENERATIONS_PER_WEEK = 3;
+const MAX_GENERATIONS_PER_WEEK = 999; // temporarily unlimited for prompt testing
 
 function getWeekStartMonday(): Date {
   const now = new Date();
@@ -74,9 +74,9 @@ export async function POST() {
   if (lastMenu) {
     for (const day of lastMenu.days) {
       const allMeals: AIMeal[] = [
-        day.meals.breakfast,
-        day.meals.lunch,
-        day.meals.dinner,
+        ...day.meals.breakfast,
+        ...day.meals.lunch,
+        ...day.meals.dinner,
         ...day.meals.snacks,
       ];
       for (const meal of allMeals) {

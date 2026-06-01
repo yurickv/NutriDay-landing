@@ -42,7 +42,7 @@ function buildPrompt(profile: UserProfile, highRated: string[], lowRated: string
   const seasonalHint = SEASON_HINTS[season];
   const macros = calcMacros(profile.goalCalories, profile.sex || 'female');
 
-  return `Склади 7-денне меню (сніданок, обід, вечеря, 1 перекус) для:
+  return `Склади 7-денне меню для:
 Стать: ${profile.sex === 'male' ? 'чоловік' : 'жінка'}, Вік: ${profile.ageYears}, Вага: ${profile.weightKg}кг, Зріст: ${profile.heightCm}см
 Цільова калорійність раціону: ${profile.goalCalories} ккал/день — дотримуйся ТОЧНО (підлаштовуй вагу порцій, щоб сумарна калорійність дня = цьому значенню)
 БЖВ цілі: ~${macros.protein}г білків / ~${macros.fat}г жирів / ~${macros.carbs}г вуглеводів
@@ -83,7 +83,7 @@ NUTRITION:
 DISHES:
 - Every dish "name" must be 30 characters or fewer.
 - Give each dish a fitting food "emoji".
-- For complex lunch and dinner dishes (3+ ingredients) put a clear, step-by-step chef-style recipe in "description"; for simple dishes a short description is enough.
+- Write a step-by-step chef-style recipe in "description" when the dish has 3+ ingredients OR any ingredient requires heat treatment (boiling, frying, stewing, baking). Number each step and separate them with \n (newline). For simple ready-to-eat foods (fresh fruit, nuts, plain yoghurt) a single short sentence is enough.
 
 OUTPUT LANGUAGE:
 - ALL text values (name, description, ingredient name) MUST be written in Ukrainian.
@@ -92,23 +92,28 @@ OUTPUT LANGUAGE:
 const SYSTEM_PROMPT = `${DIETITIAN_PERSONA}
 
 WEEKLY MENU TASK:
-- Always return EXACTLY 7 days of the week (Понеділок–Неділя), each with breakfast, lunch, dinner and 1 snack.
+- Always return EXACTLY 7 days of the week (Понеділок–Неділя).
+- Each day: breakfast (1–2 dishes), lunch (2–3 dishes), dinner (2–3 dishes), snacks (1 dish).
+- breakfast, lunch, dinner and snacks are ALL JSON ARRAYS — even when there is only one dish.
 - Reply with ONLY valid JSON, no markdown wrapper and no explanations, exactly matching this schema:
 {
   "days": [
     {
       "dayLabel": "Понеділок",
       "meals": {
-        "breakfast": { "name": "...", "calories": 0, "protein": 0, "fat": 0, "carbs": 0, "servingSize": 0, "servings": 1, "emoji": "🥣", "description": "...", "ingredients": [{"name": "...", "quantity": 0, "unit": "г", "shoppingCategory": "grains"}], "prepTimeMinutes": 0, "cookTimeMinutes": 0, "isMultiDayPrep": false, "multiDayPrepDays": 0, "difficulty": "easy" },
-        "lunch": { ...same structure... },
-        "dinner": { ...same structure... },
+        "breakfast": [{ "name": "...", "calories": 0, "protein": 0, "fat": 0, "carbs": 0, "servingSize": 0, "servings": 1, "emoji": "🥣", "description": "...", "ingredients": [{"name": "...", "quantity": 0, "unit": "г", "shoppingCategory": "grains"}], "prepTimeMinutes": 0, "cookTimeMinutes": 0, "isMultiDayPrep": false, "multiDayPrepDays": 0, "difficulty": "easy" }],
+        "lunch": [{ ...same structure... }],
+        "dinner": [{ ...same structure... }],
         "snacks": [{ ...same structure... }]
       }
     }
   ]
 }
 shoppingCategory values: vegetables|fruits|meat|fish|dairy|grains|legumes|oils|spices|other
-difficulty values: easy|medium|hard`;
+difficulty values: easy|medium|hard
+
+## EXAMPLE — one correctly formatted day (all 7 days must follow this exact pattern):
+{"dayLabel":"Понеділок","meals":{"breakfast":[{"name":"Вівсянка з молоком","calories":290,"protein":10,"fat":6,"carbs":48,"servingSize":280,"servings":1,"emoji":"🥣","description":"Вівсяну крупу варити на молоці 8–10 хв, посолити за смаком.","ingredients":[{"name":"вівсяна крупа","quantity":80,"unit":"г","shoppingCategory":"grains"},{"name":"молоко 2.5%","quantity":200,"unit":"мл","shoppingCategory":"dairy"}],"prepTimeMinutes":2,"cookTimeMinutes":10,"isMultiDayPrep":false,"multiDayPrepDays":0,"difficulty":"easy"},{"name":"Яблуко","calories":80,"protein":0,"fat":0,"carbs":21,"servingSize":150,"servings":1,"emoji":"🍎","description":"Свіже яблуко.","ingredients":[{"name":"яблуко","quantity":150,"unit":"г","shoppingCategory":"fruits"}],"prepTimeMinutes":0,"cookTimeMinutes":0,"isMultiDayPrep":false,"multiDayPrepDays":0,"difficulty":"easy"}],"lunch":[{"name":"Тушковане куряче філе з овочами","calories":380,"protein":35,"fat":13,"carbs":22,"servingSize":380,"servings":1,"emoji":"🍗","description":"Рецепт (1 порція):\\n1. Нарізати куряче філе кубиками 2–3 см, цибулю та перець — довільно.\\n2. Розігріти олію на середньому вогні, обсмажити філе 3–4 хв до золотавого кольору.\\n3. Додати овочі, посолити, поперчити, тушкувати 5 хв помішуючи.\\n4. Влити 2 ст.л. води, накрити кришкою та тушкувати ще 15 хв.\\nПодавати гарячим.","ingredients":[{"name":"куряче філе","quantity":150,"unit":"г","shoppingCategory":"meat"},{"name":"болгарський перець","quantity":100,"unit":"г","shoppingCategory":"vegetables"},{"name":"цибуля","quantity":60,"unit":"г","shoppingCategory":"vegetables"},{"name":"олія соняшникова","quantity":10,"unit":"мл","shoppingCategory":"oils"},{"name":"сіль, перець","quantity":2,"unit":"г","shoppingCategory":"spices"}],"prepTimeMinutes":8,"cookTimeMinutes":20,"isMultiDayPrep":false,"multiDayPrepDays":0,"difficulty":"medium"},{"name":"Листовий салат","calories":45,"protein":2,"fat":1,"carbs":7,"servingSize":120,"servings":1,"emoji":"🥗","description":"Промити листя, нарвати на шматки, посолити та збризнути лимонним соком.","ingredients":[{"name":"мікс листових","quantity":100,"unit":"г","shoppingCategory":"vegetables"},{"name":"лимонний сік","quantity":10,"unit":"мл","shoppingCategory":"other"}],"prepTimeMinutes":3,"cookTimeMinutes":0,"isMultiDayPrep":false,"multiDayPrepDays":0,"difficulty":"easy"}],"dinner":[{"name":"Куряче філе на грилі","calories":220,"protein":38,"fat":6,"carbs":0,"servingSize":170,"servings":1,"emoji":"🥩","description":"Рецепт:\\n1. Куряче філе відбити, натерти сіллю та паприкою.\\n2. Смажити на гриль-сковороді 4–5 хв з кожного боку до золотавої скоринки.\\nПодавати з кашею.","ingredients":[{"name":"куряче філе","quantity":150,"unit":"г","shoppingCategory":"meat"},{"name":"паприка, сіль","quantity":2,"unit":"г","shoppingCategory":"spices"},{"name":"олія","quantity":5,"unit":"мл","shoppingCategory":"oils"}],"prepTimeMinutes":3,"cookTimeMinutes":10,"isMultiDayPrep":false,"multiDayPrepDays":0,"difficulty":"easy"},{"name":"Гречана каша","calories":165,"protein":6,"fat":2,"carbs":33,"servingSize":200,"servings":1,"emoji":"🌾","description":"Рецепт:\\n1. Промити гречку, залити водою 1:2.\\n2. Варити 15–20 хв до готовності, посолити.","ingredients":[{"name":"гречана крупа","quantity":80,"unit":"г","shoppingCategory":"grains"},{"name":"вода","quantity":160,"unit":"мл","shoppingCategory":"other"}],"prepTimeMinutes":2,"cookTimeMinutes":20,"isMultiDayPrep":true,"multiDayPrepDays":2,"difficulty":"easy"}],"snacks":[{"name":"Йогурт натуральний","calories":110,"protein":6,"fat":3,"carbs":15,"servingSize":180,"servings":1,"emoji":"🥛","description":"Натуральний йогурт без добавок.","ingredients":[{"name":"йогурт натуральний","quantity":180,"unit":"г","shoppingCategory":"dairy"}],"prepTimeMinutes":0,"cookTimeMinutes":0,"isMultiDayPrep":false,"multiDayPrepDays":0,"difficulty":"easy"}]}}`;
 
 const ALT_SYSTEM_PROMPT = `${DIETITIAN_PERSONA}
 
@@ -191,17 +196,21 @@ function getWeekStart(): Date {
   return monday;
 }
 
+function normalizeArray(raw: unknown): AIMeal[] {
+  if (Array.isArray(raw)) return raw.map((m) => normalizeMeal(m as Record<string, unknown>));
+  if (raw && typeof raw === 'object') return [normalizeMeal(raw as Record<string, unknown>)];
+  return [normalizeMeal({})];
+}
+
 function mapDays(rawDays: Record<string, unknown>[], weekStartDate: Date): MenuDay[] {
   return rawDays.slice(0, 7).map((d, i) => {
     const rawMeals = (d.meals || {}) as Record<string, unknown>;
-    const breakfast = normalizeMeal((rawMeals.breakfast || {}) as Record<string, unknown>);
-    const lunch = normalizeMeal((rawMeals.lunch || {}) as Record<string, unknown>);
-    const dinner = normalizeMeal((rawMeals.dinner || {}) as Record<string, unknown>);
-    const snacks: AIMeal[] = Array.isArray(rawMeals.snacks)
-      ? (rawMeals.snacks as Record<string, unknown>[]).map((s) => normalizeMeal(s))
-      : [normalizeMeal((rawMeals.snacks || {}) as Record<string, unknown>)];
+    const breakfast = normalizeArray(rawMeals.breakfast);
+    const lunch = normalizeArray(rawMeals.lunch);
+    const dinner = normalizeArray(rawMeals.dinner);
+    const snacks = normalizeArray(rawMeals.snacks);
 
-    const allMeals = [breakfast, lunch, dinner, ...snacks];
+    const allMeals = [...breakfast, ...lunch, ...dinner, ...snacks];
     const totalCalories = allMeals.reduce((s, m) => s + m.calories * m.servings, 0);
     const totalPrepMinutes = allMeals.reduce((s, m) => s + m.prepTimeMinutes + m.cookTimeMinutes, 0);
 

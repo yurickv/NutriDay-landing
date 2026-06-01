@@ -7,7 +7,7 @@ import { WeeklyMenu } from '@/types/weeklyMenu';
 interface RateBody {
   dayLabel: string;
   mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
-  snackIndex?: number;
+  itemIndex?: number;
   rating: 1 | 2 | 3;
 }
 
@@ -18,7 +18,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   const body = await req.json() as RateBody;
-  const { dayLabel, mealType, snackIndex, rating } = body;
+  const { dayLabel, mealType, itemIndex, rating } = body;
 
   if (![1, 2, 3].includes(rating)) {
     return NextResponse.json({ error: 'Invalid rating' }, { status: 400 });
@@ -42,10 +42,8 @@ export async function PATCH(req: NextRequest) {
 
   const now = new Date();
   const fieldBase = `days.${dayIndex}.meals`;
-  const updatePath =
-    mealType === 'snack'
-      ? `${fieldBase}.snacks.${snackIndex ?? 0}`
-      : `${fieldBase}.${mealType}`;
+  const fieldName = mealType === 'snack' ? 'snacks' : mealType;
+  const updatePath = `${fieldBase}.${fieldName}.${itemIndex ?? 0}`;
 
   await col.updateOne(
     { _id: menu._id },

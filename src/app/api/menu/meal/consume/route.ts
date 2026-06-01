@@ -9,7 +9,7 @@ interface ConsumeBody {
   menuId: string;
   dayLabel: string;
   mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
-  snackIndex?: number;
+  itemIndex?: number;
   isConsumed: boolean;
   consumedWeight?: number | null;
 }
@@ -21,7 +21,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   const body = await req.json() as ConsumeBody;
-  const { dayLabel, mealType, snackIndex, isConsumed, consumedWeight } = body;
+  const { dayLabel, mealType, itemIndex, isConsumed, consumedWeight } = body;
 
   const db = await getDb();
   const col = db.collection('weekly_menus');
@@ -42,18 +42,16 @@ export async function PATCH(req: NextRequest) {
 
   const now = new Date();
   const fieldBase = `days.${dayIndex}.meals`;
-  const updatePath =
-    mealType === 'snack'
-      ? `${fieldBase}.snacks.${snackIndex ?? 0}`
-      : `${fieldBase}.${mealType}`;
+  const fieldName = mealType === 'snack' ? 'snacks' : mealType;
+  const updatePath = `${fieldBase}.${fieldName}.${itemIndex ?? 0}`;
 
   // Compute the day's post-update completion locally from the already-loaded
   // menu instead of re-reading the document (removes an N+1 round trip). We
   // know exactly which meal is toggling, so we can derive the resulting count.
   const day = menu.days[dayIndex];
-  const target =
-    mealType === 'snack' ? day.meals.snacks[snackIndex ?? 0] : day.meals[mealType];
-  const menuMeals = [day.meals.breakfast, day.meals.lunch, day.meals.dinner, ...day.meals.snacks];
+  const mealArr = mealType === 'snack' ? day.meals.snacks : day.meals[mealType];
+  const target = mealArr[itemIndex ?? 0];
+  const menuMeals = [...day.meals.breakfast, ...day.meals.lunch, ...day.meals.dinner, ...day.meals.snacks];
   const consumedBefore = menuMeals.filter((m) => m.isConsumed).length;
   const delta = (isConsumed ? 1 : 0) - (target?.isConsumed ? 1 : 0);
   // Custom entries also count as eaten toward the ≥3 threshold (mirrors

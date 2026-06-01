@@ -33,7 +33,7 @@ export function buildShoppingList(days: MenuDay[]): ShoppingListItem[] {
     // 8th day never writes past the week array.
     if (dayIndex >= DAYS_IN_WEEK) return;
     const { breakfast, lunch, dinner, snacks } = day.meals;
-    const allMeals: AIMeal[] = [breakfast, lunch, dinner, ...snacks];
+    const allMeals: AIMeal[] = [...breakfast, ...lunch, ...dinner, ...snacks];
 
     for (const meal of allMeals) {
       for (const ing of meal.ingredients) {

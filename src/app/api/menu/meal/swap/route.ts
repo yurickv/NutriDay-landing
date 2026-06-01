@@ -10,7 +10,7 @@ import { buildShoppingList, mergeShoppingItems } from '@/lib/menu/shoppingListBu
 interface SwapBody {
   dayLabel: string;
   mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
-  snackIndex?: number;
+  itemIndex?: number;
   alternativeIndex: number; // index in quickAlternatives array
 }
 
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json() as SwapBody;
-  const { dayLabel, mealType, snackIndex, alternativeIndex } = body;
+  const { dayLabel, mealType, itemIndex, alternativeIndex } = body;
 
   const db = await getDb();
   const col = db.collection('weekly_menus');
@@ -40,13 +40,8 @@ export async function POST(req: NextRequest) {
   }
 
   const day = menu.days[dayIndex];
-  let originalMeal: AIMeal;
-
-  if (mealType === 'snack') {
-    originalMeal = day.meals.snacks[snackIndex ?? 0];
-  } else {
-    originalMeal = day.meals[mealType];
-  }
+  const mealArr = mealType === 'snack' ? day.meals.snacks : day.meals[mealType];
+  const originalMeal = mealArr[itemIndex ?? 0];
 
   if (!originalMeal) {
     return NextResponse.json({ error: 'Meal not found' }, { status: 404 });
@@ -70,10 +65,8 @@ export async function POST(req: NextRequest) {
 
   const now = new Date();
   const fieldBase = `days.${dayIndex}.meals`;
-  const updatePath =
-    mealType === 'snack'
-      ? `${fieldBase}.snacks.${snackIndex ?? 0}`
-      : `${fieldBase}.${mealType}`;
+  const fieldName = mealType === 'snack' ? 'snacks' : mealType;
+  const updatePath = `${fieldBase}.${fieldName}.${itemIndex ?? 0}`;
 
   await col.updateOne(
     { _id: menu._id },
@@ -87,11 +80,7 @@ export async function POST(req: NextRequest) {
 
   // Reflect the swap in the in-memory menu so the shopping list can be rebuilt
   // from the updated days without re-fetching.
-  if (mealType === 'snack') {
-    menu.days[dayIndex].meals.snacks[snackIndex ?? 0] = swappedMeal;
-  } else {
-    menu.days[dayIndex].meals[mealType] = swappedMeal;
-  }
+  mealArr[itemIndex ?? 0] = swappedMeal;
 
   // Keep the shopping list in sync with the menu: a swap changes the meal's
   // ingredients, so rebuild it (otherwise the old meal's products linger and

@@ -28,8 +28,8 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const dayLabel = searchParams.get('dayLabel');
   const mealType = searchParams.get('mealType') as MealType | null;
-  const snackIndexRaw = searchParams.get('snackIndex');
-  const snackIndex = snackIndexRaw != null ? parseInt(snackIndexRaw, 10) : undefined;
+  const itemIndexRaw = searchParams.get('itemIndex');
+  const itemIndex = itemIndexRaw != null ? parseInt(itemIndexRaw, 10) : 0;
 
   if (!dayLabel || !mealType) {
     return NextResponse.json({ error: 'Missing dayLabel or mealType' }, { status: 400 });
@@ -51,8 +51,8 @@ export async function GET(req: NextRequest) {
   }
 
   const day = menu.days[dayIndex];
-  const meal: AIMeal | undefined =
-    mealType === 'snack' ? day.meals.snacks[snackIndex ?? 0] : day.meals[mealType];
+  const mealArr = mealType === 'snack' ? day.meals.snacks : day.meals[mealType];
+  const meal: AIMeal | undefined = mealArr[itemIndex];
   if (!meal) {
     return NextResponse.json({ error: 'Meal not found' }, { status: 404 });
   }
@@ -75,10 +75,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to generate alternatives' }, { status: 502 });
   }
 
-  const path =
-    mealType === 'snack'
-      ? `days.${dayIndex}.meals.snacks.${snackIndex ?? 0}.quickAlternatives`
-      : `days.${dayIndex}.meals.${mealType}.quickAlternatives`;
+  const fieldName = mealType === 'snack' ? 'snacks' : mealType;
+  const path = `days.${dayIndex}.meals.${fieldName}.${itemIndex}.quickAlternatives`;
 
   await col.updateOne(
     { _id: menu._id },

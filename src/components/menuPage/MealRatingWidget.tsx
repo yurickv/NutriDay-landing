@@ -7,8 +7,8 @@ interface MealRatingWidgetProps {
   meal: AIMeal;
   dayLabel: string;
   mealType: MealCategory;
-  snackIndex?: number;
-  onRate: (dayLabel: string, mealType: MealCategory, rating: 1 | 2 | 3, snackIndex?: number) => Promise<void>;
+  itemIndex?: number;
+  onRate: (dayLabel: string, mealType: MealCategory, rating: 1 | 2 | 3, itemIndex?: number) => Promise<void>;
   onClose: () => void;
 }
 
@@ -22,7 +22,7 @@ export function MealRatingWidget({
   meal,
   dayLabel,
   mealType,
-  snackIndex,
+  itemIndex,
   onRate,
   onClose,
 }: MealRatingWidgetProps) {
@@ -31,7 +31,7 @@ export function MealRatingWidget({
   const handleRate = async (rating: 1 | 2 | 3) => {
     setLoading(rating);
     try {
-      await onRate(dayLabel, mealType, rating, snackIndex);
+      await onRate(dayLabel, mealType, rating, itemIndex);
       if ('vibrate' in navigator) navigator.vibrate([20, 50, 20]);
       onClose();
     } finally {

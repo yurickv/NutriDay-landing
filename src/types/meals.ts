@@ -50,9 +50,9 @@ export interface AIMeal {
 }
 
 export interface DayMeals {
-  breakfast: AIMeal;
-  lunch: AIMeal;
-  dinner: AIMeal;
+  breakfast: AIMeal[];
+  lunch: AIMeal[];
+  dinner: AIMeal[];
   snacks: AIMeal[];
 }
 

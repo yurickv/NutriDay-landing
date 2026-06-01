@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
   // so the push and the (optional) completion happen in one update — no re-read.
   // Custom entries count as eaten meals toward the ≥3 threshold.
   const day = menu.days[dayIndex];
-  const menuMeals = [day.meals.breakfast, day.meals.lunch, day.meals.dinner, ...day.meals.snacks];
+  const menuMeals = [...day.meals.breakfast, ...day.meals.lunch, ...day.meals.dinner, ...day.meals.snacks];
   const consumedAfter =
     menuMeals.filter((m) => m.isConsumed).length + (day.customEntries?.length ?? 0) + 1;
   const shouldComplete = !day.isCompleted && consumedAfter >= 3;

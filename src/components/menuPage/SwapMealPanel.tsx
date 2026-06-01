@@ -8,17 +8,17 @@ import { RefreshCw } from 'lucide-react';
 interface SwapMealPanelProps {
   meal: AIMeal | null;
   mealType: MealCategory | null;
-  snackIndex?: number;
+  itemIndex?: number;
   dayLabel: string;
   isOpen: boolean;
   onClose: () => void;
-  onSwap: (dayLabel: string, mealType: MealCategory, alternativeIndex: number, snackIndex?: number) => Promise<void>;
+  onSwap: (dayLabel: string, mealType: MealCategory, alternativeIndex: number, itemIndex?: number) => Promise<void>;
 }
 
 export function SwapMealPanel({
   meal,
   mealType,
-  snackIndex,
+  itemIndex,
   dayLabel,
   isOpen,
   onClose,
@@ -39,7 +39,7 @@ export function SwapMealPanel({
     setFetching(true);
 
     const params = new URLSearchParams({ dayLabel, mealType });
-    if (mealType === 'snack') params.set('snackIndex', String(snackIndex ?? 0));
+    params.set('itemIndex', String(itemIndex ?? 0));
 
     fetch(`/api/menu/meal/alternatives?${params.toString()}`)
       .then(async (res) => {
@@ -57,14 +57,14 @@ export function SwapMealPanel({
     return () => {
       cancelled = true;
     };
-  }, [isOpen, meal, mealType, snackIndex, dayLabel]);
+  }, [isOpen, meal, mealType, itemIndex, dayLabel]);
 
   if (!meal || !mealType) return null;
 
   const handleSwap = async (idx: number) => {
     setLoading(idx);
     try {
-      await onSwap(dayLabel, mealType, idx, snackIndex);
+      await onSwap(dayLabel, mealType, idx, itemIndex);
       onClose();
     } finally {
       setLoading(null);

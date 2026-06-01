@@ -1,6 +1,6 @@
 # NutriDay — План розробки: Тижневе меню, Список покупок та PWA
 
-> **Статус**: Фаза 1 ✅ | Фаза 2 ✅ | Фаза 3 ✅ | Фаза 4 ✅ | Фаза 5 ✅ | Власні страви ✅ | Масштабованість & безпека ✅ | Фаза 6–7 — в черзі
+> **Статус**: Фаза 1 ✅ | Фаза 2 ✅ | Фаза 3 ✅ | Фаза 4 ✅ | Фаза 5 ✅ | Власні страви ✅ | Масштабованість & безпека ✅ | Промпт v2 ✅ | Фаза 6–7 — в черзі
 > **Пріоритет**: Висока
 > **Ціль**: Побудувати персоналізований кабінет для схуднення з AI-меню, списком покупок та елементами залучення, оптимізований для мобільних (PWA).
 
@@ -970,3 +970,114 @@ TDEE = BMR × коефіцієнт_активності
 
 ### Відоме обмеження (наступний крок — баг 2, друга частина)
 **Канонізація одиниць і назв НЕ зроблена**: «Цибуля 1 шт» і «Цибуля 50 г» досі окремі рядки (ключ агрегації = `назва+одиниця`), «помідори»/«томати» не зливаються, немасові одиниці (`ст.л.`, `склянка`) у грами не зводяться. Це причина залишкових розбіжностей ваги по конкретному продукту. Period-overlap частину бага 2 вже закрито.
+
+---
+
+## 🔧 Changelog — Промпт v2: кілька страв за прийом + рецепти з кроками (2026-06-01)
+
+### Мотивація
+1. **Якість рецептів**: AI генерував опис страви суцільним текстом — кроки приготування не відділялись і не нумерувались. Потрібні рецепти з кроками з нового рядка для складних страв (≥3 інгредієнтів або термічна обробка).
+2. **Реалістичність прийомів їжі**: одна страва на сніданок або обід — занадто спрощена модель. Реальний сніданок = вівсянка + яблуко; обід = основне + гарнір + салат. Потрібно декілька карток страв під кожним прийомом.
+3. **Тестування промпту**: тимчасово прибрати ліміт генерації, щоб зручно ітерувати промпт без очікування нового тижня.
+
+### Зміни
+
+#### 1. Rate limit тимчасово відключено
+**`src/app/api/menu/generate/route.ts`**:
+```ts
+// Було:
+const MAX_GENERATIONS_PER_WEEK = 3;
+// Стало:
+const MAX_GENERATIONS_PER_WEEK = 999; // тимчасово необмежено для тестування промпту
+```
+> Повернути `3` після затвердження фінального промпту.
+
+#### 2. Тип `DayMeals` — всі прийоми стали масивами
+**`src/types/meals.ts`**:
+```ts
+// Було:
+export interface DayMeals {
+  breakfast: AIMeal;
+  lunch: AIMeal;
+  dinner: AIMeal;
+  snacks: AIMeal[];
+}
+// Стало:
+export interface DayMeals {
+  breakfast: AIMeal[];
+  lunch: AIMeal[];
+  dinner: AIMeal[];
+  snacks: AIMeal[];
+}
+```
+Тепер усі чотири прийоми є масивами, що дозволяє AI повертати 1–2 страви на сніданок і 2–3 на обід/вечерю. Паттерн `snacks` вже був масивом — тепер однорідна модель.
+
+#### 3. `generateMenuWithAI.ts` — рефакторинг парсингу та промпту
+**`src/lib/menu/generateMenuWithAI.ts`**:
+
+- **Новий хелпер `normalizeArray(raw)`**: приймає масив або одиночний об'єкт (для зворотньої сумісності зі старими меню в БД) і завжди повертає `AIMeal[]`.
+- **`mapDays`**: тепер викликає `normalizeArray` для `breakfast`, `lunch`, `dinner` і `snacks`; `allMeals` рахується через `[...breakfast, ...lunch, ...dinner, ...snacks]`.
+- **`buildPrompt`**: прибрано деталізацію структури ("сніданок, обід, вечеря, 1 перекус") — вона тепер у `SYSTEM_PROMPT`.
+- **`DIETITIAN_PERSONA` — правило DISHES оновлено**:
+  - Було: "For complex lunch and dinner dishes (3+ ingredients) put a clear, step-by-step chef-style recipe in `description`"
+  - Стало: "Write a step-by-step chef-style recipe in `description` when the dish has **3+ ingredients OR any ingredient requires heat treatment** (boiling, frying, stewing, baking). **Number each step and separate them with `\n` (newline)**. For simple ready-to-eat foods (fresh fruit, nuts, plain yoghurt) a single short sentence is enough."
+- **`SYSTEM_PROMPT` — нова структура**:
+  - Вказано явні розміри прийомів: `breakfast (1–2 dishes)`, `lunch (2–3 dishes)`, `dinner (2–3 dishes)`, `snacks (1 dish)`.
+  - Схема JSON оновлена — всі чотири поля тепер `[{...}]` (масиви).
+  - Доданий **приклад дня** (`## EXAMPLE`) що демонструє:
+    - Сніданок з 2 страв (Вівсянка з молоком + Яблуко)
+    - Обід з 2 страв (Тушковане куряче філе — з нумерованим рецептом через `\\n` + Листовий салат)
+    - Вечеря з 2 страв (Куряче філе на грилі з рецептом + Гречана каша з рецептом)
+    - Перекус (Йогурт натуральний — коротке речення)
+  - `\\n` у TypeScript-рядку генерує `\n` у рядку промпту — модель бачить правильний JSON-ескейп.
+
+#### 4. Рефакторинг індексу страви в API та UI: `snackIndex` → `itemIndex`
+До цих змін `snackIndex` використовувався лише для перекусів (`snacks[]`). Оскільки тепер усі прийоми є масивами, потрібен уніфікований індекс для будь-якої страви в будь-якому прийомі.
+
+**Перейменовано в усіх файлах**: `snackIndex` → `itemIndex`. Логіка ідентична — індекс усередині масиву конкретного прийому.
+
+**Зачеплені файли**:
+| Файл | Зміна |
+|------|-------|
+| `src/app/api/menu/meal/consume/route.ts` | `snackIndex` → `itemIndex` в тілі запиту; `fieldName = mealType === 'snack' ? 'snacks' : mealType`; `updatePath = fieldBase.fieldName.itemIndex` для всіх типів |
+| `src/app/api/menu/meal/rate/route.ts` | Те саме — `itemIndex` в тілі, `fieldName` + уніфікований `updatePath` |
+| `src/app/api/menu/meal/swap/route.ts` | `itemIndex` в тілі; `mealArr = mealType==='snack' ? meals.snacks : meals[mealType]`; `mealArr[itemIndex]`; уніфікований `updatePath` |
+| `src/app/api/menu/meal/alternatives/route.ts` | Query param `snackIndex` → `itemIndex`; тепер передається для **всіх** типів прийомів (не лише `snack`) |
+| `src/components/menuPage/MealCard.tsx` | Prop `snackIndex` → `itemIndex` |
+| `src/components/menuPage/MealRatingWidget.tsx` | Prop `snackIndex` → `itemIndex` |
+| `src/components/menuPage/SwapMealPanel.tsx` | Prop `snackIndex` → `itemIndex`; `params.set('itemIndex', ...)` передається **завжди** (не тільки для snack) |
+| `src/components/menuPage/DayView.tsx` | Props `snackIndex` → `itemIndex`; `.map` з `itemIndex={i}` для **всіх** прийомів |
+| `src/components/menuPage/WeeklyMenuView.tsx` | Глобальна заміна `snackIndex` → `itemIndex`; lookup: `mealArr = mealType==='snack' ? meals.snacks : meals[mealType]` |
+
+#### 5. `DayView` — секції рендеряться через `.map`
+**`src/components/menuPage/DayView.tsx`**:
+- `calcConsumedMacros` і `allMeals` використовують `[...breakfast, ...lunch, ...dinner, ...snacks]`.
+- Кожна секція (Сніданок / Обід / Вечеря / Перекус) рендерить масив карток через `.map` із `space-y-2`.
+- Секція прихована (`{arr.length > 0 && ...}`), якщо масив порожній.
+
+#### 6. Агрегатори — flatten скрізь
+| Файл | Зміна |
+|------|-------|
+| `src/lib/menu/shoppingListBuilder.ts` | `[...breakfast, ...lunch, ...dinner, ...snacks]` |
+| `src/app/api/menu/generate/route.ts` | Те саме — при зборі `highRated`/`lowRated` |
+| `src/app/api/menu/meal/custom/route.ts` | Те саме — при перевірці порогу завершення дня (≥3) |
+
+### Структура MongoDB після змін
+Поле `meals` у `weekly_menus.days[]` тепер:
+```js
+meals: {
+  breakfast: [AIMeal, AIMeal],     // 1–2 страви
+  lunch:     [AIMeal, AIMeal, AIMeal], // 2–3 страви
+  dinner:    [AIMeal, AIMeal],     // 2–3 страви
+  snacks:    [AIMeal]              // 1 страва
+}
+```
+**Зворотня сумісність**: `normalizeArray()` у `mapDays` перетворює одиночний об'єкт (старі меню) у масив при читанні — клієнт завжди отримує масиви.
+
+### Перевірка
+- `npx tsc --noEmit` → exit 0.
+- RecipeTab вже використовує `whitespace-pre-line` — `\n` у `description` рендеряться як переноси рядків без додаткових змін UI.
+
+### Відомі наступні кроки
+- Після затвердження якості промпту повернути `MAX_GENERATIONS_PER_WEEK = 3`.
+- Після перегенерації нового меню старі документи в MongoDB (з `breakfast: AIMeal`) залишаються валідними завдяки `normalizeArray` — міграція не потрібна.

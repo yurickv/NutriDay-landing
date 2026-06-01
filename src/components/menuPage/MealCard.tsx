@@ -8,11 +8,11 @@ interface MealCardProps {
   meal: AIMeal;
   mealType: MealCategory;
   dayLabel: string;
-  snackIndex?: number;
-  onConsume: (dayLabel: string, mealType: MealCategory, snackIndex?: number, isConsumed?: boolean, consumedWeight?: number | null) => Promise<void>;
-  onOpenConsume: (meal: AIMeal, mealType: MealCategory, snackIndex?: number) => void;
+  itemIndex?: number;
+  onConsume: (dayLabel: string, mealType: MealCategory, itemIndex?: number, isConsumed?: boolean, consumedWeight?: number | null) => Promise<void>;
+  onOpenConsume: (meal: AIMeal, mealType: MealCategory, itemIndex?: number) => void;
   onOpenDetail: (meal: AIMeal) => void;
-  onOpenSwap: (meal: AIMeal, mealType: MealCategory, snackIndex?: number) => void;
+  onOpenSwap: (meal: AIMeal, mealType: MealCategory, itemIndex?: number) => void;
 }
 
 const MEAL_LABELS: Record<MealCategory, string> = {
@@ -26,7 +26,7 @@ export function MealCard({
   meal,
   mealType,
   dayLabel,
-  snackIndex,
+  itemIndex,
   onConsume,
   onOpenConsume,
   onOpenDetail,
@@ -41,7 +41,7 @@ export function MealCard({
       // Toggle off directly
       setLoading(true);
       try {
-        await onConsume(dayLabel, mealType, snackIndex, false);
+        await onConsume(dayLabel, mealType, itemIndex, false);
         if ('vibrate' in navigator) navigator.vibrate(30);
       } finally {
         setLoading(false);
@@ -50,11 +50,11 @@ export function MealCard({
     }
     // Mark as eaten → ask for the actual portion weight first
     if (meal.servingSize > 0) {
-      onOpenConsume(meal, mealType, snackIndex);
+      onOpenConsume(meal, mealType, itemIndex);
     } else {
       setLoading(true);
       try {
-        await onConsume(dayLabel, mealType, snackIndex, true);
+        await onConsume(dayLabel, mealType, itemIndex, true);
         if ('vibrate' in navigator) navigator.vibrate(30);
       } finally {
         setLoading(false);
@@ -72,10 +72,10 @@ export function MealCard({
     const delta = e.changedTouches[0].clientX - touchStartX.current;
     if (delta > 70) {
       // Swipe right → consume
-      onConsume(dayLabel, mealType, snackIndex, true);
+      onConsume(dayLabel, mealType, itemIndex, true);
     } else if (delta < -70) {
       // Swipe left → swap
-      onOpenSwap(meal, mealType, snackIndex);
+      onOpenSwap(meal, mealType, itemIndex);
     }
     touchStartX.current = null;
   };
@@ -139,7 +139,7 @@ export function MealCard({
       <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
         {/* Swap button */}
         <button
-          onClick={(e) => { e.stopPropagation(); onOpenSwap(meal, mealType, snackIndex); }}
+          onClick={(e) => { e.stopPropagation(); onOpenSwap(meal, mealType, itemIndex); }}
           className="p-2 rounded-full text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
           aria-label="Замінити страву"
         >
