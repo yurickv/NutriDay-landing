@@ -13,6 +13,7 @@ const PERIOD_DAY_INDICES: Record<PeriodFilter, number[]> = {
 };
 
 type QuantifiedItem = { quantity: number; quantityByDay: number[]; isCustom: boolean };
+type PurchasableItem = QuantifiedItem & { isPurchased: boolean; purchasedPeriods?: string[] };
 
 /**
  * Quantity of an item needed within the selected period. Sums the per-day
@@ -30,6 +31,39 @@ export function periodQuantity(item: Pick<QuantifiedItem, 'quantity' | 'quantity
 }
 
 /**
+ * Whether the item is purchased for the active filter. In period views the check
+ * uses `purchasedPeriods`; in the 'all' view (or for custom items) it falls back
+ * to the global `isPurchased`. Items that predate per-period tracking (no
+ * `purchasedPeriods`) also fall back to `isPurchased` for backward compat.
+ */
+export function isEffectivePurchased(item: PurchasableItem, filter: DayFilter): boolean {
+  if (filter === 'all' || item.isCustom || !item.quantityByDay?.length) {
+    return item.isPurchased;
+  }
+  if (!item.purchasedPeriods || item.purchasedPeriods.length === 0) {
+    return item.isPurchased; // backward compat for legacy items
+  }
+  return item.purchasedPeriods.includes(filter);
+}
+
+/**
+ * Quantity to display for an item. In period views: quantity for that period.
+ * In 'all' view: total minus already-purchased period quantities, so the number
+ * shrinks as you tick off each half of the week. Custom items always show full
+ * quantity (no per-period breakdown to subtract).
+ */
+export function displayQuantity(item: PurchasableItem, filter: DayFilter): number {
+  if (filter !== 'all') return periodQuantity(item, filter);
+  if (item.isCustom || !item.quantityByDay?.length) return item.quantity;
+
+  const purchasedQty = (['mon-wed', 'thu-sun'] as PeriodFilter[])
+    .filter((p) => (item.purchasedPeriods ?? []).includes(p))
+    .reduce((s, p) => s + periodQuantity(item, p), 0);
+
+  return Math.max(0, Math.round((item.quantity - purchasedQty) * 10) / 10);
+}
+
+/**
  * Whether an item belongs in the selected period. Menu items appear only when
  * actually needed in that period; manual custom items always appear.
  */
@@ -37,6 +71,35 @@ export function isVisibleInPeriod(item: QuantifiedItem, filter: DayFilter): bool
   if (filter === 'all') return true;
   if (item.isCustom || !item.quantityByDay || item.quantityByDay.length === 0) return true;
   return periodQuantity(item, filter) > 0;
+}
+
+/**
+ * Computes the new `isPurchased` + `purchasedPeriods` when the user toggles an
+ * item in `filter` view. Custom items / 'all' view toggle the global flag;
+ * period views toggle only that period and derive the global flag from whether
+ * all active periods are now purchased.
+ */
+export function computePurchasedUpdate(
+  item: PurchasableItem,
+  checked: boolean,
+  filter: DayFilter,
+): { isPurchased: boolean; purchasedPeriods: string[] } {
+  if (filter === 'all' || item.isCustom || !item.quantityByDay?.length) {
+    return { isPurchased: checked, purchasedPeriods: checked ? ['mon-wed', 'thu-sun'] : [] };
+  }
+
+  const current = item.purchasedPeriods ?? [];
+  const newPeriods = checked
+    ? [...new Set([...current, filter])]
+    : current.filter((p) => p !== filter);
+
+  const hasMonWed = periodQuantity(item, 'mon-wed') > 0;
+  const hasThuSun = periodQuantity(item, 'thu-sun') > 0;
+  const allDone =
+    (!hasMonWed || newPeriods.includes('mon-wed')) &&
+    (!hasThuSun || newPeriods.includes('thu-sun'));
+
+  return { isPurchased: allDone, purchasedPeriods: newPeriods };
 }
 
 interface DayFilterTabsProps {

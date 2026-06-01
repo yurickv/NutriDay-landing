@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { ShoppingList, ShoppingListItem } from '@/types/shoppingList';
 import { ShoppingCategory } from '@/types/meals';
 import { CategorySection } from './CategorySection';
-import { DayFilterTabs, DayFilter, periodQuantity, isVisibleInPeriod } from './DayFilterTabs';
+import { DayFilterTabs, DayFilter, displayQuantity, isVisibleInPeriod, isEffectivePurchased, computePurchasedUpdate } from './DayFilterTabs';
 import { AddCustomItemForm } from './AddCustomItemForm';
 import { OfflineIndicator } from './OfflineIndicator';
 import { CheckCircle } from 'lucide-react';
@@ -18,6 +18,7 @@ const OFFLINE_QUEUE_KEY = 'nd_shopping_queue';
 interface OfflineQueueEntry {
   itemId: string;
   isPurchased: boolean;
+  purchasedPeriods: string[];
   timestamp: number;
 }
 
@@ -42,6 +43,8 @@ export function ShoppingListView({ initialList }: ShoppingListViewProps) {
   const [items, setItems] = useState<ShoppingListItem[]>(initialList.items);
   const [filter, setFilter] = useState<DayFilter>('all');
   const offlineQueueRef = useRef<OfflineQueueEntry[]>([]);
+  const itemsRef = useRef(items);
+  useEffect(() => { itemsRef.current = items; }, [items]);
 
   // Sync pending offline changes on reconnect
   useEffect(() => {
@@ -56,7 +59,7 @@ export function ShoppingListView({ initialList }: ShoppingListViewProps) {
           fetch('/api/shopping-list', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ itemId: entry.itemId, isPurchased: entry.isPurchased }),
+            body: JSON.stringify({ itemId: entry.itemId, isPurchased: entry.isPurchased, purchasedPeriods: entry.purchasedPeriods }),
           }),
         ),
       );
@@ -74,19 +77,23 @@ export function ShoppingListView({ initialList }: ShoppingListViewProps) {
     return () => window.removeEventListener('online', () => void syncOfflineQueue());
   }, []);
 
-  const handleToggle = useCallback(async (itemId: string, isPurchased: boolean) => {
+  const handleToggle = useCallback(async (itemId: string, checked: boolean) => {
+    const original = itemsRef.current.find((i) => i.id === itemId);
+    if (!original) return;
+
+    const { isPurchased, purchasedPeriods } = computePurchasedUpdate(original, checked, filter);
+
     // Optimistic update
     setItems((prev) =>
       prev.map((item) =>
         item.id === itemId
-          ? { ...item, isPurchased, purchasedAt: isPurchased ? new Date() : null }
+          ? { ...item, isPurchased, purchasedPeriods, purchasedAt: isPurchased ? new Date() : null }
           : item,
       ),
     );
 
     if (!navigator.onLine) {
-      // Queue for later sync
-      const entry: OfflineQueueEntry = { itemId, isPurchased, timestamp: Date.now() };
+      const entry: OfflineQueueEntry = { itemId, isPurchased, purchasedPeriods, timestamp: Date.now() };
       const queue = [...offlineQueueRef.current.filter((e) => e.itemId !== itemId), entry];
       offlineQueueRef.current = queue;
       saveOfflineQueue(queue);
@@ -96,18 +103,18 @@ export function ShoppingListView({ initialList }: ShoppingListViewProps) {
     const res = await fetch('/api/shopping-list', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ itemId, isPurchased }),
+      body: JSON.stringify({ itemId, isPurchased, purchasedPeriods }),
     });
 
     if (!res.ok) {
       // Revert optimistic update on failure
       setItems((prev) =>
         prev.map((item) =>
-          item.id === itemId ? { ...item, isPurchased: !isPurchased } : item,
+          item.id === itemId ? { ...item, isPurchased: original.isPurchased, purchasedPeriods: original.purchasedPeriods } : item,
         ),
       );
     }
-  }, []);
+  }, [filter]);
 
   const handleAddCustom = useCallback(async (name: string) => {
     const res = await fetch('/api/shopping-list', {
@@ -122,11 +129,15 @@ export function ShoppingListView({ initialList }: ShoppingListViewProps) {
     }
   }, []);
 
-  // Filter items by period, and show each item's quantity for that period
-  // (summed from its per-day breakdown — see periodQuantity).
+  // Filter items by period, and show each item's quantity + purchased state for
+  // that period (summed from per-day breakdown; purchased derived per-period).
   const filteredItems = items
     .filter((item) => isVisibleInPeriod(item, filter))
-    .map((item) => ({ ...item, quantity: periodQuantity(item, filter) }));
+    .map((item) => ({
+      ...item,
+      quantity: displayQuantity(item, filter),
+      isPurchased: isEffectivePurchased(item, filter),
+    }));
 
   // Group by category
   const grouped = CATEGORY_ORDER.reduce<Record<ShoppingCategory, ShoppingListItem[]>>(

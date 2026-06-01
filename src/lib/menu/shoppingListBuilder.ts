@@ -76,6 +76,7 @@ export function buildShoppingList(days: MenuDay[]): ShoppingListItem[] {
       mealNames: Array.from(data.mealNames),
       forDays: Array.from(data.forDays),
       isPurchased: false,
+      purchasedPeriods: [],
       purchasedAt: null,
       isCustom: false,
     });

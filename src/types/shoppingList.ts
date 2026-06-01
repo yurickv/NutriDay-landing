@@ -13,7 +13,8 @@ export interface ShoppingListItem {
   shoppingCategory: ShoppingCategory;
   mealNames: string[];
   forDays: string[];
-  isPurchased: boolean;
+  isPurchased: boolean; // true when all active periods are purchased (or custom/whole-week items)
+  purchasedPeriods: string[]; // which periods ('mon-wed', 'thu-sun') are individually marked
   purchasedAt: Date | null;
   isCustom: boolean;
 }

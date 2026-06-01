@@ -49,8 +49,8 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const body = await req.json() as { itemId: string; isPurchased: boolean };
-  const { itemId, isPurchased } = body;
+  const body = await req.json() as { itemId: string; isPurchased: boolean; purchasedPeriods?: string[] };
+  const { itemId, isPurchased, purchasedPeriods } = body;
 
   if (!itemId) {
     return NextResponse.json({ error: 'itemId required' }, { status: 400 });
@@ -62,6 +62,7 @@ export async function PATCH(req: NextRequest) {
     {
       $set: {
         'items.$.isPurchased': isPurchased,
+        'items.$.purchasedPeriods': purchasedPeriods ?? [],
         'items.$.purchasedAt': isPurchased ? new Date() : null,
         updatedAt: new Date(),
       },
@@ -107,6 +108,7 @@ export async function POST(req: NextRequest) {
     mealNames: [],
     forDays: [],
     isPurchased: false,
+    purchasedPeriods: [],
     purchasedAt: null,
     isCustom: true,
   };
