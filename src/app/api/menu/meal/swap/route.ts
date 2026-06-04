@@ -6,6 +6,7 @@ import { WeeklyMenu } from '@/types/weeklyMenu';
 import { AIMeal } from '@/types/meals';
 import { ShoppingListItem } from '@/types/shoppingList';
 import { buildShoppingList, mergeShoppingItems } from '@/lib/menu/shoppingListBuilder';
+import { scaleMealToCalories } from '@/lib/menu/generateMenuWithAI';
 
 interface SwapBody {
   dayLabel: string;
@@ -63,6 +64,16 @@ export async function POST(req: NextRequest) {
     ratedAt: null,
   };
 
+  // Ensure the swapped meal's calories (and ingredient weights) match the original
+  // so totalCalories stays accurate. This is a safety net for cases where the
+  // alternative was generated before the ingredient fix or the LLM under/over-sized.
+  scaleMealToCalories(swappedMeal, originalMeal.calories);
+
+  // Update in-memory first so totalCalories can be recalculated from the new state.
+  mealArr[itemIndex ?? 0] = swappedMeal;
+  const allMeals = [...day.meals.breakfast, ...day.meals.lunch, ...day.meals.dinner, ...day.meals.snacks];
+  const newTotalCalories = allMeals.reduce((s, m) => s + m.calories * m.servings, 0);
+
   const now = new Date();
   const fieldBase = `days.${dayIndex}.meals`;
   const fieldName = mealType === 'snack' ? 'snacks' : mealType;
@@ -73,14 +84,11 @@ export async function POST(req: NextRequest) {
     {
       $set: {
         [updatePath]: swappedMeal,
+        [`days.${dayIndex}.totalCalories`]: newTotalCalories,
         updatedAt: now,
       },
     },
   );
-
-  // Reflect the swap in the in-memory menu so the shopping list can be rebuilt
-  // from the updated days without re-fetching.
-  mealArr[itemIndex ?? 0] = swappedMeal;
 
   // Keep the shopping list in sync with the menu: a swap changes the meal's
   // ingredients, so rebuild it (otherwise the old meal's products linger and

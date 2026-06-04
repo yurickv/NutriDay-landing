@@ -117,7 +117,7 @@
   difficulty: "easy" | "medium" | "hard",
   isSwapped: boolean,
   originalMealSnapshot: AIMeal | null,
-  quickAlternatives: AIMeal[],     // 2 передгенеровані заміни (без доп. AI запиту)
+  quickAlternatives: AIMeal[],     // ліниво генеруються на запит (GET /api/menu/meal/alternatives)
 
   // Трекінг споживання:
   isConsumed: boolean,             // чи з'їла
@@ -401,10 +401,11 @@ src/
 │       │   ├── generate/route.ts       ← POST → OpenAI (rate limited)
 │       │   ├── weekly/route.ts         ← GET
 │       │   ├── meal/
-│       │   │   ├── swap/route.ts       ← POST
+│       │   │   ├── swap/route.ts       ← POST (+ scaleMealToCalories + totalCalories recalc)
 │       │   │   ├── consume/route.ts    ← PATCH isConsumed
 │       │   │   ├── rate/route.ts       ← PATCH rating
-│       │   │   └── custom/route.ts     ← POST/DELETE власні з'їдені страви
+│       │   │   ├── custom/route.ts     ← POST/DELETE власні з'їдені страви
+│       │   │   └── alternatives/route.ts ← GET ліниво генерує quickAlternatives
 │       │   ├── food/
 │       │   │   └── parse/route.ts      ← POST LLM-оцінка калорій/БЖВ
 │       │   └── complete-day/route.ts
@@ -498,7 +499,8 @@ src/
 |-------|---------|------|
 | POST | `/api/menu/generate` | Генерація меню (rate limited: 3/тиждень) |
 | GET | `/api/menu/weekly` | Поточний тиждень |
-| POST | `/api/menu/meal/swap` | Замінити страву |
+| POST | `/api/menu/meal/swap` | Замінити страву (масштабує калорії + перераховує `totalCalories` дня) |
+| GET | `/api/menu/meal/alternatives` | Лінива генерація альтернатив для одної страви |
 | PATCH | `/api/menu/meal/consume` | Відмітити страву з'їденою |
 | PATCH | `/api/menu/meal/rate` | Рейтинг страви (1/2/3) |
 | POST | `/api/menu/complete-day` | Відмітити день |
@@ -1217,8 +1219,8 @@ Pass 4  totalCalories / totalPrepMinutes
 ```
 
 **`generateMealAlternatives()`:**
-- Промпт: видалено посилання на `calories`; замінено `«±10% ккал»` → `«~${meal.servingSize}г»`
-- Після `normalizeMeal` кожну альтернативу масштабовано під калорії оригіналу: `k = meal.calories / alt.calories`; якщо `|k-1| > 5%` і `k ∈ [0.5, 2.0]` — застосовується
+- Промпт: явно передається цільова калорійність (`~${meal.calories} ккал`); LLM просять регулювати вагу інгредієнтів у грамах для влучення в ціль; схема JSON включає повну структуру `ingredients` (раніше модель повертала страви без інгредієнтів)
+- Масштабування через `scaleMealToCalories(alt, meal.calories)` — виделено в окрему функцію
 
 ---
 
@@ -1235,3 +1237,46 @@ Pass 4  totalCalories / totalPrepMinutes
 - Після генерації: `days[].totalCalories` ∈ `[goalCalories × 0.97, goalCalories × 1.03]`
 - Dev-консоль: `[foodNutrition] no match for ingredient: "..."` → сигнал розширити `FOOD_TABLE`
 - `ConsumePortionSheet`: зміна ваги порції → ккал перераховується пропорційно
+
+---
+
+## 🔧 Changelog — Виправлення свопу: інгредієнти в альтернативах + регулювання калорій (2026-06-04)
+
+### Проблеми
+1. **LLM повертав альтернативи без інгредієнтів**: промпт `generateMealAlternatives` посилався на `<AIMeal>` без визначення схеми — модель не знала, що потрібне поле `ingredients`. Через це `computeMealNutrition` повертала 0 ккал і масштабування не спрацьовувало.
+2. **`totalCalories` дня не оновлювався після свопу**: `swap/route.ts` перезаписував лише страву, а `days[].totalCalories` лишався зі старим значенням до наступного рефетчу меню.
+
+### Зміни
+
+#### 1. Промпт `generateMealAlternatives` — повна схема + цільові калорії
+**`src/lib/menu/generateMenuWithAI.ts`**:
+- Замінено `<AIMeal>` на явну JSON-схему зі структурою `ingredients` (аналогічно до `SYSTEM_PROMPT` тижневого меню)
+- Додано цільову калорійність у промпт: `~${meal.calories} ккал на порцію`; LLM просять регулювати вагу інгредієнтів у грамах для влучення в ціль
+- Fallback коли `meal.calories === 0`: орієнтир на `servingSize` г
+
+#### 2. `scaleMealToCalories()` — виділена в окрему exported функцію
+**`src/lib/menu/generateMenuWithAI.ts`**:
+```ts
+export function scaleMealToCalories(meal: AIMeal, targetCalories: number): void
+```
+- Рахує `k = targetCalories / meal.calories`
+- Масштабує `calories`, `protein`, `fat`, `carbs`, `servingSize`, `ingredients[].quantity`
+- `шт` → `max(1, round(q × k))`; `г/мл` → `max(5, round(q × k))`
+- No-op якщо будь-яке значення = 0, `|k−1| ≤ 3%`, або `k ∉ [0.5, 2.0]`
+- Замінює інлайн-блок у `generateMealAlternatives`; використовується і в `swap/route.ts`
+
+#### 3. `swap/route.ts` — масштабування + перерахунок `totalCalories`
+**`src/app/api/menu/meal/swap/route.ts`**:
+- Після формування `swappedMeal` — виклик `scaleMealToCalories(swappedMeal, originalMeal.calories)` перед записом у БД
+- `totalCalories` дня перераховується з усіх страв (consumed + unconsumed) і зберігається в одному `$set` разом зі страваою та `updatedAt`
+
+#### 4. `foodNutrition.ts` — нові продукти
+**`src/lib/menu/foodNutrition.ts`**:
+- **Кус-кус**: protein 13, fat 1.7, carbs 72 (keywords: `кус-кус`, `кускус`, `кус кус`)
+- **Пшенична крупа**: protein 13, fat 2, carbs 68 (keywords: `пшенична крупа`, `пшенична каша` тощо)
+- **Курячі грудки** (розширення існуючого запису "Куряче філе"): додано `курячі грудки`, `курячих грудок`, `курячу грудку`
+
+### Перевірка
+- `npx tsc --noEmit` → exit 0
+- Альтернативи тепер містять `ingredients` → `computeMealNutrition` дає ненульові калорії → `scaleMealToCalories` коректно масштабує
+- Після свопу `days[].totalCalories` у MongoDB відразу відповідає сумі страв дня

@@ -45,6 +45,9 @@ export const FOOD_TABLE: FoodEntry[] = [
       'філе курки',
       'грудка курки',
       'куряча грудка',
+      'курячі грудки',
+      'курячих грудок',
+      'курячу грудку',
     ],
   },
   {
@@ -465,6 +468,13 @@ export const FOOD_TABLE: FoodEntry[] = [
     keywords: ['манн', 'манка'],
   },
   {
+    label: 'Пшенична крупа',
+    protein: 13,
+    fat: 2,
+    carbs: 68,
+    keywords: ['пшенична крупа', 'пшеничної крупи', 'пшенична каша', 'пшеничної каші'],
+  },
+  {
     label: 'Кукурудзяна крупа',
     protein: 8,
     fat: 1.2,
@@ -484,6 +494,13 @@ export const FOOD_TABLE: FoodEntry[] = [
     fat: 6,
     carbs: 57,
     keywords: ['кіноа', 'кіное'],
+  },
+  {
+    label: 'Кус-кус',
+    protein: 13,
+    fat: 1.7,
+    carbs: 72,
+    keywords: ['кус-кус', 'кускус', 'кус кус'],
   },
   {
     label: 'Макарони (тверді сорти)',

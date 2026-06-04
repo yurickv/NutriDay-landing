@@ -365,6 +365,29 @@ export async function generateMenuWithAI(
 }
 
 /**
+ * Scales a meal's macros and ingredient quantities so its calories match
+ * targetCalories within ±3%. Mutates the meal in place. No-ops when either
+ * value is 0 or the factor is outside the safe [0.5, 2.0] range.
+ */
+export function scaleMealToCalories(meal: AIMeal, targetCalories: number): void {
+  if (targetCalories <= 0 || meal.calories <= 0) return;
+  const k = targetCalories / meal.calories;
+  if (Math.abs(k - 1) <= 0.03 || k < 0.5 || k > 2.0) return;
+
+  meal.calories    = Math.round(meal.calories    * k);
+  meal.protein     = Math.round(meal.protein     * k);
+  meal.fat         = Math.round(meal.fat         * k);
+  meal.carbs       = Math.round(meal.carbs       * k);
+  meal.servingSize = Math.round(meal.servingSize * k);
+  meal.ingredients = meal.ingredients.map((ing) => ({
+    ...ing,
+    quantity: ing.unit === 'шт'
+      ? Math.max(1, Math.round(ing.quantity * k))
+      : Math.max(5, Math.round(ing.quantity * k)),
+  }));
+}
+
+/**
  * Generates fresh alternatives for a single meal on demand (used by the swap flow).
  * Alternatives are no longer pre-generated with the weekly menu — that bloated the
  * response and forced the model to truncate the 7-day plan.
@@ -380,11 +403,21 @@ export async function generateMealAlternatives(
     profile.allergies?.length ? `Алергії: ${profile.allergies.join(', ')}` : '',
   ].filter(Boolean).join('\n');
 
-  const prompt = `Запропонуй ${count} альтернативні страви на заміну "${meal.name}" (аналогічний розмір порції ~${meal.servingSize}г).
-Та сама категорія прийому їжі, аналогічна поживна цінність. Для кожної страви вкажи servingSize (вагу порції в г).
-Мова: українська. Реальні, різноманітні страви.
+  const targetCalories = meal.calories > 0 ? meal.calories : null;
+  const calorieInstruction = targetCalories
+    ? `Цільова калорійність однієї порції: ~${targetCalories} ккал. Підбирай та регулюй вагу інгредієнтів у грамах так, щоб сума калорій кожної страви максимально відповідала цій цілі.`
+    : `Орієнтовний розмір порції: ~${meal.servingSize}г.`;
+
+  const prompt = `Запропонуй ${count} альтернативні страви на заміну "${meal.name}".
+Та сама категорія прийому їжі. Мова: українська. Реальні, різноманітні страви.
+${calorieInstruction}
 ${constraints}
-Відповідь — ТІЛЬКИ валідний JSON: { "alternatives": [ <AIMeal>, ... ] } з ${count} елементами.`;
+Відповідь — ТІЛЬКИ валідний JSON без markdown та коментарів:
+{ "alternatives": [ { "name": "...", "servingSize": 0, "servings": 1, "emoji": "🍽️", "description": "...", "ingredients": [{"name": "...", "quantity": 0, "unit": "г", "shoppingCategory": "other"}], "prepTimeMinutes": 0, "cookTimeMinutes": 0, "isMultiDayPrep": false, "multiDayPrepDays": 0, "difficulty": "easy" } ] }
+shoppingCategory values: vegetables|fruits|meat|fish|dairy|grains|legumes|oils|spices|other
+difficulty values: easy|medium|hard
+ОБОВ'ЯЗКОВО: кожна страва повинна мати масив ingredients з усіма складниками та їх кількістю.
+Рівно ${count} елементів у масиві alternatives.`;
 
   const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
     { role: 'system', content: ALT_SYSTEM_PROMPT },
@@ -401,23 +434,7 @@ ${constraints}
       }
       return parsed.alternatives.slice(0, count).map((a) => {
         const alt = normalizeMeal(a);
-        // Scale alternative to match the original meal's calories (±5% guard).
-        if (meal.calories > 0 && alt.calories > 0) {
-          const k = meal.calories / alt.calories;
-          if (Math.abs(k - 1) > 0.05 && k >= 0.5 && k <= 2.0) {
-            alt.calories    = Math.round(alt.calories    * k);
-            alt.protein     = Math.round(alt.protein     * k);
-            alt.fat         = Math.round(alt.fat         * k);
-            alt.carbs       = Math.round(alt.carbs       * k);
-            alt.servingSize = Math.round(alt.servingSize * k);
-            alt.ingredients = alt.ingredients.map((ing) => ({
-              ...ing,
-              quantity: ing.unit === 'шт'
-                ? Math.max(1, Math.round(ing.quantity * k))
-                : Math.max(5, Math.round(ing.quantity * k)),
-            }));
-          }
-        }
+        scaleMealToCalories(alt, meal.calories);
         return alt;
       });
     } catch (err) {
