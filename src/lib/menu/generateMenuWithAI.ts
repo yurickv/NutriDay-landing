@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 import { UserProfile } from '@/types/userProfile';
 import { AIMeal, DayMeals } from '@/types/meals';
 import { MenuDay } from '@/types/weeklyMenu';
+import { computeMealNutrition } from './foodNutrition';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -27,25 +28,16 @@ function getMonthName(month: number): string {
   return names[month];
 }
 
-function calcMacros(goalCalories: number, sex: string) {
-  const protein = Math.round(goalCalories * 0.3 / 4);
-  const fat = Math.round(goalCalories * 0.25 / 9);
-  const carbs = Math.round(goalCalories * 0.45 / 4);
-  return { protein, fat, carbs };
-}
-
 function buildPrompt(profile: UserProfile, highRated: string[], lowRated: string[]): string {
   const now = new Date();
   const month = now.getMonth() + 1;
   const monthName = getMonthName(month);
   const season = getSeason(month);
   const seasonalHint = SEASON_HINTS[season];
-  const macros = calcMacros(profile.goalCalories, profile.sex || 'female');
 
   return `Склади 7-денне меню для:
 Стать: ${profile.sex === 'male' ? 'чоловік' : 'жінка'}, Вік: ${profile.ageYears}, Вага: ${profile.weightKg}кг, Зріст: ${profile.heightCm}см
-Цільова калорійність раціону: ${profile.goalCalories} ккал/день — дотримуйся ТОЧНО (підлаштовуй вагу порцій, щоб сумарна калорійність дня = цьому значенню)
-БЖВ цілі: ~${macros.protein}г білків / ~${macros.fat}г жирів / ~${macros.carbs}г вуглеводів
+Орієнтовна калорійність: ~${profile.goalCalories} ккал/день (орієнтир для розміру порцій; точний розрахунок виконується автоматично)
 Мета: ${profile.mainGoal || 'схуднення'}
 Поточний місяць: ${monthName} — пріоритизуй сезонні, недорогі продукти для України: ${seasonalHint}
 ${profile.favoriteFoods?.length ? `Улюблені продукти: ${profile.favoriteFoods.join(', ')}` : ''}
@@ -55,7 +47,7 @@ ${profile.allergies?.length ? `Алергії: ${profile.allergies.join(', ')}` 
 ${highRated.length ? `Страви з хорошим рейтингом (повтори подібні): ${highRated.join(', ')}` : ''}
 ${lowRated.length ? `Страви з поганим рейтингом (не повторювати): ${lowRated.join(', ')}` : ''}
 Якщо страва готується на 2-3 дні — позначити isMultiDayPrep: true, multiDayPrepDays: N.
-Для кожної страви обов'язково вкажи servingSize (вагу однієї порції в грамах); калорійність і БЖВ мають відповідати саме цій вазі, а сума ваг інгредієнтів ≈ servingSize.
+Для кожної страви вкажи servingSize (вагу готової порції в грамах); сума ваг інгредієнтів має приблизно відповідати servingSize.
 
 ВАЖЛИВО: Поверни РІВНО 7 днів (Понеділок–Неділя). Відповідь — ТІЛЬКИ валідний JSON без markdown-обгортки та пояснень. Суворо дотримуйся наданої схеми.`;
 }
@@ -64,21 +56,21 @@ ${lowRated.length ? `Страви з поганим рейтингом (не п�
 // Kept in English (proven base prompt); the model still must output Ukrainian text.
 const DIETITIAN_PERSONA = `You are an AI dietitian. Build a healthy, balanced menu tailored to the user's data and preferences supplied in the user message.
 
-CALORIES (most important):
-- The user message states the target daily calorie intake. Hit that number for the whole day.
-- Distribute calories so that about 80% fall in the first half of the day (breakfast + lunch + daytime snack) and about 20% on dinner.
-- Strictly respect the daily calorie target, do not drift. If a draft day totals too many calories, redo the SAME day with smaller portions; if too few, increase the portions — until the day's total matches the target.
-- Never plan below 1200 kcal/day.
-
-PORTION WEIGHT (critical for calorie accuracy):
-- For every dish set "servingSize" to the cooked weight of ONE portion in grams.
-- "calories", "protein", "fat", "carbs" MUST correspond to eating exactly that servingSize — more grams means more calories. Keep them mutually consistent.
-- Each ingredient "quantity" is its weight (or count) for one portion; the ingredient weights must add up to the dish servingSize.
+PORTION SIZING:
+- Use the target daily calorie value in the user message only as a rough guide for sizing portions sensibly.
+- You do NOT need to calculate, verify, or output any calorie or macro numbers — that is handled entirely by the application from the ingredient list.
+- Focus on: nutritional variety, seasonal/local ingredients, recipe quality, realistic cooking steps.
 
 NUTRITION:
 - Varied menu covering all food groups (proteins, fats, carbohydrates, vitamins, minerals).
 - Prefer inexpensive products typical for Ukraine; prioritize the seasonal products named in the user message.
 - Never put incompatible foods in the same meal (e.g. milk + cucumber).
+- If the user's favorite foods include fast food, confectionery, pastry, fried snacks, or other high-calorie processed items: you MAY include them, but their combined daily caloric contribution must not exceed 20% of the target intake.
+
+MEAL STRUCTURE (mandatory):
+- The FIRST dish in breakfast, lunch, and dinner MUST feature a substantial protein source: meat, fish, eggs, cottage cheese, hard cheese, yogurt (≥100 g), or cooked legumes. A plain fruit, bread, or pure-starch dish is NEVER the first dish of a main meal.
+- Lunch MUST include at least one dedicated side dish of cooked grains or pasta as a separate dish (buckwheat, rice, pasta, millet, pearl barley, bulgur, polenta, etc.) — in addition to the main protein dish. This ensures adequate calorie density and satiety.
+- Snack (1 dish only): can be fruit, dairy, nuts, or a light whole-grain item.
 
 DISHES:
 - Every dish "name" must be 30 characters or fewer.
@@ -101,7 +93,7 @@ WEEKLY MENU TASK:
     {
       "dayLabel": "Понеділок",
       "meals": {
-        "breakfast": [{ "name": "...", "calories": 0, "protein": 0, "fat": 0, "carbs": 0, "servingSize": 0, "servings": 1, "emoji": "🥣", "description": "...", "ingredients": [{"name": "...", "quantity": 0, "unit": "г", "shoppingCategory": "grains"}], "prepTimeMinutes": 0, "cookTimeMinutes": 0, "isMultiDayPrep": false, "multiDayPrepDays": 0, "difficulty": "easy" }],
+        "breakfast": [{ "name": "...", "servingSize": 0, "servings": 1, "emoji": "🥣", "description": "...", "ingredients": [{"name": "...", "quantity": 0, "unit": "г", "shoppingCategory": "grains"}], "prepTimeMinutes": 0, "cookTimeMinutes": 0, "isMultiDayPrep": false, "multiDayPrepDays": 0, "difficulty": "easy" }],
         "lunch": [{ ...same structure... }],
         "dinner": [{ ...same structure... }],
         "snacks": [{ ...same structure... }]
@@ -113,7 +105,7 @@ shoppingCategory values: vegetables|fruits|meat|fish|dairy|grains|legumes|oils|s
 difficulty values: easy|medium|hard
 
 ## EXAMPLE — one correctly formatted day (all 7 days must follow this exact pattern):
-{"dayLabel":"Понеділок","meals":{"breakfast":[{"name":"Вівсянка з молоком","calories":290,"protein":10,"fat":6,"carbs":48,"servingSize":280,"servings":1,"emoji":"🥣","description":"Вівсяну крупу варити на молоці 8–10 хв, посолити за смаком.","ingredients":[{"name":"вівсяна крупа","quantity":80,"unit":"г","shoppingCategory":"grains"},{"name":"молоко 2.5%","quantity":200,"unit":"мл","shoppingCategory":"dairy"}],"prepTimeMinutes":2,"cookTimeMinutes":10,"isMultiDayPrep":false,"multiDayPrepDays":0,"difficulty":"easy"},{"name":"Яблуко","calories":80,"protein":0,"fat":0,"carbs":21,"servingSize":150,"servings":1,"emoji":"🍎","description":"Свіже яблуко.","ingredients":[{"name":"яблуко","quantity":150,"unit":"г","shoppingCategory":"fruits"}],"prepTimeMinutes":0,"cookTimeMinutes":0,"isMultiDayPrep":false,"multiDayPrepDays":0,"difficulty":"easy"}],"lunch":[{"name":"Тушковане куряче філе з овочами","calories":380,"protein":35,"fat":13,"carbs":22,"servingSize":380,"servings":1,"emoji":"🍗","description":"Рецепт (1 порція):\\n1. Нарізати куряче філе кубиками 2–3 см, цибулю та перець — довільно.\\n2. Розігріти олію на середньому вогні, обсмажити філе 3–4 хв до золотавого кольору.\\n3. Додати овочі, посолити, поперчити, тушкувати 5 хв помішуючи.\\n4. Влити 2 ст.л. води, накрити кришкою та тушкувати ще 15 хв.\\nПодавати гарячим.","ingredients":[{"name":"куряче філе","quantity":150,"unit":"г","shoppingCategory":"meat"},{"name":"болгарський перець","quantity":100,"unit":"г","shoppingCategory":"vegetables"},{"name":"цибуля","quantity":60,"unit":"г","shoppingCategory":"vegetables"},{"name":"олія соняшникова","quantity":10,"unit":"мл","shoppingCategory":"oils"},{"name":"сіль, перець","quantity":2,"unit":"г","shoppingCategory":"spices"}],"prepTimeMinutes":8,"cookTimeMinutes":20,"isMultiDayPrep":false,"multiDayPrepDays":0,"difficulty":"medium"},{"name":"Листовий салат","calories":45,"protein":2,"fat":1,"carbs":7,"servingSize":120,"servings":1,"emoji":"🥗","description":"Промити листя, нарвати на шматки, посолити та збризнути лимонним соком.","ingredients":[{"name":"мікс листових","quantity":100,"unit":"г","shoppingCategory":"vegetables"},{"name":"лимонний сік","quantity":10,"unit":"мл","shoppingCategory":"other"}],"prepTimeMinutes":3,"cookTimeMinutes":0,"isMultiDayPrep":false,"multiDayPrepDays":0,"difficulty":"easy"}],"dinner":[{"name":"Куряче філе на грилі","calories":220,"protein":38,"fat":6,"carbs":0,"servingSize":170,"servings":1,"emoji":"🥩","description":"Рецепт:\\n1. Куряче філе відбити, натерти сіллю та паприкою.\\n2. Смажити на гриль-сковороді 4–5 хв з кожного боку до золотавої скоринки.\\nПодавати з кашею.","ingredients":[{"name":"куряче філе","quantity":150,"unit":"г","shoppingCategory":"meat"},{"name":"паприка, сіль","quantity":2,"unit":"г","shoppingCategory":"spices"},{"name":"олія","quantity":5,"unit":"мл","shoppingCategory":"oils"}],"prepTimeMinutes":3,"cookTimeMinutes":10,"isMultiDayPrep":false,"multiDayPrepDays":0,"difficulty":"easy"},{"name":"Гречана каша","calories":165,"protein":6,"fat":2,"carbs":33,"servingSize":200,"servings":1,"emoji":"🌾","description":"Рецепт:\\n1. Промити гречку, залити водою 1:2.\\n2. Варити 15–20 хв до готовності, посолити.","ingredients":[{"name":"гречана крупа","quantity":80,"unit":"г","shoppingCategory":"grains"},{"name":"вода","quantity":160,"unit":"мл","shoppingCategory":"other"}],"prepTimeMinutes":2,"cookTimeMinutes":20,"isMultiDayPrep":true,"multiDayPrepDays":2,"difficulty":"easy"}],"snacks":[{"name":"Йогурт натуральний","calories":110,"protein":6,"fat":3,"carbs":15,"servingSize":180,"servings":1,"emoji":"🥛","description":"Натуральний йогурт без добавок.","ingredients":[{"name":"йогурт натуральний","quantity":180,"unit":"г","shoppingCategory":"dairy"}],"prepTimeMinutes":0,"cookTimeMinutes":0,"isMultiDayPrep":false,"multiDayPrepDays":0,"difficulty":"easy"}]}}`;
+{"dayLabel":"Понеділок","meals":{"breakfast":[{"name":"Вівсянка з молоком","servingSize":280,"servings":1,"emoji":"🥣","description":"Вівсяну крупу варити на молоці 8–10 хв, посолити за смаком.","ingredients":[{"name":"вівсяна крупа","quantity":80,"unit":"г","shoppingCategory":"grains"},{"name":"молоко 2.5%","quantity":200,"unit":"мл","shoppingCategory":"dairy"}],"prepTimeMinutes":2,"cookTimeMinutes":10,"isMultiDayPrep":false,"multiDayPrepDays":0,"difficulty":"easy"},{"name":"Яблуко","servingSize":150,"servings":1,"emoji":"🍎","description":"Свіже яблуко.","ingredients":[{"name":"яблуко","quantity":150,"unit":"г","shoppingCategory":"fruits"}],"prepTimeMinutes":0,"cookTimeMinutes":0,"isMultiDayPrep":false,"multiDayPrepDays":0,"difficulty":"easy"}],"lunch":[{"name":"Тушковане куряче філе з овочами","servingSize":380,"servings":1,"emoji":"🍗","description":"Рецепт (1 порція):\\n1. Нарізати куряче філе кубиками 2–3 см, цибулю та перець — довільно.\\n2. Розігріти олію на середньому вогні, обсмажити філе 3–4 хв до золотавого кольору.\\n3. Додати овочі, посолити, поперчити, тушкувати 5 хв помішуючи.\\n4. Влити 2 ст.л. води, накрити кришкою та тушкувати ще 15 хв.\\nПодавати гарячим.","ingredients":[{"name":"куряче філе","quantity":150,"unit":"г","shoppingCategory":"meat"},{"name":"болгарський перець","quantity":100,"unit":"г","shoppingCategory":"vegetables"},{"name":"цибуля","quantity":60,"unit":"г","shoppingCategory":"vegetables"},{"name":"олія соняшникова","quantity":10,"unit":"мл","shoppingCategory":"oils"},{"name":"сіль, перець","quantity":2,"unit":"г","shoppingCategory":"spices"}],"prepTimeMinutes":8,"cookTimeMinutes":20,"isMultiDayPrep":false,"multiDayPrepDays":0,"difficulty":"medium"},{"name":"Листовий салат","servingSize":120,"servings":1,"emoji":"🥗","description":"Промити листя, нарвати на шматки, посолити та збризнути лимонним соком.","ingredients":[{"name":"мікс листових","quantity":100,"unit":"г","shoppingCategory":"vegetables"},{"name":"лимонний сік","quantity":10,"unit":"мл","shoppingCategory":"other"}],"prepTimeMinutes":3,"cookTimeMinutes":0,"isMultiDayPrep":false,"multiDayPrepDays":0,"difficulty":"easy"}],"dinner":[{"name":"Куряче філе на грилі","servingSize":170,"servings":1,"emoji":"🥩","description":"Рецепт:\\n1. Куряче філе відбити, натерти сіллю та паприкою.\\n2. Смажити на гриль-сковороді 4–5 хв з кожного боку до золотавої скоринки.\\nПодавати з кашею.","ingredients":[{"name":"куряче філе","quantity":150,"unit":"г","shoppingCategory":"meat"},{"name":"паприка, сіль","quantity":2,"unit":"г","shoppingCategory":"spices"},{"name":"олія","quantity":5,"unit":"мл","shoppingCategory":"oils"}],"prepTimeMinutes":3,"cookTimeMinutes":10,"isMultiDayPrep":false,"multiDayPrepDays":0,"difficulty":"easy"},{"name":"Гречана каша","servingSize":200,"servings":1,"emoji":"🌾","description":"Рецепт:\\n1. Промити гречку, залити водою 1:2.\\n2. Варити 15–20 хв до готовності, посолити.","ingredients":[{"name":"гречана крупа","quantity":80,"unit":"г","shoppingCategory":"grains"},{"name":"вода","quantity":160,"unit":"мл","shoppingCategory":"other"}],"prepTimeMinutes":2,"cookTimeMinutes":20,"isMultiDayPrep":true,"multiDayPrepDays":2,"difficulty":"easy"}],"snacks":[{"name":"Йогурт натуральний","servingSize":180,"servings":1,"emoji":"🥛","description":"Натуральний йогурт без добавок.","ingredients":[{"name":"йогурт натуральний","quantity":180,"unit":"г","shoppingCategory":"dairy"}],"prepTimeMinutes":0,"cookTimeMinutes":0,"isMultiDayPrep":false,"multiDayPrepDays":0,"difficulty":"easy"}]}}`;
 
 const ALT_SYSTEM_PROMPT = `${DIETITIAN_PERSONA}
 
@@ -149,22 +141,28 @@ async function callOpenAI(
 }
 
 function normalizeMeal(raw: Record<string, unknown>, defaults: Partial<AIMeal> = {}): AIMeal {
+  const ingredients = Array.isArray(raw.ingredients)
+    ? (raw.ingredients as Record<string, unknown>[]).map((i) => ({
+        name: String(i.name ?? ''),
+        quantity: Number(i.quantity ?? 0),
+        unit: String(i.unit ?? 'г'),
+        shoppingCategory: (i.shoppingCategory as AIMeal['ingredients'][0]['shoppingCategory']) ?? 'other',
+      }))
+    : [];
+
+  const computed = computeMealNutrition(ingredients);
+
   return {
     name: String(raw.name ?? ''),
-    calories: Number(raw.calories ?? 0),
-    protein: Number(raw.protein ?? 0),
-    fat: Number(raw.fat ?? 0),
-    carbs: Number(raw.carbs ?? 0),
+    calories: computed.calories,
+    protein: computed.protein,
+    fat: computed.fat,
+    carbs: computed.carbs,
     servingSize: Number(raw.servingSize ?? 200),
     servings: Number(raw.servings ?? 1),
     emoji: String(raw.emoji ?? '🍽️'),
     description: String(raw.description ?? ''),
-    ingredients: Array.isArray(raw.ingredients) ? (raw.ingredients as Record<string, unknown>[]).map((i) => ({
-      name: String(i.name ?? ''),
-      quantity: Number(i.quantity ?? 0),
-      unit: String(i.unit ?? 'г'),
-      shoppingCategory: (i.shoppingCategory as AIMeal['ingredients'][0]['shoppingCategory']) ?? 'other',
-    })) : [],
+    ingredients,
     prepTimeMinutes: Number(raw.prepTimeMinutes ?? 10),
     cookTimeMinutes: Number(raw.cookTimeMinutes ?? 10),
     isMultiDayPrep: Boolean(raw.isMultiDayPrep),
@@ -202,31 +200,128 @@ function normalizeArray(raw: unknown): AIMeal[] {
   return [normalizeMeal({})];
 }
 
-function mapDays(rawDays: Record<string, unknown>[], weekStartDate: Date): MenuDay[] {
-  return rawDays.slice(0, 7).map((d, i) => {
+// Scales all meals in a day so the daily calorie total matches targetCalories
+// within ±3%. Applies a uniform factor k to macros, servingSize, and ingredient
+// quantities — preserving the macro ratio and kcal/g consistency.
+function scaleDayToTarget(meals: DayMeals, targetCalories: number): void {
+  const allMeals = [...meals.breakfast, ...meals.lunch, ...meals.dinner, ...meals.snacks];
+  const dayTotal = allMeals.reduce((s, m) => s + m.calories * m.servings, 0);
+
+  if (dayTotal === 0) return;
+
+  let k = targetCalories / dayTotal;
+  if (Math.abs(k - 1) <= 0.03) return; // already within ±3%
+
+  if (k < 0.5 || k > 2.0) {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn(`[scaleDayToTarget] extreme scale factor k=${k.toFixed(2)}, clamping to [0.5, 2.0]`);
+    }
+    k = Math.max(0.5, Math.min(2.0, k));
+  }
+
+  for (const meal of allMeals) {
+    meal.calories   = Math.round(meal.calories   * k);
+    meal.protein    = Math.round(meal.protein    * k);
+    meal.fat        = Math.round(meal.fat        * k);
+    meal.carbs      = Math.round(meal.carbs      * k);
+    meal.servingSize = Math.round(meal.servingSize * k);
+    meal.ingredients = meal.ingredients.map((ing) => ({
+      ...ing,
+      quantity: ing.unit === 'шт'
+        ? Math.max(1, Math.round(ing.quantity * k))
+        : Math.max(5, Math.round(ing.quantity * k)),
+    }));
+  }
+}
+
+// When a day is still severely deficient after scaling (because many ingredients
+// were unknown → near-zero computed calories → k was clamped at 2.0), borrows
+// the lowest-calorie dish from another day's same meal slot — but only if
+// that donor has ≥2 dishes there and the current day has just 1. Priority:
+// adjacent days first, then any other day. The borrowed dish is a copy; the
+// donor is left unchanged. After borrowing, the day is re-scaled so the total
+// stays within ±3%.
+function adjustDeficientDays(days: MenuDay[], targetCalories: number): void {
+  const SEVERE_DEFICIT = 0.88; // still below 88% of target after scaling
+  const MEAL_SLOTS: (keyof DayMeals)[] = ['lunch', 'breakfast', 'dinner'];
+
+  for (let i = 0; i < days.length; i++) {
+    const day = days[i];
+    const allMeals = [...day.meals.breakfast, ...day.meals.lunch, ...day.meals.dinner, ...day.meals.snacks];
+    const dayTotal = allMeals.reduce((s, m) => s + m.calories * m.servings, 0);
+
+    if (dayTotal >= targetCalories * SEVERE_DEFICIT) continue;
+
+    let borrowed = false;
+
+    for (const slot of MEAL_SLOTS) {
+      if (day.meals[slot].length >= 2) continue; // already has 2 dishes here
+
+      // Search: adjacent days first, then all others
+      const orderedIdxs = [i - 1, i + 1, ...Array.from({ length: days.length }, (_, j) => j)]
+        .filter((j, pos, arr) => j >= 0 && j < days.length && j !== i && arr.indexOf(j) === pos);
+
+      for (const ni of orderedIdxs) {
+        const neighborSlot = days[ni].meals[slot];
+        if (neighborSlot.length < 2) continue;
+
+        // Copy the smallest-calorie dish (side / salad) from the donor
+        const sorted = [...neighborSlot].sort((a, b) => a.calories - b.calories);
+        day.meals[slot].push({
+          ...sorted[0],
+          isConsumed: false,
+          consumedAt: null,
+          consumedWeight: null,
+          rating: null,
+          ratedAt: null,
+        });
+        borrowed = true;
+        break;
+      }
+      if (borrowed) break;
+    }
+
+    if (borrowed) scaleDayToTarget(day.meals, targetCalories);
+  }
+}
+
+function mapDays(rawDays: Record<string, unknown>[], weekStartDate: Date, targetCalories: number): MenuDay[] {
+  // Pass 1 — normalize: parse LLM output + compute macros from ingredient lookup table
+  const days: MenuDay[] = rawDays.slice(0, 7).map((d, i) => {
     const rawMeals = (d.meals || {}) as Record<string, unknown>;
-    const breakfast = normalizeArray(rawMeals.breakfast);
-    const lunch = normalizeArray(rawMeals.lunch);
-    const dinner = normalizeArray(rawMeals.dinner);
-    const snacks = normalizeArray(rawMeals.snacks);
-
-    const allMeals = [...breakfast, ...lunch, ...dinner, ...snacks];
-    const totalCalories = allMeals.reduce((s, m) => s + m.calories * m.servings, 0);
-    const totalPrepMinutes = allMeals.reduce((s, m) => s + m.prepTimeMinutes + m.cookTimeMinutes, 0);
-
     const date = new Date(weekStartDate);
     date.setDate(weekStartDate.getDate() + i);
-
     return {
       date,
       dayLabel: String(d.dayLabel ?? DAY_LABELS[i]),
-      meals: { breakfast, lunch, dinner, snacks },
-      totalCalories,
-      totalPrepMinutes,
+      meals: {
+        breakfast: normalizeArray(rawMeals.breakfast),
+        lunch:     normalizeArray(rawMeals.lunch),
+        dinner:    normalizeArray(rawMeals.dinner),
+        snacks:    normalizeArray(rawMeals.snacks),
+      },
+      totalCalories: 0,
+      totalPrepMinutes: 0,
       isCompleted: false,
       completedAt: null,
     };
   });
+
+  // Pass 2 — scale each day to the calorie target (uniform k factor)
+  for (const day of days) scaleDayToTarget(day.meals, targetCalories);
+
+  // Pass 3 — for days still severely deficient (k was clamped), borrow a dish
+  //          from a neighboring day and re-scale
+  adjustDeficientDays(days, targetCalories);
+
+  // Pass 4 — compute final aggregate totals
+  for (const day of days) {
+    const allMeals = [...day.meals.breakfast, ...day.meals.lunch, ...day.meals.dinner, ...day.meals.snacks];
+    day.totalCalories    = allMeals.reduce((s, m) => s + m.calories    * m.servings, 0);
+    day.totalPrepMinutes = allMeals.reduce((s, m) => s + m.prepTimeMinutes + m.cookTimeMinutes, 0);
+  }
+
+  return days;
 }
 
 export async function generateMenuWithAI(
@@ -259,7 +354,7 @@ export async function generateMenuWithAI(
         throw new Error(`AI returned ${parsed.days?.length ?? 0} days, expected 7`);
       }
 
-      return { days: mapDays(parsed.days, weekStartDate), weekStartDate };
+      return { days: mapDays(parsed.days, weekStartDate, profile.goalCalories), weekStartDate };
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
       if (attempt < 2) await sleep(1000 * Math.pow(2, attempt));
@@ -285,9 +380,8 @@ export async function generateMealAlternatives(
     profile.allergies?.length ? `Алергії: ${profile.allergies.join(', ')}` : '',
   ].filter(Boolean).join('\n');
 
-  const prompt = `Запропонуй ${count} альтернативні страви на заміну "${meal.name}" (${meal.calories} ккал, ${meal.servingSize} г).
-Та сама категорія прийому їжі, калорійність у межах ±10% (${Math.round(meal.calories * 0.9)}–${Math.round(meal.calories * 1.1)} ккал).
-Для кожної страви вкажи servingSize (вагу порції в г); калорійність має відповідати цій вазі.
+  const prompt = `Запропонуй ${count} альтернативні страви на заміну "${meal.name}" (аналогічний розмір порції ~${meal.servingSize}г).
+Та сама категорія прийому їжі, аналогічна поживна цінність. Для кожної страви вкажи servingSize (вагу порції в г).
 Мова: українська. Реальні, різноманітні страви.
 ${constraints}
 Відповідь — ТІЛЬКИ валідний JSON: { "alternatives": [ <AIMeal>, ... ] } з ${count} елементами.`;
@@ -305,7 +399,27 @@ ${constraints}
       if (!Array.isArray(parsed.alternatives) || parsed.alternatives.length === 0) {
         throw new Error('AI returned no alternatives');
       }
-      return parsed.alternatives.slice(0, count).map((a) => normalizeMeal(a));
+      return parsed.alternatives.slice(0, count).map((a) => {
+        const alt = normalizeMeal(a);
+        // Scale alternative to match the original meal's calories (±5% guard).
+        if (meal.calories > 0 && alt.calories > 0) {
+          const k = meal.calories / alt.calories;
+          if (Math.abs(k - 1) > 0.05 && k >= 0.5 && k <= 2.0) {
+            alt.calories    = Math.round(alt.calories    * k);
+            alt.protein     = Math.round(alt.protein     * k);
+            alt.fat         = Math.round(alt.fat         * k);
+            alt.carbs       = Math.round(alt.carbs       * k);
+            alt.servingSize = Math.round(alt.servingSize * k);
+            alt.ingredients = alt.ingredients.map((ing) => ({
+              ...ing,
+              quantity: ing.unit === 'шт'
+                ? Math.max(1, Math.round(ing.quantity * k))
+                : Math.max(5, Math.round(ing.quantity * k)),
+            }));
+          }
+        }
+        return alt;
+      });
     } catch (err) {
       if (attempt >= 2) throw err instanceof Error ? err : new Error(String(err));
       await sleep(1000 * Math.pow(2, attempt));
