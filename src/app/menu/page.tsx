@@ -19,6 +19,7 @@ export default function MenuPage() {
   const [menu, setMenu] = useState<WeeklyMenu | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [generationsLeft, setGenerationsLeft] = useState<number | null>(null);
   const [profileMissing, setProfileMissing] = useState(false);
 
   const { streak } = useStreak();
@@ -51,79 +52,35 @@ export default function MenuPage() {
     }
   }, []);
 
-  // On mount: check if a generation was already in progress (e.g. user navigated away).
   useEffect(() => {
-    const init = async () => {
-      const [, , statusRes] = await Promise.all([
-        fetchMenu(),
-        fetchProfile(),
-        fetch('/api/menu/generate-status'),
-      ]);
-      if (statusRes.ok) {
-        const { status } = await statusRes.json() as { status: string };
-        if (status === 'pending') setState('generating');
-      }
-    };
-    void init();
+    void Promise.all([fetchMenu(), fetchProfile()]);
   }, [fetchMenu, fetchProfile]);
-
-  // Poll /api/menu/generate-status while in 'generating' state.
-  useEffect(() => {
-    if (state !== 'generating') return;
-
-    let cancelled = false;
-    let attempts = 0;
-    const MAX_ATTEMPTS = 30; // 30 × 3 s = 90 s max wait
-
-    const poll = async () => {
-      while (!cancelled && attempts < MAX_ATTEMPTS) {
-        await new Promise<void>((r) => setTimeout(r, 3000));
-        attempts++;
-        try {
-          const res = await fetch('/api/menu/generate-status');
-          if (!res.ok || cancelled) continue;
-          const { status, error } = await res.json() as { status: string; error?: string };
-          if (status === 'done' && !cancelled) {
-            await fetchMenu();
-            return;
-          }
-          if (status === 'error' && !cancelled) {
-            setError(error ?? 'Помилка генерації меню. Спробуйте ще раз.');
-            setState((prev) => (prev === 'generating' ? (menu ? 'has-menu' : 'no-menu') : prev));
-            return;
-          }
-        } catch { /* network blip — retry next tick */ }
-      }
-      if (!cancelled) {
-        setError('Генерація зайняла занадто довго. Спробуйте ще раз.');
-        setState(menu ? 'has-menu' : 'no-menu');
-      }
-    };
-
-    void poll();
-    return () => { cancelled = true; };
-  }, [state, fetchMenu, menu]);
 
   const handleGenerate = async () => {
     if (profileMissing) {
       setError('Будь ласка, заповніть профіль перед генерацією меню.');
       return;
     }
+    setState('generating');
     setError(null);
 
     try {
       const res = await fetch('/api/menu/generate', { method: 'POST' });
-      const data = await res.json() as { status?: string; error?: string; message?: string };
+      const data = await res.json() as { error?: string; message?: string; generationsLeft?: number };
 
       if (!res.ok) {
         setError(data.message ?? data.error ?? 'Помилка генерації');
+        setState(menu ? 'has-menu' : 'no-menu');
         return;
       }
 
-      // Job enqueued — switch to generating state; polling effect takes over.
-      setState('generating');
+      if (data.generationsLeft !== undefined) {
+        setGenerationsLeft(data.generationsLeft);
+      }
+      await fetchMenu();
     } catch {
       setError('Сталася помилка. Перевірте підключення до інтернету.');
+      setState(menu ? 'has-menu' : 'no-menu');
     }
   };
 
@@ -208,6 +165,12 @@ export default function MenuPage() {
               Згенерувати меню
             </button>
           </>
+        )}
+
+        {generationsLeft !== null && (
+          <p className="text-xs text-neutral-400 text-center">
+            Залишилось генерацій цього тижня: {generationsLeft}
+          </p>
         )}
 
         <div className="grid grid-cols-3 gap-3 max-w-xs w-full text-center mt-2">

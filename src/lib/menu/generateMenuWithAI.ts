@@ -328,9 +328,7 @@ export async function generateMenuWithAI(
   profile: UserProfile,
   highRatedMeals: string[] = [],
   lowRatedMeals: string[] = [],
-  options: { maxAttempts?: number } = {},
 ): Promise<{ days: MenuDay[]; weekStartDate: Date }> {
-  const maxAttempts = options.maxAttempts ?? 3;
   const prompt = buildPrompt(profile, highRatedMeals, lowRatedMeals);
   const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
     { role: 'system', content: SYSTEM_PROMPT },
@@ -342,7 +340,7 @@ export async function generateMenuWithAI(
 
   // Retry the whole attempt (call → parse → validate) so a truncated or
   // short response (the "menu only has one day" bug) triggers a fresh try.
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+  for (let attempt = 0; attempt < 3; attempt++) {
     try {
       const { content, finishReason } = await callOpenAI(messages, MAX_OUTPUT_TOKENS);
 

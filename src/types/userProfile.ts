@@ -25,9 +25,5 @@ export interface UserProfile extends OnboardingData {
   menuGenerationsThisWeek: number;
   lastGenerationWeekStart: Date | null;
 
-  // Async generation status (set by Inngest worker)
-  generationStatus?: 'pending' | 'done' | 'error';
-  generationError?: string | null;
-
   updatedAt: Date;
 }

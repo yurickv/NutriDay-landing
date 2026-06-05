@@ -1,6 +1,6 @@
 # NutriDay — План розробки: Тижневе меню, Список покупок та PWA
 
-> **Статус**: Фаза 1 ✅ | Фаза 2 ✅ | Фаза 3 ✅ | Фаза 4 ✅ | Фаза 5 ✅ | Власні страви ✅ | Масштабованість & безпека ✅ | Промпт v2 ✅ | UI Redesign ✅ | Async Queue ✅ | Фаза 6–7 — в черзі
+> **Статус**: Фаза 1 ✅ | Фаза 2 ✅ | Фаза 3 ✅ | Фаза 4 ✅ | Фаза 5 ✅ | Власні страви ✅ | Масштабованість & безпека ✅ | Промпт v2 ✅ | UI Redesign ✅ | Фаза 6–7 — в черзі
 > **Пріоритет**: Висока
 > **Ціль**: Побудувати персоналізований кабінет для схуднення з AI-меню, списком покупок та елементами залучення, оптимізований для мобільних (PWA).
 
@@ -49,14 +49,6 @@
   dietaryPreferences: string[],// ["без глютену", "вегетаріанське", ...]
   allergies: string[],         // ["горіхи", "молоко", ...]
   waterGoalMl: number,         // default 2000
-
-  // Generation limits
-  menuGenerationsThisWeek: number,
-  lastGenerationWeekStart: Date | null,
-
-  // Async generation status (виставляється Inngest-воркером)
-  generationStatus: 'pending' | 'done' | 'error' | undefined,
-  generationError: string | null | undefined,
 
   updatedAt: Date
 }
@@ -405,10 +397,8 @@ src/
 │   ├── profile/
 │   │   └── page.tsx
 │   └── api/
-│       ├── inngest/route.ts            ← Inngest serve handler (maxDuration=60)
 │       ├── menu/
-│       │   ├── generate/route.ts       ← POST → enqueue Inngest job (~200ms)
-│       │   ├── generate-status/route.ts← GET → { status: pending|done|error }
+│       │   ├── generate/route.ts       ← POST → OpenAI (rate limited)
 │       │   ├── weekly/route.ts         ← GET
 │       │   ├── meal/
 │       │   │   ├── swap/route.ts       ← POST (+ scaleMealToCalories + totalCalories recalc)
@@ -495,16 +485,10 @@ src/
     │   ├── generateMenuWithAI.ts       ← OpenAI + retry + rate limit
     │   ├── parseCustomFood.ts          ← gpt-4o-mini: назва+вага → per100 → БЖВ
     │   ├── shoppingListBuilder.ts      ← агрегація + quantityByDay + mergeShoppingItems (ре-синк)
-    │   ├── weekUtils.ts                ← getWeekStartMonday(), isSameWeek() (shared між route і воркером)
     │   └── streakUpdater.ts
     ├── analytics.ts                    ← track() функція
     └── push/
         └── sendPushNotification.ts
-│
-└── inngest/                            ← Inngest async queue
-    ├── client.ts                       ← Inngest({ id: 'nutri-day' })
-    └── functions/
-        └── generateMenu.ts             ← воркер: archive → AI → DB → shopping list
 ```
 
 ---
@@ -513,8 +497,7 @@ src/
 
 | Метод | Маршрут | Опис |
 |-------|---------|------|
-| POST | `/api/menu/generate` | Постановка задачі в Inngest-чергу (~200ms, не блокує) |
-| GET | `/api/menu/generate-status` | Статус генерації: `pending \| done \| error` |
+| POST | `/api/menu/generate` | Генерація меню (rate limited: 3/тиждень) |
 | GET | `/api/menu/weekly` | Поточний тиждень |
 | POST | `/api/menu/meal/swap` | Замінити страву (масштабує калорії + перераховує `totalCalories` дня) |
 | GET | `/api/menu/meal/alternatives` | Лінива генерація альтернатив для одної страви |
@@ -892,52 +875,6 @@ track('weekly_summary_viewed');
 - **Гігієна секретів** — `.env` у `.gitignore`, в історії git ніколи не було; витоку немає.
 - **Redis-кеш сесій** — свідомо відкладено (індекси вже зробили пошук швидким; повернутись
   при реальному навантаженні через Upstash/Vercel KV).
-
-### Фаза D — Async AI queue ✅ (2026-06-05)
-- **Inngest async queue** для `POST /api/menu/generate` — виправляє тайм-аут Vercel Hobby (10с).
-  HTTP-відповідь повертається за ~200ms; воркер виконується в фоні до 60с (`maxDuration=60`
-  на `/api/inngest`). UI поллить `GET /api/menu/generate-status` кожні 3с до `status='done'`.
-- **Захист від подвійного сабміту** — поле `generationStatus:'pending'` в `user_profiles`
-  блокує повторну відправку до завершення воркера.
-- **`src/inngest/client.ts`** + **`src/inngest/functions/generateMenu.ts`** + **`src/lib/menu/weekUtils.ts`**.
-- Env-змінні: `INNGEST_EVENT_KEY`, `INNGEST_SIGNING_KEY` (додати в Vercel Settings).
-- Локальна розробка: `npm run dev` запускає Next.js + Inngest dev server паралельно
-  через `concurrently`.
-
----
-
-## Майбутні milestones (не заплановані, активуються при потребі)
-
-### Milestone I — Redis rate-limit (при ~1K+ активних сесій/хв)
-Поточний `src/lib/rateLimit.ts` використовує MongoDB fixed-window counter — один
-`findOneAndUpdate` на кожен запит magic-link/subscription. Це ~10-15ms і з'їдає
-connection pool. Заміна — **Upstash Redis** (serverless HTTP API, без persistent з'єднань):
-
-```
-npm install @upstash/ratelimit @upstash/redis
-```
-
-Інтерфейс `checkRateLimit(key, limit, windowMs)` залишається незмінним — лише
-внутрішній механізм. Env-змінні: `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`.
-Додаткові бонуси: кешувати `tips` (незмінні 44 записи) + поточне меню юзера.
-
-**Коли**: коли rate-limit errors або connection pool exhaustion з'являться в логах.
-
-### Milestone II — Supabase auth (після 5K+ активних юзерів)
-Поточна auth через magic-link + MongoDB (`users`, `sessions`, `magic_links`) — коректна,
-але вся логіка ручна. При зростанні стає важко: безпека, compliance, OAuth-провайдери.
-
-**Supabase** замінює `users`, `sessions`, `magic_links`, `rate_limits` (auth-частину):
-- Вбудований magic-link (email OTP) — `supabase.auth.signInWithOtp()`
-- Row Level Security замість ручних guard-ів у кожному route
-- OAuth провайдери (Google, Apple) — без коду
-- Free tier: 50K MAU, 500MB DB
-
-`weekly_menus`, `shopping_lists` та решта залишаються на MongoDB Atlas
-(глибоко вкладені документи — SQL-антипаттерн).
-
-**Коли**: коли auth-ускладнення (OAuth, compliance, multi-device) відчуватиметься реально;
-орієнтовно після 5K+ активних юзерів або при першому B2B-запиті.
 
 ---
 
@@ -1343,78 +1280,3 @@ export function scaleMealToCalories(meal: AIMeal, targetCalories: number): void
 - `npx tsc --noEmit` → exit 0
 - Альтернативи тепер містять `ingredients` → `computeMealNutrition` дає ненульові калорії → `scaleMealToCalories` коректно масштабує
 - Після свопу `days[].totalCalories` у MongoDB відразу відповідає сумі страв дня
-
----
-
-## 🔧 Changelog — Async menu generation via Inngest queue (2026-06-05)
-
-### Проблема
-`POST /api/menu/generate` викликав OpenAI синхронно (15–25 с). Vercel Hobby має ліміт 10 с
-на serverless function → **504 Gateway Timeout** при кожній генерації. Навіть на Pro (60 с)
-цей підхід не масштабується при сотнях одночасних запитів.
-
-### Рішення
-**Inngest async job queue**: HTTP-відповідь повертається миттєво, воркер виконується в фоні.
-Vercel Hobby підтримує до 60 с через `maxDuration` — достатньо для генерації.
-
-### Нові файли
-
-| Файл | Роль |
-|------|------|
-| `src/inngest/client.ts` | `new Inngest({ id: 'nutri-day' })` |
-| `src/inngest/functions/generateMenu.ts` | Воркер: archive → `generateMenuWithAI` → MongoDB → shopping list → `generationStatus:'done'` |
-| `src/app/api/inngest/route.ts` | Inngest serve handler; `export const maxDuration = 60` |
-| `src/app/api/menu/generate-status/route.ts` | `GET` → `{ status, error }` з `user_profiles` |
-| `src/lib/menu/weekUtils.ts` | `getWeekStartMonday()`, `isSameWeek()` — shared між route і воркером |
-
-### Змінені файли
-
-#### `src/app/api/menu/generate/route.ts`
-- **До**: auth → load profile → rate-limit → AI (15-25с) → DB writes → відповідь
-- **Після**: auth → load profile → rate-limit → `user_profiles.generationStatus = 'pending'` → `inngest.send(event)` → `{ status: 'pending' }` (~200ms)
-- Захист від подвійного сабміту: якщо `generationStatus === 'pending'` → 200 з повідомленням
-- Збір `highRated`/`lowRated` залишився в route (читання, не запис)
-
-#### `src/app/menu/page.tsx`
-- **`handleGenerate`**: не чекає завершення генерації — одразу `setState('generating')`
-- **Новий `useEffect`** для polling: при `state === 'generating'` → `GET /api/menu/generate-status`
-  кожні 3с; на `done` → `fetchMenu()`; на `error` → показати помилку; max 30 спроб (90с)
-- **On mount**: також перевіряє `generate-status` — якщо `pending` (юзер повернувся на сторінку
-  під час генерації), відновлює `state='generating'` і продовжує polling
-- Видалено стан `generationsLeft` (більше не повертається з route)
-
-#### `src/types/userProfile.ts`
-```ts
-generationStatus?: 'pending' | 'done' | 'error';
-generationError?: string | null;
-```
-
-### Логіка воркера (`generateMenu.ts`)
-```
-1. Re-fetch profile з MongoDB
-2. Archive старе active меню ($set status:'archived', archivedAt)
-3. generateMenuWithAI(profile, highRated, lowRated)  ← може зайняти 15-25с
-4. insertOne новий weekly_menu
-5. buildShoppingList → deleteMany + insertOne shopping_list
-6. updateOne user_profiles: generationsThisWeek+1, generationStatus:'done'
-   On catch: generationStatus:'error', generationError: message; throw (logується Inngest)
-```
-
-`retries: 0` — повторна спроба Inngest заархівувала б нове меню з першої спроби.
-`generateMenuWithAI` має власний retry (3 спроби з exponential backoff).
-
-### Налаштування середовища
-```
-# .env.local
-INNGEST_EVENT_KEY=...       # з Inngest dashboard → Manage → Event keys
-INNGEST_SIGNING_KEY=...     # з Inngest dashboard → Manage → Signing keys
-```
-
-Локальна розробка: `npm run dev` запускає Next.js + `inngest-cli dev` через `concurrently`.
-Production: ті самі змінні в Vercel Settings → Environment Variables.
-
-### Перевірка
-- `npx tsc --noEmit` → exit 0
-- `POST /api/menu/generate` → відповідь `{ status: 'pending' }` за ~200ms
-- UI показує `GenerateMenuLoader` і поллить кожні 3с
-- Через 15-25с меню з'являється в `/api/menu/weekly` → UI переходить у `has-menu`
