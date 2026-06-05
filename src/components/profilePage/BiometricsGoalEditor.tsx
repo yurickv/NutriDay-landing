@@ -176,7 +176,7 @@ export function BiometricsGoalEditor({
   // First-time setup: always-open orange card (matches previous inline form).
   if (!isEdit) {
     return (
-      <div className="mx-4 mt-4 rounded-2xl border border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950/30 p-5">
+      <div className="mx-4 mt-4 rounded-2xl border border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950/30 shadow-[0_2px_8px_rgba(0,0,0,0.08)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.07),_0_6px_24px_rgba(120,120,120,0.25)] p-5">
         {formBody}
       </div>
     );
@@ -184,20 +184,45 @@ export function BiometricsGoalEditor({
 
   // Existing profile: collapsible edit section.
   return (
-    <section className="px-4 pb-4">
+    <section className="mx-4 mt-4 mb-4">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between py-3"
+        className="w-full flex items-center justify-between rounded-2xl border border-orange-200 dark:border-orange-800/60 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/20 shadow-[0_2px_8px_rgba(0,0,0,0.08)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.07),_0_6px_24px_rgba(120,120,120,0.25)] px-4 py-3.5 text-left"
       >
-        <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-          <span>⚙️</span> Мої дані та ціль
-        </h2>
-        <ChevronDown
-          size={18}
-          className={`text-neutral-400 transition-transform ${open ? 'rotate-180' : ''}`}
-        />
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center shrink-0">
+            <span className="text-xl">⚙️</span>
+          </div>
+          <div>
+            <p className="text-sm font-bold text-neutral-900 dark:text-neutral-100">Мої дані та ціль</p>
+            {!open && (
+              <p className="text-xs text-neutral-500 mt-0.5">
+                {[
+                  profile?.weightKg && `${profile.weightKg} кг`,
+                  profile?.heightCm && `${profile.heightCm} см`,
+                  profile?.ageYears && `${profile.ageYears} р.`,
+                ].filter(Boolean).join(' · ') || 'Натисніть щоб переглянути'}
+              </p>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {!open && (
+            <span className="text-xs font-medium text-orange-600 dark:text-orange-400">
+              Змінити
+            </span>
+          )}
+          <ChevronDown
+            size={18}
+            className={`text-neutral-400 transition-transform ${open ? 'rotate-180' : ''}`}
+          />
+        </div>
       </button>
-      {open && <div className="pt-1">{formBody}</div>}
+      {open && (
+        <div className="mt-2 rounded-2xl border border-orange-100 dark:border-orange-900/30 bg-white dark:bg-neutral-900 shadow-[0_2px_8px_rgba(0,0,0,0.08)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.07),_0_6px_24px_rgba(120,120,120,0.25)] p-4">
+          {formBody}
+        </div>
+      )}
     </section>
   );
 }

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { TagInput } from '@/components/common/TagInput';
 import { UserProfile } from '@/types/userProfile';
-import { ChevronDown, ChevronUp, Save } from 'lucide-react';
+import { ChevronDown, Save } from 'lucide-react';
 
 const DIETARY_OPTIONS = [
   { value: 'вегетаріанське', label: '🥗 Вегетаріанське' },
@@ -68,29 +68,40 @@ export function FoodPreferencesEditor({ profile, onSaved }: FoodPreferencesEdito
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
-        className="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl border border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-left"
+        className="w-full flex items-center justify-between rounded-2xl border border-green-200 dark:border-green-800/60 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/20 shadow-[0_2px_8px_rgba(0,0,0,0.08)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.07),_0_6px_24px_rgba(120,120,120,0.25)] px-4 py-3.5 text-left"
       >
         <div className="flex items-center gap-3">
-          <span className="text-lg">🥦</span>
+          <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center shrink-0">
+            <span className="text-xl">🥦</span>
+          </div>
           <div>
-            <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Харчові вподобання</p>
-            {!expanded && (dietaryPreferences.length > 0 || favoriteFoods.length > 0) && (
-              <p className="text-xs text-neutral-400 mt-0.5 truncate max-w-[200px]">
+            <p className="text-sm font-bold text-neutral-900 dark:text-neutral-100">Мої вподобання</p>
+            {!expanded && (dietaryPreferences.length > 0 || favoriteFoods.length > 0 || allergies.length > 0) && (
+              <p className="text-xs text-neutral-500 mt-0.5 truncate max-w-[180px]">
                 {[...dietaryPreferences, ...favoriteFoods].slice(0, 3).join(', ')}
-                {dietaryPreferences.length + favoriteFoods.length > 3 ? '...' : ''}
+                {dietaryPreferences.length + favoriteFoods.length > 3 ? '…' : ''}
               </p>
+            )}
+            {!expanded && dietaryPreferences.length === 0 && favoriteFoods.length === 0 && allergies.length === 0 && (
+              <p className="text-xs text-neutral-400 mt-0.5">Налаштуйте для кращого меню</p>
             )}
           </div>
         </div>
-        {expanded ? (
-          <ChevronUp size={16} className="text-neutral-400 shrink-0" />
-        ) : (
-          <ChevronDown size={16} className="text-neutral-400 shrink-0" />
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          {!expanded && (
+            <span className="text-xs font-medium text-green-600 dark:text-green-400">
+              Змінити
+            </span>
+          )}
+          <ChevronDown
+            size={16}
+            className={`text-neutral-400 transition-transform ${expanded ? 'rotate-180' : ''}`}
+          />
+        </div>
       </button>
 
       {expanded && (
-        <div className="mt-2 px-4 pt-4 pb-5 rounded-2xl border border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-900 space-y-5">
+        <div className="mt-2 px-4 pt-4 pb-5 rounded-2xl border border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-[0_2px_8px_rgba(0,0,0,0.08)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.07),_0_6px_24px_rgba(120,120,120,0.25)] space-y-5">
 
           {/* Dietary preferences */}
           <div>
