@@ -7,6 +7,8 @@ import { UserProfile } from '@/types/userProfile';
 import { WeeklyMenu } from '@/types/weeklyMenu';
 import { AIMeal } from '@/types/meals';
 
+export const maxDuration = 60; // Vercel Hobby max; prevents 10s default timeout on AI call
+
 const MAX_GENERATIONS_PER_WEEK = 999; // temporarily unlimited for prompt testing
 
 function getWeekStartMonday(): Date {
