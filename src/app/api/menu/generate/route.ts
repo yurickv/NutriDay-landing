@@ -70,6 +70,15 @@ export async function POST() {
     }
   }
 
+  // Archive the old active menu here (fast, no timeout risk) so the worker
+  // only needs to generate + save without touching the old menu.
+  if (lastMenu) {
+    await db.collection('weekly_menus').updateOne(
+      { _id: (lastMenu as typeof lastMenu & { _id: import('mongodb').ObjectId })._id },
+      { $set: { status: 'archived', archivedAt: new Date(), updatedAt: new Date() } },
+    );
+  }
+
   // Mark generation as pending (prevents double-submit) and enqueue the job.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await (db.collection('user_profiles') as any).updateOne(

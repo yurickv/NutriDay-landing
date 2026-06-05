@@ -1,11 +1,9 @@
-import { ObjectId } from 'mongodb';
 import { inngest } from '../client';
 import { getDb } from '@/lib/db';
 import { generateMenuWithAI } from '@/lib/menu/generateMenuWithAI';
 import { buildShoppingList } from '@/lib/menu/shoppingListBuilder';
 import { getWeekStartMonday, isSameWeek } from '@/lib/menu/weekUtils';
 import { UserProfile } from '@/types/userProfile';
-import { WeeklyMenu } from '@/types/weeklyMenu';
 
 type GenerateMenuEvent = {
   data: {
@@ -15,10 +13,12 @@ type GenerateMenuEvent = {
   };
 };
 
-// retries: 0 — generateMenuWithAI already retries internally (3 attempts).
-// A second Inngest retry would archive the freshly-created menu from attempt 1.
+// retries: 1 — archive already happened in the HTTP route, so retrying here is safe.
+// maxAttempts: 1 passed to generateMenuWithAI so each Inngest invocation makes a single
+// OpenAI call (~20-25s) and stays well within Vercel Hobby's 60s maxDuration limit.
+// Internal retries (3 attempts × 20s = up to 75s) are what caused FUNCTION_INVOCATION_TIMEOUT.
 export const generateMenuFn = inngest.createFunction(
-  { id: 'generate-weekly-menu', retries: 0, triggers: [{ event: 'menu/generate.requested' }] },
+  { id: 'generate-weekly-menu', retries: 1, triggers: [{ event: 'menu/generate.requested' }] },
   async ({ event }: { event: GenerateMenuEvent }) => {
     const { userEmail, highRated, lowRated } = event.data;
     const db = await getDb();
@@ -29,19 +29,14 @@ export const generateMenuFn = inngest.createFunction(
         .findOne({ userEmail });
       if (!profile) throw new Error('Profile not found');
 
-      // Archive the old active menu so the new one becomes the single active one.
-      const lastMenu = await db
-        .collection<WeeklyMenu & { _id: ObjectId }>('weekly_menus')
-        .findOne({ userEmail, status: 'active' }, { sort: { createdAt: -1 } });
-
-      if (lastMenu) {
-        await db.collection('weekly_menus').updateOne(
-          { _id: lastMenu._id },
-          { $set: { status: 'archived', archivedAt: new Date(), updatedAt: new Date() } },
-        );
-      }
-
-      const { days, weekStartDate } = await generateMenuWithAI(profile, highRated, lowRated);
+      // Archive already done in the HTTP route before enqueuing.
+      // Single OpenAI attempt — Inngest retries the whole function if it fails.
+      const { days, weekStartDate } = await generateMenuWithAI(
+        profile,
+        highRated,
+        lowRated,
+        { maxAttempts: 1 },
+      );
 
       const now = new Date();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
