@@ -3,6 +3,7 @@ import AdvantagesSection from "@/components/MainPage/section-advanteges/SectionA
 import ExampleWorkSection from "@/components/MainPage/section-exampleWork/ExampleWorkSection";
 import HeroSection from "@/components/MainPage/section-hero/HeroSection";
 import ReviewsSection from "@/components/MainPage/section-reviews/SectionReviews";
+import Footer from "@/components/Footer";
 
 export default function Home() {
   return (
@@ -14,7 +15,7 @@ export default function Home() {
         <ExampleWorkSection />
         <ReviewsSection />
       </main>
-      <footer className=''></footer>
+      <Footer />
     </div>
   );
 }
