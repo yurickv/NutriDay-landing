@@ -1,0 +1,385 @@
+diff --git a/src/lib/menu/generateMenuWithAI.ts b/src/lib/menu/generateMenuWithAI.ts
+index eea4a49..337d262 100644
+--- a/src/lib/menu/generateMenuWithAI.ts
++++ b/src/lib/menu/generateMenuWithAI.ts
+@@ -1,10 +1,20 @@
+ import OpenAI from 'openai';
+ import { UserProfile } from '@/types/userProfile';
+-import { AIMeal, DayMeals } from '@/types/meals';
++import { AIMeal } from '@/types/meals';
+ import { MenuDay } from '@/types/weeklyMenu';
+ 
+ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+ 
++// Model for menu generation. Days are generated in PARALLEL (one call per day),
++// so the wall-clock ≈ a single day's latency regardless of the model's
++// throughput — that, not the model, is the main speed lever.
++const MENU_MODEL = 'gpt-4.1-mini';
++
++// gpt-5 / o-series are reasoning models: the Chat Completions API wants
++// `max_completion_tokens` (not `max_tokens`) and rejects a custom temperature;
++// `reasoning_effort: 'minimal'` keeps latency down for a structured task.
++const IS_REASONING_MODEL = /^(gpt-5|o\d)/.test(MENU_MODEL);
++
+ const SEASON_HINTS: Record<string, string> = {
+   winter: 'буряк, морква, капуста, яблука, хурма, броколі',
+   spring: 'редиска, шпинат, зелена цибуля, кріп, салат',
+@@ -27,22 +37,55 @@ function getMonthName(month: number): string {
+   return names[month];
+ }
+ 
+-function calcMacros(goalCalories: number, sex: string) {
++function calcMacros(goalCalories: number) {
+   const protein = Math.round(goalCalories * 0.3 / 4);
+   const fat = Math.round(goalCalories * 0.25 / 9);
+   const carbs = Math.round(goalCalories * 0.45 / 4);
+   return { protein, fat, carbs };
+ }
+ 
+-function buildPrompt(profile: UserProfile, highRated: string[], lowRated: string[]): string {
++// Authoritative Понеділок→Неділя labels, indexed 0..6. The day label/date of a
++// generated day is taken from its target index (not from the model's output),
++// which also sidesteps apostrophe variants in "П'ятниця".
++export const DAY_LABELS = ['Понеділок', 'Вівторок', 'Середа', 'Четвер', 'П\'ятниця', 'Субота', 'Неділя'];
++
++// Per-day style nudge so concurrently-generated days differ (parallel calls
++// can't see each other). Style-based, not protein-based, to avoid clashing with
++// dietary preferences/allergies in the prompt.
++const DAY_VARIETY_HINTS = [
++  'Стиль дня: класичні домашні страви.',
++  'Стиль дня: легкі та свіжі страви (більше овочів і салатів).',
++  'Стиль дня: ситні зігрівальні страви (запіканки, супи, тушковане).',
++  'Стиль дня: швидкі прості страви з мінімумом готування.',
++];
++
++export function getWeekStart(): Date {
++  const now = new Date();
++  const day = now.getDay();
++  const diff = day === 0 ? -6 : 1 - day;
++  const monday = new Date(now);
++  monday.setDate(now.getDate() + diff);
++  monday.setHours(0, 0, 0, 0);
++  return monday;
++}
++
++function buildUserPrompt(
++  profile: UserProfile,
++  highRated: string[],
++  lowRated: string[],
++  dayLabels: string[],
++  avoidMeals: string[],
++  extraHint: string,
++): string {
+   const now = new Date();
+   const month = now.getMonth() + 1;
+   const monthName = getMonthName(month);
+   const season = getSeason(month);
+   const seasonalHint = SEASON_HINTS[season];
+-  const macros = calcMacros(profile.goalCalories, profile.sex || 'female');
++  const macros = calcMacros(profile.goalCalories);
++  const dayList = dayLabels.join(', ');
+ 
+-  return `Склади 7-денне меню (сніданок, обід, вечеря, 1 перекус) для:
++  return `Склади меню (сніданок, обід, вечеря, 1 перекус) на такі дні: ${dayList}.
+ Стать: ${profile.sex === 'male' ? 'чоловік' : 'жінка'}, Вік: ${profile.ageYears}, Вага: ${profile.weightKg}кг, Зріст: ${profile.heightCm}см
+ Цільова калорійність раціону: ${profile.goalCalories} ккал/день — дотримуйся ТОЧНО (підлаштовуй вагу порцій, щоб сумарна калорійність дня = цьому значенню)
+ БЖВ цілі: ~${macros.protein}г білків / ~${macros.fat}г жирів / ~${macros.carbs}г вуглеводів
+@@ -54,10 +97,13 @@ ${profile.dietaryPreferences?.length ? `Обмеження: ${profile.dietaryPre
+ ${profile.allergies?.length ? `Алергії: ${profile.allergies.join(', ')}` : ''}
+ ${highRated.length ? `Страви з хорошим рейтингом (повтори подібні): ${highRated.join(', ')}` : ''}
+ ${lowRated.length ? `Страви з поганим рейтингом (не повторювати): ${lowRated.join(', ')}` : ''}
++${avoidMeals.length ? `Ці страви вже заплановані на цей тиждень — НЕ повторюй їх, дай інші: ${avoidMeals.join(', ')}` : ''}
++${extraHint}
+ Якщо страва готується на 2-3 дні — позначити isMultiDayPrep: true, multiDayPrepDays: N.
+ Для кожної страви обов'язково вкажи servingSize (вагу однієї порції в грамах); калорійність і БЖВ мають відповідати саме цій вазі, а сума ваг інгредієнтів ≈ servingSize.
++Для обідів, вечер і складних страв (3+ інгредієнти) поле "description" — це ПОКРОКОВА ТЕХНОЛОГІЯ приготування, а не опис страви: 4–7 пронумерованих кроків (кожен з нового рядка через \n) — нарізка/підготовка, послідовність дій, спосіб (смажити/варити/тушкувати/запікати), вогонь або температура, час кожного кроку, коли що додавати, як визначити готовність. Пиши конкретні час і температуру.
+ 
+-ВАЖЛИВО: Поверни РІВНО 7 днів (Понеділок–Неділя). Відповідь — ТІЛЬКИ валідний JSON без markdown-обгортки та пояснень. Суворо дотримуйся наданої схеми.`;
++ВАЖЛИВО: Поверни саме ці дні: ${dayList} (рівно ${dayLabels.length}). Відповідь — ТІЛЬКИ валідний JSON без markdown-обгортки та пояснень. Суворо дотримуйся наданої схеми.`;
+ }
+ 
+ // Persona + nutrition rules, shared by the weekly-menu and meal-alternatives calls.
+@@ -67,7 +113,7 @@ const DIETITIAN_PERSONA = `You are an AI dietitian. Build a healthy, balanced me
+ CALORIES (most important):
+ - The user message states the target daily calorie intake. Hit that number for the whole day.
+ - Distribute calories so that about 80% fall in the first half of the day (breakfast + lunch + daytime snack) and about 20% on dinner.
+-- Strictly respect the daily calorie target, do not drift. If a draft day totals too many calories, redo the SAME day with smaller portions; if too few, increase the portions — until the day's total matches the target.
++- Strictly respect the daily calorie target, do not drift. If a draft day totals too many calories, redo it with smaller portions; if too few, increase the portions — until the day's total matches the target.
+ - Never plan below 1200 kcal/day.
+ 
+ PORTION WEIGHT (critical for calorie accuracy):
+@@ -83,21 +129,29 @@ NUTRITION:
+ DISHES:
+ - Every dish "name" must be 30 characters or fewer.
+ - Give each dish a fitting food "emoji".
+-- For complex lunch and dinner dishes (3+ ingredients) put a clear, step-by-step chef-style recipe in "description"; for simple dishes a short description is enough.
++
++RECIPE — the "description" field (shown to the user under the heading "Рецепт"):
++- "description" MUST be the COOKING METHOD — how to actually make the dish — NOT a description of what the dish is or how it tastes.
++- For lunch, dinner and ANY dish with 3+ ingredients: write a real step-by-step recipe with the actual cooking TECHNOLOGY, in order: prep (how to cut/marinate), the sequence of actions, the method (fry / boil / stew / bake / steam), heat level or oven temperature, the time of each step, when to add each ingredient, and how to tell it is done. Use 4–7 numbered steps.
++- Format as ONE string, each step on its own line, numbered with real newline characters: "1. …\n2. …\n3. …".
++- Be concrete with times, temperatures and amounts (e.g. "обсмажуй 5–7 хв на середньому вогні", "запікай 25 хв при 180°C"); never write only a vague "готувати до готовності".
++- Example of a GOOD description: "1. Куряче філе (300 г) наріж кубиками ~2 см, посоли і поперчи.\n2. Розігрій сковороду з 1 ст. л. олії на середньому вогні, обсмаж філе 5–6 хв до золотистої скоринки.\n3. Додай нарізану цибулю, смаж ще 3 хв, помішуючи.\n4. Влий 100 мл вершків, туши на малому вогні 7 хв до загуснення.\n5. Подавай гарячою, посипавши зеленню."
++- For simple dishes (breakfast, snack, ≤2 ingredients) 1–3 short sentences are enough.
+ 
+ OUTPUT LANGUAGE:
+ - ALL text values (name, description, ingredient name) MUST be written in Ukrainian.
+ - Do not ask the user questions and do not add alternatives, notes or commentary outside the JSON.`;
+ 
+-const SYSTEM_PROMPT = `${DIETITIAN_PERSONA}
++function buildSystemPrompt(dayLabels: string[]): string {
++  return `${DIETITIAN_PERSONA}
+ 
+-WEEKLY MENU TASK:
+-- Always return EXACTLY 7 days of the week (Понеділок–Неділя), each with breakfast, lunch, dinner and 1 snack.
++MENU TASK:
++- Return EXACTLY these ${dayLabels.length} day(s), in this order: ${dayLabels.join(', ')}. Each day has breakfast, lunch, dinner and 1 snack.
+ - Reply with ONLY valid JSON, no markdown wrapper and no explanations, exactly matching this schema:
+ {
+   "days": [
+     {
+-      "dayLabel": "Понеділок",
++      "dayLabel": "${dayLabels[0]}",
+       "meals": {
+         "breakfast": { "name": "...", "calories": 0, "protein": 0, "fat": 0, "carbs": 0, "servingSize": 0, "servings": 1, "emoji": "🥣", "description": "...", "ingredients": [{"name": "...", "quantity": 0, "unit": "г", "shoppingCategory": "grains"}], "prepTimeMinutes": 0, "cookTimeMinutes": 0, "isMultiDayPrep": false, "multiDayPrepDays": 0, "difficulty": "easy" },
+         "lunch": { ...same structure... },
+@@ -109,6 +163,7 @@ WEEKLY MENU TASK:
+ }
+ shoppingCategory values: vegetables|fruits|meat|fish|dairy|grains|legumes|oils|spices|other
+ difficulty values: easy|medium|hard`;
++}
+ 
+ const ALT_SYSTEM_PROMPT = `${DIETITIAN_PERSONA}
+ 
+@@ -119,26 +174,39 @@ async function sleep(ms: number) {
+   return new Promise((r) => setTimeout(r, ms));
+ }
+ 
+-// gpt-4o supports up to 16384 output tokens. A full 7-day menu (4 meals/day with
+-// Ukrainian recipes) needs the headroom — 8000 truncated the JSON and the model
+-// silently returned fewer days.
+-const MAX_OUTPUT_TOKENS = 16384;
+-
+ async function callOpenAI(
+   messages: OpenAI.Chat.ChatCompletionMessageParam[],
+   maxTokens: number,
+-): Promise<{ content: string; finishReason: string | null }> {
+-  const response = await openai.chat.completions.create({
+-    model: 'gpt-4o',
+-    messages,
+-    max_tokens: maxTokens,
+-    temperature: 0.7,
+-    response_format: { type: 'json_object' },
+-  });
++): Promise<{ content: string; finishReason: string | null; completionTokens: number }> {
++  // Reasoning models (gpt-5 / o-series) use max_completion_tokens and no custom
++  // temperature; classic models (gpt-4o…) use max_tokens + temperature. Built as
++  // a loose object so an unfamiliar new-model param contract doesn't fight tsc.
++  // eslint-disable-next-line @typescript-eslint/no-explicit-any
++  const params: any = IS_REASONING_MODEL
++    ? {
++        model: MENU_MODEL,
++        messages,
++        max_completion_tokens: maxTokens,
++        // 'none' = no reasoning (fastest) — best for this structured JSON task.
++        // Note: supported values differ by model (gpt-5-nano wants 'minimal';
++        // gpt-5.4-nano wants 'none'/'low'/…). Adjust if you switch the model.
++        reasoning_effort: 'none',
++        response_format: { type: 'json_object' },
++      }
++    : {
++        model: MENU_MODEL,
++        messages,
++        max_tokens: maxTokens,
++        temperature: 0.7,
++        response_format: { type: 'json_object' },
++      };
++
++  const response = (await openai.chat.completions.create(params)) as OpenAI.Chat.ChatCompletion;
+   const choice = response.choices[0];
+   return {
+     content: choice.message.content ?? '',
+     finishReason: choice.finish_reason ?? null,
++    completionTokens: response.usage?.completion_tokens ?? 0,
+   };
+ }
+ 
+@@ -178,91 +246,118 @@ function normalizeMeal(raw: Record<string, unknown>, defaults: Partial<AIMeal> =
+   };
+ }
+ 
+-const DAY_LABELS = ['Понеділок', 'Вівторок', 'Середа', 'Четвер', 'П\'ятниця', 'Субота', 'Неділя'];
++// Build a single MenuDay from a model day object, with date/label taken from the
++// target weekday index (0=Пн…6=Нд) — robust to partial weeks and LLM label drift.
++function toMenuDay(rawDay: Record<string, unknown>, weekStartDate: Date, weekIdx: number): MenuDay {
++  const rawMeals = (rawDay.meals || {}) as Record<string, unknown>;
++  const breakfast = normalizeMeal((rawMeals.breakfast || {}) as Record<string, unknown>);
++  const lunch = normalizeMeal((rawMeals.lunch || {}) as Record<string, unknown>);
++  const dinner = normalizeMeal((rawMeals.dinner || {}) as Record<string, unknown>);
++  const snacks: AIMeal[] = Array.isArray(rawMeals.snacks)
++    ? (rawMeals.snacks as Record<string, unknown>[]).map((s) => normalizeMeal(s))
++    : [normalizeMeal((rawMeals.snacks || {}) as Record<string, unknown>)];
+ 
+-function getWeekStart(): Date {
+-  const now = new Date();
+-  const day = now.getDay();
+-  const diff = day === 0 ? -6 : 1 - day;
+-  const monday = new Date(now);
+-  monday.setDate(now.getDate() + diff);
+-  monday.setHours(0, 0, 0, 0);
+-  return monday;
+-}
++  const allMeals = [breakfast, lunch, dinner, ...snacks];
++  const totalCalories = allMeals.reduce((s, m) => s + m.calories * m.servings, 0);
++  const totalPrepMinutes = allMeals.reduce((s, m) => s + m.prepTimeMinutes + m.cookTimeMinutes, 0);
+ 
+-function mapDays(rawDays: Record<string, unknown>[], weekStartDate: Date): MenuDay[] {
+-  return rawDays.slice(0, 7).map((d, i) => {
+-    const rawMeals = (d.meals || {}) as Record<string, unknown>;
+-    const breakfast = normalizeMeal((rawMeals.breakfast || {}) as Record<string, unknown>);
+-    const lunch = normalizeMeal((rawMeals.lunch || {}) as Record<string, unknown>);
+-    const dinner = normalizeMeal((rawMeals.dinner || {}) as Record<string, unknown>);
+-    const snacks: AIMeal[] = Array.isArray(rawMeals.snacks)
+-      ? (rawMeals.snacks as Record<string, unknown>[]).map((s) => normalizeMeal(s))
+-      : [normalizeMeal((rawMeals.snacks || {}) as Record<string, unknown>)];
+-
+-    const allMeals = [breakfast, lunch, dinner, ...snacks];
+-    const totalCalories = allMeals.reduce((s, m) => s + m.calories * m.servings, 0);
+-    const totalPrepMinutes = allMeals.reduce((s, m) => s + m.prepTimeMinutes + m.cookTimeMinutes, 0);
+-
+-    const date = new Date(weekStartDate);
+-    date.setDate(weekStartDate.getDate() + i);
+-
+-    return {
+-      date,
+-      dayLabel: String(d.dayLabel ?? DAY_LABELS[i]),
+-      meals: { breakfast, lunch, dinner, snacks },
+-      totalCalories,
+-      totalPrepMinutes,
+-      isCompleted: false,
+-      completedAt: null,
+-    };
+-  });
++  const date = new Date(weekStartDate);
++  date.setDate(weekStartDate.getDate() + weekIdx);
++
++  return {
++    date,
++    dayLabel: DAY_LABELS[weekIdx],
++    meals: { breakfast, lunch, dinner, snacks },
++    totalCalories,
++    totalPrepMinutes,
++    isCompleted: false,
++    completedAt: null,
++  };
+ }
+ 
+-export async function generateMenuWithAI(
++// One OpenAI call = one day. Retries on its own so a transient failure of one
++// day doesn't redo the others. Logs per-attempt timing + throughput (TEMP).
++async function generateOneDay(
+   profile: UserProfile,
+-  highRatedMeals: string[] = [],
+-  lowRatedMeals: string[] = [],
+-): Promise<{ days: MenuDay[]; weekStartDate: Date }> {
+-  const prompt = buildPrompt(profile, highRatedMeals, lowRatedMeals);
++  highRatedMeals: string[],
++  lowRatedMeals: string[],
++  dayIndex: number,
++  weekStartDate: Date,
++  avoidMeals: string[],
++  varietyHint: string,
++): Promise<MenuDay> {
++  const dayLabel = DAY_LABELS[dayIndex];
+   const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
+-    { role: 'system', content: SYSTEM_PROMPT },
+-    { role: 'user', content: prompt },
++    { role: 'system', content: buildSystemPrompt([dayLabel]) },
++    { role: 'user', content: buildUserPrompt(profile, highRatedMeals, lowRatedMeals, [dayLabel], avoidMeals, varietyHint) },
+   ];
++  // 1 day ≈ ~1300 output tokens; detailed step-by-step recipes push this higher,
++  // so keep a comfortable cap to avoid truncation → retry.
++  const maxTokens = 5000;
+ 
+-  const weekStartDate = getWeekStart();
+   let lastError: Error | null = null;
+-
+-  // Retry the whole attempt (call → parse → validate) so a truncated or
+-  // short response (the "menu only has one day" bug) triggers a fresh try.
+   for (let attempt = 0; attempt < 3; attempt++) {
++    const tAttempt = performance.now();
+     try {
+-      const { content, finishReason } = await callOpenAI(messages, MAX_OUTPUT_TOKENS);
++      const { content, finishReason, completionTokens } = await callOpenAI(messages, maxTokens);
++      const ms = Math.round(performance.now() - tAttempt);
++      const tps = ms > 0 ? Math.round((completionTokens / ms) * 1000) : 0;
++      // TEMP instrumentation — remove after confirming gpt-5-mini latency.
++      console.log(`[generateOneDay] model=${MENU_MODEL} day=${dayLabel} attempt=${attempt} ms=${ms} finish=${finishReason} completionTokens=${completionTokens} (${tps} tok/s)`);
+ 
+-      if (finishReason === 'length') {
+-        throw new Error('AI response truncated (hit token limit) — incomplete menu');
+-      }
++      if (finishReason === 'length') throw new Error('AI response truncated (hit token limit)');
+ 
+       const parsed = JSON.parse(content) as { days?: Record<string, unknown>[] };
++      const day = parsed.days?.[0];
++      if (!day) throw new Error('AI returned no day');
+ 
+-      if (!Array.isArray(parsed.days) || parsed.days.length < 7) {
+-        throw new Error(`AI returned ${parsed.days?.length ?? 0} days, expected 7`);
+-      }
+-
+-      return { days: mapDays(parsed.days, weekStartDate), weekStartDate };
++      return toMenuDay(day, weekStartDate, dayIndex);
+     } catch (err) {
++      console.log(`[generateOneDay] day=${dayLabel} attempt ${attempt} FAILED after ${Math.round(performance.now() - tAttempt)}ms: ${err instanceof Error ? err.message : String(err)}`);
+       lastError = err instanceof Error ? err : new Error(String(err));
+       if (attempt < 2) await sleep(1000 * Math.pow(2, attempt));
+     }
+   }
+ 
+-  throw lastError ?? new Error('Failed to generate menu');
++  throw lastError ?? new Error(`Failed to generate day ${dayLabel}`);
++}
++
++/**
++ * Generate the menu for a set of weekday indices (0=Пн…6=Нд). Each day is a
++ * SEPARATE OpenAI call fired in PARALLEL, so the wall-clock ≈ one day's latency
++ * instead of the sum. `avoidMeals` lists dishes already planned for the week so
++ * the model doesn't repeat them across halves; concurrent days within this call
++ * are diversified via per-day style hints.
++ */
++export async function generateMenuDays(
++  profile: UserProfile,
++  highRatedMeals: string[],
++  lowRatedMeals: string[],
++  dayIndices: number[],
++  weekStartDate: Date,
++  avoidMeals: string[] = [],
++): Promise<MenuDay[]> {
++  if (dayIndices.length === 0) return [];
++
++  // Promise.all keeps the result in dayIndices order; if any day exhausts its
++  // retries the whole generation fails (no silently-missing day).
++  return Promise.all(
++    dayIndices.map((idx, i) =>
++      generateOneDay(
++        profile,
++        highRatedMeals,
++        lowRatedMeals,
++        idx,
++        weekStartDate,
++        avoidMeals,
++        DAY_VARIETY_HINTS[i % DAY_VARIETY_HINTS.length],
++      ),
++    ),
++  );
+ }
+ 
+ /**
+  * Generates fresh alternatives for a single meal on demand (used by the swap flow).
+- * Alternatives are no longer pre-generated with the weekly menu — that bloated the
+- * response and forced the model to truncate the 7-day plan.
+  */
+ export async function generateMealAlternatives(
+   profile: UserProfile,

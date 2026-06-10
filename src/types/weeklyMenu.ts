@@ -19,6 +19,7 @@ export interface WeeklyMenu {
   aiModel: string;
   status: 'active' | 'archived';
   days: MenuDay[];
+  pendingDayIndices?: number[]; // 0=Пн…6=Нд, дні поточного тижня ще не згенеровані
   createdAt: Date;
   updatedAt: Date;
 }

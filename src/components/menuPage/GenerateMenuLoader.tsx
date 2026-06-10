@@ -10,7 +10,7 @@ export function GenerateMenuLoader() {
         <p className="text-sm font-semibold text-neutral-600 dark:text-neutral-400">
           AI складає ваше персональне меню…
         </p>
-        <p className="text-xs text-neutral-400">Зазвичай займає 15–30 секунд</p>
+        <p className="text-xs text-neutral-400">Зазвичай займає 10–20 секунд</p>
       </div>
 
       {/* Fake day tabs */}

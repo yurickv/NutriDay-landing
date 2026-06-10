@@ -1280,3 +1280,84 @@ export function scaleMealToCalories(meal: AIMeal, targetCalories: number): void
 - `npx tsc --noEmit` → exit 0
 - Альтернативи тепер містять `ingredients` → `computeMealNutrition` дає ненульові калорії → `scaleMealToCalories` коректно масштабує
 - Після свопу `days[].totalCalories` у MongoDB відразу відповідає сумі страв дня
+
+---
+
+## 🔧 Changelog — Інкрементальна генерація меню (сьогодні → решта тижня частинами) (2026-06-10)
+
+### Проблема
+На iPhone (PWA, «Додати на головний екран») генерація меню падала з generic
+«Сталася помилка. Перевірте підключення до інтернету.» (`src/app/menu/page.tsx`).
+Корінь: **один виклик OpenAI на весь тиждень** (до 3 спроб, до 16384 токенів)
+часто наближався/перевищував `maxDuration=60` Vercel Hobby. При перевищенні Vercel
+повертає HTML 504, `res.json()` кидає `SyntaxError`, і клієнт показує цю generic
+помилку (не справжню причину).
+
+### Рішення
+Генерувати лише **сьогоднішній день** синхронно (швидко, ~10-20с — великий запас
+до 60с), а решту тижня (до неділі) **догенеровувати окремими фоновими запитами по
+≤3 дні**. Дні до сьогодні в поточному тижні (Пн/Вт, якщо сьогодні Ср) пропускаються
+повністю — наступного тижня генерація знову почнеться з Понеділка. Весь пост-процесинг
+(`computeMealNutrition`, `scaleDayToTarget`, `adjustDeficientDays`, мульти-страви,
+рецепти) лишився без змін — він працює над довільним `MenuDay[]`.
+
+### Зміни
+
+#### 1. `weekly_menus` — нове поле
+**`src/types/weeklyMenu.ts`**: `pendingDayIndices?: number[]` (0=Пн…6=Нд — дні
+поточного тижня, що ще не згенеровані).
+
+#### 2. `generateMenuWithAI` — параметризація по днях
+**`src/lib/menu/generateMenuWithAI.ts`**:
+- Сигнатура: `generateMenuWithAI(profile, highRated, lowRated, dayIndices = [0..6], priorMeals = [])`.
+- `buildPrompt` / `buildSystemPrompt(dayLabels)` тепер просять РІВНО задані дні у
+  заданому порядку (раніше жорстко «7 днів, Понеділок–Неділя»).
+- `mapDays(rawDays, weekStartDate, targetCalories, dayIndices)` — дата/`dayLabel`
+  обчислюються з `dayIndices[i]`, тож часткові партії лягають на правильний день.
+- Токени масштабуються per-batch: `TOKENS_PER_DAY = 4000`, кап `MAX_OUTPUT_TOKENS_CAP = 16384`.
+- Перевірка довжини відповіді: `parsed.days.length < dayIndices.length` (замість `< 7`).
+- Новий хелпер `getTodayWeekdayIndex()` → `(new Date().getDay() + 6) % 7`.
+- **`priorMeals`** (НЕ «avoidMeals»): у промпт передаються назви складних страв
+  обіду/вечері з уже згенерованих днів з інструкцією, що їх **доречно повторити** на
+  1-2 наступні дні поспіль для готування наперед (`isMultiDayPrep`) — багатоденне
+  готування працює і через межі батчів. (Снідки/прості страви — різноманітні.)
+
+#### 3. `POST /api/menu/generate` — лише сьогодні
+**`src/app/api/menu/generate/route.ts`**: `todayIdx = getTodayWeekdayIndex()`,
+генерує `dayIndices = [todayIdx]`, зберігає `pendingDayIndices = [todayIdx+1 … 6]`
+(порожній масив, якщо сьогодні Неділя).
+
+#### 4. `POST /api/menu/generate-rest` — новий маршрут
+**`src/app/api/menu/generate-rest/route.ts`** (`maxDuration = 60`):
+- Auth `checkSessionSubscription()` (401/402). Якщо `pendingDayIndices` порожній → `{ pendingDayIndices: [] }`.
+- **Claim до 3 днів з оптимістичним lock'ом**: `updateOne({ _id, pendingDayIndices: pending }, { $set: { pendingDayIndices: remaining } })`; якщо `matchedCount === 0` (паралельний запит уже забрав) → повертає `pending` без генерації.
+- Збирає `priorMeals` зі страв обіду/вечері вже згенерованих днів, викликає
+  `generateMenuWithAI(profile, [], [], claimed, priorMeals)`.
+- При успіху: `$push: { days: { $each: newDays } }` + ре-синк списку покупок
+  (`mergeShoppingItems` зберігає purchased-стан і власні товари).
+- При помилці — повертає `claimed` назад у `pendingDayIndices` і відповідає 500.
+- Відповідь: `{ pendingDayIndices: remaining }`.
+
+#### 5. `shoppingListBuilder` — індекс дня з дати
+**`src/lib/menu/shoppingListBuilder.ts`**: `dayIndex` тепер
+`(new Date(day.date).getDay() + 6) % 7`, а не позиція в масиві — `quantityByDay`
+коректний навіть коли `days` починається не з Понеділка (частковий тиждень).
+
+#### 6. Клієнт — catch-up
+**`src/app/menu/page.tsx`**: ефект, що поки `menu.pendingDayIndices?.length`,
+шле `POST /api/menu/generate-rest`, потім `fetchMenu()` і повторює (з retry на
+помилки, `useRef`-захист від дублів). Банер «🌀 Доганяємо решту тижня…» над
+`WeeklyMenuView`. Самовідновлюється при перезавантаженні сторінки з незавершеним меню.
+
+#### 7. Косметика
+**`src/components/menuPage/GenerateMenuLoader.tsx`**: «15–30 секунд» → «10–20 секунд».
+
+### Перевірка
+- `npx tsc --noEmit` → exit 0
+- Генерація: спершу швидко з'являється лише сьогоднішній день (за датою), далі
+  автоматично підтягуються наступні по ≤3, `pendingDayIndices` спадає до `[]`.
+- Список покупок після кожного підвантаження містить позиції з усіх згенерованих
+  днів з правильним `quantityByDay`; purchased-стан зберігається.
+- Edge case «сьогодні Неділя»: `pendingDayIndices = []`, без catch-up запитів.
+- Залишок: фінальний тест на iPhone PWA (перший виклик має стабільно вкладатись у
+  кілька секунд незалежно від мережі).

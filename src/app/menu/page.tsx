@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { WeeklyMenu } from '@/types/weeklyMenu';
 import { UserProfile } from '@/types/userProfile';
 import { WeeklyMenuView } from '@/components/menuPage/WeeklyMenuView';
@@ -21,6 +21,8 @@ export default function MenuPage() {
   const [error, setError] = useState<string | null>(null);
   const [generationsLeft, setGenerationsLeft] = useState<number | null>(null);
   const [profileMissing, setProfileMissing] = useState(false);
+  const [catchingUp, setCatchingUp] = useState(false);
+  const catchingUpRef = useRef(false);
 
   const { streak } = useStreak();
 
@@ -55,6 +57,42 @@ export default function MenuPage() {
   useEffect(() => {
     void Promise.all([fetchMenu(), fetchProfile()]);
   }, [fetchMenu, fetchProfile]);
+
+  // Доганяємо решту тижня частинами по ≤3 дні, поки pendingDayIndices не спорожніє.
+  // Спрацьовує і після генерації, і при перезавантаженні сторінки з незавершеним меню.
+  useEffect(() => {
+    if (state !== 'has-menu' || !menu?.pendingDayIndices?.length) return;
+    if (catchingUpRef.current) return;
+    catchingUpRef.current = true;
+    setCatchingUp(true);
+
+    let cancelled = false;
+
+    const run = async (retriesLeft: number) => {
+      try {
+        const res = await fetch('/api/menu/generate-rest', { method: 'POST' });
+        if (!res.ok) throw new Error('generate-rest failed');
+        if (cancelled) return;
+        await fetchMenu();
+      } catch {
+        if (cancelled) return;
+        if (retriesLeft > 0) {
+          await new Promise((r) => setTimeout(r, 3000));
+          if (!cancelled) await run(retriesLeft - 1);
+          return;
+        }
+      } finally {
+        if (!cancelled) {
+          catchingUpRef.current = false;
+          setCatchingUp(false);
+        }
+      }
+    };
+
+    void run(2);
+
+    return () => { cancelled = true; };
+  }, [state, menu?.pendingDayIndices, fetchMenu]);
 
   const handleGenerate = async () => {
     if (profileMissing) {
@@ -216,6 +254,15 @@ export default function MenuPage() {
 
         {/* Engagement widgets */}
         <DailyTipCard />
+
+        {catchingUp && (
+          <div className="mx-4 mt-3 flex items-center gap-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-2xl px-4 py-2.5">
+            <span className="text-lg animate-spin">🌀</span>
+            <p className="text-xs text-orange-700 dark:text-orange-300 font-medium">
+              Доганяємо решту тижня…
+            </p>
+          </div>
+        )}
 
         <WeeklyMenuView
           menu={menu}

@@ -28,10 +28,8 @@ const round1 = (n: number) => Math.round(n * 10) / 10;
 export function buildShoppingList(days: MenuDay[]): ShoppingListItem[] {
   const acc = new Map<string, IngredientAccumulator>();
 
-  days.forEach((day, dayIndex) => {
-    // The menu is always Понеділок→Неділя ordered; guard anyway so a stray
-    // 8th day never writes past the week array.
-    if (dayIndex >= DAYS_IN_WEEK) return;
+  days.forEach((day) => {
+    const dayIndex = (new Date(day.date).getDay() + 6) % 7; // 0=Пн…6=Нд
     const { breakfast, lunch, dinner, snacks } = day.meals;
     const allMeals: AIMeal[] = [...breakfast, ...lunch, ...dinner, ...snacks];
 

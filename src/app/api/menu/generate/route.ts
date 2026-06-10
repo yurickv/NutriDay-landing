@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { checkSessionSubscription } from '@/lib/subscription';
 import { getDb } from '@/lib/db';
-import { generateMenuWithAI } from '@/lib/menu/generateMenuWithAI';
+import { generateMenuWithAI, getTodayWeekdayIndex } from '@/lib/menu/generateMenuWithAI';
 import { buildShoppingList } from '@/lib/menu/shoppingListBuilder';
 import { UserProfile } from '@/types/userProfile';
 import { WeeklyMenu } from '@/types/weeklyMenu';
@@ -95,8 +95,13 @@ export async function POST() {
     );
   }
 
-  // Generate menu
-  const { days, weekStartDate } = await generateMenuWithAI(profile, highRated, lowRated);
+  // Генеруємо лише сьогоднішній день — швидко (~10-20с), решту тижня
+  // догенеровуємо фоновими запитами через /api/menu/generate-rest.
+  const todayIdx = getTodayWeekdayIndex();
+  const dayIndices = [todayIdx];
+  const pendingDayIndices = Array.from({ length: 6 - todayIdx }, (_, k) => todayIdx + 1 + k);
+
+  const { days, weekStartDate } = await generateMenuWithAI(profile, highRated, lowRated, dayIndices);
 
   const now = new Date();
   const newMenu = {
@@ -106,6 +111,7 @@ export async function POST() {
     aiModel: 'gpt-4o',
     status: 'active' as const,
     days,
+    pendingDayIndices,
     createdAt: now,
     updatedAt: now,
   };

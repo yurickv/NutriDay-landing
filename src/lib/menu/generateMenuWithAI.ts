@@ -28,14 +28,21 @@ function getMonthName(month: number): string {
   return names[month];
 }
 
-function buildPrompt(profile: UserProfile, highRated: string[], lowRated: string[]): string {
+function buildPrompt(
+  profile: UserProfile,
+  highRated: string[],
+  lowRated: string[],
+  dayLabels: string[],
+  priorMeals: string[],
+): string {
   const now = new Date();
   const month = now.getMonth() + 1;
   const monthName = getMonthName(month);
   const season = getSeason(month);
   const seasonalHint = SEASON_HINTS[season];
+  const dayList = dayLabels.join(', ');
 
-  return `Склади 7-денне меню для:
+  return `Склади меню (сніданок, обід, вечеря, перекуси) на ${dayLabels.length === 1 ? 'день' : 'дні'}: ${dayList} для:
 Стать: ${profile.sex === 'male' ? 'чоловік' : 'жінка'}, Вік: ${profile.ageYears}, Вага: ${profile.weightKg}кг, Зріст: ${profile.heightCm}см
 Орієнтовна калорійність: ~${profile.goalCalories} ккал/день (орієнтир для розміру порцій; точний розрахунок виконується автоматично)
 Мета: ${profile.mainGoal || 'схуднення'}
@@ -46,10 +53,11 @@ ${profile.dietaryPreferences?.length ? `Обмеження: ${profile.dietaryPre
 ${profile.allergies?.length ? `Алергії: ${profile.allergies.join(', ')}` : ''}
 ${highRated.length ? `Страви з хорошим рейтингом (повтори подібні): ${highRated.join(', ')}` : ''}
 ${lowRated.length ? `Страви з поганим рейтингом (не повторювати): ${lowRated.join(', ')}` : ''}
+${priorMeals.length ? `Складні страви обіду/вечері з попередніх днів цього тижня: ${priorMeals.join(', ')}. Якщо страва готується на 2-3 дні — ДОРЕЧНО повторити ту саму страву на 1-2 наступні дні поспіль (постав isMultiDayPrep: true, multiDayPrepDays: N), щоб користувач приготував одразу на кілька днів. Снідки та прості страви роби різноманітними.` : ''}
 Якщо страва готується на 2-3 дні — позначити isMultiDayPrep: true, multiDayPrepDays: N.
 Для кожної страви вкажи servingSize (вагу готової порції в грамах); сума ваг інгредієнтів має приблизно відповідати servingSize.
 
-ВАЖЛИВО: Поверни РІВНО 7 днів (Понеділок–Неділя). Відповідь — ТІЛЬКИ валідний JSON без markdown-обгортки та пояснень. Суворо дотримуйся наданої схеми.`;
+ВАЖЛИВО: Поверни РІВНО ці дні (у такому порядку): ${dayList}. Відповідь — ТІЛЬКИ валідний JSON без markdown-обгортки та пояснень. Суворо дотримуйся наданої схеми.`;
 }
 
 // Persona + nutrition rules, shared by the weekly-menu and meal-alternatives calls.
@@ -81,17 +89,18 @@ OUTPUT LANGUAGE:
 - ALL text values (name, description, ingredient name) MUST be written in Ukrainian.
 - Do not ask the user questions and do not add alternatives, notes or commentary outside the JSON.`;
 
-const SYSTEM_PROMPT = `${DIETITIAN_PERSONA}
+function buildSystemPrompt(dayLabels: string[]): string {
+  return `${DIETITIAN_PERSONA}
 
-WEEKLY MENU TASK:
-- Always return EXACTLY 7 days of the week (Понеділок–Неділя).
+MENU TASK:
+- Return EXACTLY ${dayLabels.length} day(s), in this order: ${dayLabels.join(', ')}.
 - Each day: breakfast (1–2 dishes), lunch (2–3 dishes), dinner (2–3 dishes), snacks (1 dish).
 - breakfast, lunch, dinner and snacks are ALL JSON ARRAYS — even when there is only one dish.
 - Reply with ONLY valid JSON, no markdown wrapper and no explanations, exactly matching this schema:
 {
   "days": [
     {
-      "dayLabel": "Понеділок",
+      "dayLabel": "${dayLabels[0]}",
       "meals": {
         "breakfast": [{ "name": "...", "servingSize": 0, "servings": 1, "emoji": "🥣", "description": "...", "ingredients": [{"name": "...", "quantity": 0, "unit": "г", "shoppingCategory": "grains"}], "prepTimeMinutes": 0, "cookTimeMinutes": 0, "isMultiDayPrep": false, "multiDayPrepDays": 0, "difficulty": "easy" }],
         "lunch": [{ ...same structure... }],
@@ -104,8 +113,9 @@ WEEKLY MENU TASK:
 shoppingCategory values: vegetables|fruits|meat|fish|dairy|grains|legumes|oils|spices|other
 difficulty values: easy|medium|hard
 
-## EXAMPLE — one correctly formatted day (all 7 days must follow this exact pattern):
+## EXAMPLE — one correctly formatted day (every requested day must follow this exact pattern):
 {"dayLabel":"Понеділок","meals":{"breakfast":[{"name":"Вівсянка з молоком","servingSize":280,"servings":1,"emoji":"🥣","description":"Вівсяну крупу варити на молоці 8–10 хв, посолити за смаком.","ingredients":[{"name":"вівсяна крупа","quantity":80,"unit":"г","shoppingCategory":"grains"},{"name":"молоко 2.5%","quantity":200,"unit":"мл","shoppingCategory":"dairy"}],"prepTimeMinutes":2,"cookTimeMinutes":10,"isMultiDayPrep":false,"multiDayPrepDays":0,"difficulty":"easy"},{"name":"Яблуко","servingSize":150,"servings":1,"emoji":"🍎","description":"Свіже яблуко.","ingredients":[{"name":"яблуко","quantity":150,"unit":"г","shoppingCategory":"fruits"}],"prepTimeMinutes":0,"cookTimeMinutes":0,"isMultiDayPrep":false,"multiDayPrepDays":0,"difficulty":"easy"}],"lunch":[{"name":"Тушковане куряче філе з овочами","servingSize":380,"servings":1,"emoji":"🍗","description":"Рецепт (1 порція):\\n1. Нарізати куряче філе кубиками 2–3 см, цибулю та перець — довільно.\\n2. Розігріти олію на середньому вогні, обсмажити філе 3–4 хв до золотавого кольору.\\n3. Додати овочі, посолити, поперчити, тушкувати 5 хв помішуючи.\\n4. Влити 2 ст.л. води, накрити кришкою та тушкувати ще 15 хв.\\nПодавати гарячим.","ingredients":[{"name":"куряче філе","quantity":150,"unit":"г","shoppingCategory":"meat"},{"name":"болгарський перець","quantity":100,"unit":"г","shoppingCategory":"vegetables"},{"name":"цибуля","quantity":60,"unit":"г","shoppingCategory":"vegetables"},{"name":"олія соняшникова","quantity":10,"unit":"мл","shoppingCategory":"oils"},{"name":"сіль, перець","quantity":2,"unit":"г","shoppingCategory":"spices"}],"prepTimeMinutes":8,"cookTimeMinutes":20,"isMultiDayPrep":false,"multiDayPrepDays":0,"difficulty":"medium"},{"name":"Листовий салат","servingSize":120,"servings":1,"emoji":"🥗","description":"Промити листя, нарвати на шматки, посолити та збризнути лимонним соком.","ingredients":[{"name":"мікс листових","quantity":100,"unit":"г","shoppingCategory":"vegetables"},{"name":"лимонний сік","quantity":10,"unit":"мл","shoppingCategory":"other"}],"prepTimeMinutes":3,"cookTimeMinutes":0,"isMultiDayPrep":false,"multiDayPrepDays":0,"difficulty":"easy"}],"dinner":[{"name":"Куряче філе на грилі","servingSize":170,"servings":1,"emoji":"🥩","description":"Рецепт:\\n1. Куряче філе відбити, натерти сіллю та паприкою.\\n2. Смажити на гриль-сковороді 4–5 хв з кожного боку до золотавої скоринки.\\nПодавати з кашею.","ingredients":[{"name":"куряче філе","quantity":150,"unit":"г","shoppingCategory":"meat"},{"name":"паприка, сіль","quantity":2,"unit":"г","shoppingCategory":"spices"},{"name":"олія","quantity":5,"unit":"мл","shoppingCategory":"oils"}],"prepTimeMinutes":3,"cookTimeMinutes":10,"isMultiDayPrep":false,"multiDayPrepDays":0,"difficulty":"easy"},{"name":"Гречана каша","servingSize":200,"servings":1,"emoji":"🌾","description":"Рецепт:\\n1. Промити гречку, залити водою 1:2.\\n2. Варити 15–20 хв до готовності, посолити.","ingredients":[{"name":"гречана крупа","quantity":80,"unit":"г","shoppingCategory":"grains"},{"name":"вода","quantity":160,"unit":"мл","shoppingCategory":"other"}],"prepTimeMinutes":2,"cookTimeMinutes":20,"isMultiDayPrep":true,"multiDayPrepDays":2,"difficulty":"easy"}],"snacks":[{"name":"Йогурт натуральний","servingSize":180,"servings":1,"emoji":"🥛","description":"Натуральний йогурт без добавок.","ingredients":[{"name":"йогурт натуральний","quantity":180,"unit":"г","shoppingCategory":"dairy"}],"prepTimeMinutes":0,"cookTimeMinutes":0,"isMultiDayPrep":false,"multiDayPrepDays":0,"difficulty":"easy"}]}}`;
+}
 
 const ALT_SYSTEM_PROMPT = `${DIETITIAN_PERSONA}
 
@@ -118,8 +128,11 @@ async function sleep(ms: number) {
 
 // gpt-4o supports up to 16384 output tokens. A full 7-day menu (4 meals/day with
 // Ukrainian recipes) needs the headroom — 8000 truncated the JSON and the model
-// silently returned fewer days.
-const MAX_OUTPUT_TOKENS = 16384;
+// silently returned fewer days. Generation now happens in smaller day-batches
+// (today first, then the rest of the week in chunks), so scale the budget per
+// batch instead of always requesting the full-week maximum.
+const TOKENS_PER_DAY = 4000;
+const MAX_OUTPUT_TOKENS_CAP = 16384;
 
 async function callOpenAI(
   messages: OpenAI.Chat.ChatCompletionMessageParam[],
@@ -192,6 +205,11 @@ function getWeekStart(): Date {
   monday.setDate(now.getDate() + diff);
   monday.setHours(0, 0, 0, 0);
   return monday;
+}
+
+// Today's position in the week, 0=Понеділок…6=Неділя.
+export function getTodayWeekdayIndex(): number {
+  return (new Date().getDay() + 6) % 7;
 }
 
 function normalizeArray(raw: unknown): AIMeal[] {
@@ -285,15 +303,18 @@ function adjustDeficientDays(days: MenuDay[], targetCalories: number): void {
   }
 }
 
-function mapDays(rawDays: Record<string, unknown>[], weekStartDate: Date, targetCalories: number): MenuDay[] {
-  // Pass 1 — normalize: parse LLM output + compute macros from ingredient lookup table
-  const days: MenuDay[] = rawDays.slice(0, 7).map((d, i) => {
+function mapDays(rawDays: Record<string, unknown>[], weekStartDate: Date, targetCalories: number, dayIndices: number[]): MenuDay[] {
+  // Pass 1 — normalize: parse LLM output + compute macros from ingredient lookup table.
+  // Date/label are derived from the target weekday index (not array position or
+  // the LLM's own dayLabel), so partial-week batches land on the right day.
+  const days: MenuDay[] = rawDays.slice(0, dayIndices.length).map((d, i) => {
     const rawMeals = (d.meals || {}) as Record<string, unknown>;
+    const weekIdx = dayIndices[i];
     const date = new Date(weekStartDate);
-    date.setDate(weekStartDate.getDate() + i);
+    date.setDate(weekStartDate.getDate() + weekIdx);
     return {
       date,
-      dayLabel: String(d.dayLabel ?? DAY_LABELS[i]),
+      dayLabel: DAY_LABELS[weekIdx],
       meals: {
         breakfast: normalizeArray(rawMeals.breakfast),
         lunch:     normalizeArray(rawMeals.lunch),
@@ -328,12 +349,16 @@ export async function generateMenuWithAI(
   profile: UserProfile,
   highRatedMeals: string[] = [],
   lowRatedMeals: string[] = [],
+  dayIndices: number[] = [0, 1, 2, 3, 4, 5, 6],
+  priorMeals: string[] = [],
 ): Promise<{ days: MenuDay[]; weekStartDate: Date }> {
-  const prompt = buildPrompt(profile, highRatedMeals, lowRatedMeals);
+  const dayLabels = dayIndices.map((i) => DAY_LABELS[i]);
+  const prompt = buildPrompt(profile, highRatedMeals, lowRatedMeals, dayLabels, priorMeals);
   const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-    { role: 'system', content: SYSTEM_PROMPT },
+    { role: 'system', content: buildSystemPrompt(dayLabels) },
     { role: 'user', content: prompt },
   ];
+  const maxTokens = Math.min(MAX_OUTPUT_TOKENS_CAP, dayIndices.length * TOKENS_PER_DAY);
 
   const weekStartDate = getWeekStart();
   let lastError: Error | null = null;
@@ -342,7 +367,7 @@ export async function generateMenuWithAI(
   // short response (the "menu only has one day" bug) triggers a fresh try.
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      const { content, finishReason } = await callOpenAI(messages, MAX_OUTPUT_TOKENS);
+      const { content, finishReason } = await callOpenAI(messages, maxTokens);
 
       if (finishReason === 'length') {
         throw new Error('AI response truncated (hit token limit) — incomplete menu');
@@ -350,11 +375,11 @@ export async function generateMenuWithAI(
 
       const parsed = JSON.parse(content) as { days?: Record<string, unknown>[] };
 
-      if (!Array.isArray(parsed.days) || parsed.days.length < 7) {
-        throw new Error(`AI returned ${parsed.days?.length ?? 0} days, expected 7`);
+      if (!Array.isArray(parsed.days) || parsed.days.length < dayIndices.length) {
+        throw new Error(`AI returned ${parsed.days?.length ?? 0} days, expected ${dayIndices.length}`);
       }
 
-      return { days: mapDays(parsed.days, weekStartDate, profile.goalCalories), weekStartDate };
+      return { days: mapDays(parsed.days, weekStartDate, profile.goalCalories, dayIndices), weekStartDate };
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
       if (attempt < 2) await sleep(1000 * Math.pow(2, attempt));
