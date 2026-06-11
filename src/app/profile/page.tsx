@@ -8,6 +8,7 @@ import { BiometricsGoalEditor } from '@/components/profilePage/BiometricsGoalEdi
 import { useStreak } from '@/hooks/useStreak';
 import { UserProfile } from '@/types/userProfile';
 import NotificationSettings from '@/components/profilePage/NotificationSettings';
+import InstallAppSettings from '@/components/profilePage/InstallAppSettings';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
 
 const GOAL_LABELS: Record<string, string> = {
@@ -136,6 +137,14 @@ export default function ProfilePage() {
           </div>
         </section>
       )}
+
+      {/* Застосунок (PWA) */}
+      <section className="mx-4 mb-4">
+        <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+          <span>📱</span> Застосунок
+        </p>
+        <InstallAppSettings />
+      </section>
 
       {/* В розробці */}
       <section className="mx-4 mb-4">

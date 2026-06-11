@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { AppShell } from '@/components/layout/AppShell';
-import IOSInstallBanner from '@/components/common/IOSInstallBanner';
+import InstallBanner from '@/components/common/InstallBanner';
 import { checkSessionSubscription, inactiveRedirectTarget } from '@/lib/subscription';
 
 export default async function MenuLayout({
@@ -14,7 +14,7 @@ export default async function MenuLayout({
   return (
     <AppShell>
       {children}
-      <IOSInstallBanner />
+      <InstallBanner />
     </AppShell>
   );
 }

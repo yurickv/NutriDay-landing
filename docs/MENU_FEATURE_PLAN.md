@@ -819,7 +819,9 @@ track('weekly_summary_viewed');
 - [x] `POST /api/push/subscribe|unsubscribe` — колекція `push_subscriptions`
 - [x] VAPID ключі згенеровані → `.env`
 - [x] `NotificationSettings` компонент → profile/page.tsx
-- [x] `IOSInstallBanner` — iOS Safari інструкція з кроками → menu/layout.tsx
+- [x] `usePwaInstall` хук — детект standalone/`navigator.standalone`/`appinstalled` + `beforeinstallprompt` (Android) → `promptInstall()`
+- [x] `InstallBanner` (перейм. з IOSInstallBanner) — Android: кнопка «Встановити» (нативний промпт), iOS: інструкція з кроками → menu/layout.tsx + shopping-list/layout.tsx
+- [x] `InstallAppSettings` — секція «📱 Застосунок» у profile/page.tsx (стан «Встановлено» / install-кнопка / iOS-кроки / desktop-fallback)
 
 ---
 

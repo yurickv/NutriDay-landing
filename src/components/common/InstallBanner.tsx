@@ -1,28 +1,48 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { X, Share, PlusSquare } from 'lucide-react';
+import { X, Share, PlusSquare, Download } from 'lucide-react';
+import { usePwaInstall } from '@/hooks/usePwaInstall';
 
-const STORAGE_KEY = 'nd_ios_install_dismissed';
+const STORAGE_KEY = 'nd_install_dismissed';
 
-export default function IOSInstallBanner() {
+/**
+ * Floating "add to home screen" prompt.
+ *  - Android/Chrome: a single "Встановити" button that fires the native dialog.
+ *  - iOS Safari: manual Share → На головний екран instructions.
+ * Hidden once installed or dismissed (for the session).
+ */
+export default function InstallBanner() {
+  const { isInstalled, isIOS, canPrompt, promptInstall } = usePwaInstall();
   const [visible, setVisible] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const eligible = !isInstalled && (canPrompt || isIOS);
 
   useEffect(() => {
-    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-    const dismissed = sessionStorage.getItem(STORAGE_KEY);
-
-    if (isIOS && !isStandalone && !dismissed) {
-      // Show after 3 seconds to not interrupt initial load
-      const t = setTimeout(() => setVisible(true), 3000);
-      return () => clearTimeout(t);
+    if (!eligible) {
+      setVisible(false);
+      return;
     }
-  }, []);
+    if (sessionStorage.getItem(STORAGE_KEY)) return;
+    // Delay so it doesn't interrupt the initial load.
+    const t = setTimeout(() => setVisible(true), 3000);
+    return () => clearTimeout(t);
+  }, [eligible]);
 
   const dismiss = () => {
     sessionStorage.setItem(STORAGE_KEY, '1');
     setVisible(false);
+  };
+
+  const handleInstall = async () => {
+    setBusy(true);
+    try {
+      const outcome = await promptInstall();
+      if (outcome === 'accepted') setVisible(false);
+    } finally {
+      setBusy(false);
+    }
   };
 
   if (!visible) return null;
@@ -60,26 +80,39 @@ export default function IOSInstallBanner() {
           </div>
         </div>
 
-        <div className="mt-3 space-y-2">
-          <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
-            <div className="w-6 h-6 rounded-md bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
-              <span className="text-blue-500 font-bold text-xs">1</span>
+        {canPrompt ? (
+          // Android/Chrome — native install in one tap.
+          <button
+            onClick={handleInstall}
+            disabled={busy}
+            className="mt-3 w-full rounded-xl bg-orange-500 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-orange-600 disabled:opacity-60 flex items-center justify-center gap-2"
+          >
+            <Download className="w-4 h-4" />
+            {busy ? 'Встановлення…' : 'Встановити'}
+          </button>
+        ) : (
+          // iOS Safari — manual steps.
+          <div className="mt-3 space-y-2">
+            <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
+              <div className="w-6 h-6 rounded-md bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
+                <span className="text-blue-500 font-bold text-xs">1</span>
+              </div>
+              <span>Натисніть</span>
+              <Share className="w-3.5 h-3.5 text-blue-500 inline" />
+              <span className="font-medium text-blue-500">«Поділитися»</span>
+              <span>в нижній панелі Safari</span>
             </div>
-            <span>Натисніть</span>
-            <Share className="w-3.5 h-3.5 text-blue-500 inline" />
-            <span className="font-medium text-blue-500">"Поділитися"</span>
-            <span>в нижній панелі Safari</span>
-          </div>
 
-          <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
-            <div className="w-6 h-6 rounded-md bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
-              <span className="text-blue-500 font-bold text-xs">2</span>
+            <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
+              <div className="w-6 h-6 rounded-md bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
+                <span className="text-blue-500 font-bold text-xs">2</span>
+              </div>
+              <span>Оберіть</span>
+              <PlusSquare className="w-3.5 h-3.5 text-blue-500 inline" />
+              <span className="font-medium text-blue-500">«На головний екран»</span>
             </div>
-            <span>Оберіть</span>
-            <PlusSquare className="w-3.5 h-3.5 text-blue-500 inline" />
-            <span className="font-medium text-blue-500">"На головний екран"</span>
           </div>
-        </div>
+        )}
 
         {/* iOS-style bottom arrow indicator */}
         <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white dark:bg-gray-900 border-r border-b border-gray-100 dark:border-gray-700 rotate-45" />

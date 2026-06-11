@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import InstallBanner from '@/components/common/InstallBanner';
 import { checkSessionSubscription, inactiveRedirectTarget } from '@/lib/subscription';
 
 // Server guard: blocks access when the subscription is missing or expired.
@@ -11,5 +12,10 @@ export default async function ShoppingListLayout({
   const { active, userExists } = await checkSessionSubscription();
   if (!active) redirect(inactiveRedirectTarget(userExists));
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <InstallBanner />
+    </>
+  );
 }
