@@ -6,7 +6,7 @@ export default function HeroSection() {
     <section className='relative w-full flex items-center justify-center text-white overflow-hidden h-[700px] md:h-[720px]'>
       <Image
         src='/hero-image.avif'
-        alt='NutriDay background'
+        alt='EasyMenu background'
         fill
         sizes='100vw'
         style={{ objectFit: "cover" }}
@@ -23,7 +23,7 @@ export default function HeroSection() {
           </h1>
           <p className='text-lg md:text-2xl mb-8'>
             Почніть харчуватися збалансовано без складних підрахунків і стресу.
-            NutriDay допоможе скласти просте та різноманітне меню для вашого
+            EasyMenu допоможе скласти просте та різноманітне меню для вашого
             комфорту й результату.
           </p>
           <Link

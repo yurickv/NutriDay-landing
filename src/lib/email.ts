@@ -27,10 +27,10 @@ export async function sendMagicLinkEmail(to: string, token: string) {
     token
   )}`;
 
-  const subject = 'Ваш магічний лінк для входу в NutriDay';
+  const subject = 'Ваш магічний лінк для входу в EasyMenu';
   const html = `
     <div style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.5;">
-      <h2>Вітаємо в NutriDay!</h2>
+      <h2>Вітаємо в EasyMenu!</h2>
       <p>Натисніть кнопку нижче, щоб увійти до свого кабінету без пароля.</p>
       <p style="margin: 24px 0;">
         <a href="${magicLinkUrl}" style="display:inline-block;padding:10px 18px;border-radius:999px;background:#f97316;color:#fff;text-decoration:none;font-weight:600;">

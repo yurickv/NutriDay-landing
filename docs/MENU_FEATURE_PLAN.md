@@ -1,4 +1,4 @@
-# NutriDay — План розробки: Тижневе меню, Список покупок та PWA
+# EasyMenu — План розробки: Тижневе меню, Список покупок та PWA
 
 > **Статус**: Фаза 1 ✅ | Фаза 2 ✅ | Фаза 3 ✅ | Фаза 4 ✅ | Фаза 5 ✅ | Власні страви ✅ | Масштабованість & безпека ✅ | Промпт v2 ✅ | UI Redesign ✅ | Фаза 6–7 — в черзі
 > **Пріоритет**: Висока
@@ -554,7 +554,7 @@ src/
 ## PWA налаштування
 
 1. **`public/manifest.json`**:
-   - `name: "NutriDay"`, `short_name: "NutriDay"`
+   - `name: "EasyMenu"`, `short_name: "EasyMenu"`
    - `start_url: "/menu"`, `display: "standalone"`, `orientation: "portrait"`
    - `theme_color: "#f97316"`, `lang: "uk"`
    - Іконки 192×192 і 512×512 PNG

@@ -23,13 +23,13 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'NutriDay — персоналізоване меню',
+  title: 'EasyMenu — персоналізоване меню',
   description: 'Швидке меню для здорового харчування — за 1 хвилину',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'NutriDay',
+    title: 'EasyMenu',
   },
   icons: {
     icon: [
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
     apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
   },
   openGraph: {
-    title: 'NutriDay — персоналізоване меню',
+    title: 'EasyMenu — персоналізоване меню',
     description: 'AI-генероване тижневе меню для здорового схуднення',
     type: 'website',
     locale: 'uk_UA',

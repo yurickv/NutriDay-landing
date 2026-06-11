@@ -47,12 +47,12 @@ export default function IOSInstallBanner() {
             className="w-12 h-12 rounded-2xl flex-shrink-0 flex items-center justify-center text-white font-bold text-lg"
             style={{ background: '#f97316' }}
           >
-            N
+            E
           </div>
 
           <div className="flex-1 pr-4">
             <p className="font-semibold text-sm text-gray-900 dark:text-gray-100 mb-0.5">
-              Встановіть NutriDay
+              Встановіть EasyMenu
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400 leading-snug">
               Додайте на головний екран для швидкого доступу без браузера

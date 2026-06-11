@@ -1,6 +1,6 @@
 {
-  "name": "NutriDay",
-  "short_name": "NutriDay",
+  "name": "EasyMenu",
+  "short_name": "EasyMenu",
   "description": "Персоналізований план харчування для здорового схуднення",
   "start_url": "/menu",
   "scope": "/",

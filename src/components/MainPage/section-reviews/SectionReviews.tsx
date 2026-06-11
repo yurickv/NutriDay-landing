@@ -10,7 +10,7 @@ const ReviewsSection = () => {
   const reviews = [
     {
       id: 1,
-      text: "NutriDay — це економія часу і різноманітність! Я отримую нові ідеї для страв щодня і можу легко змінити меню під настрій.",
+      text: "EasyMenu — це економія часу і різноманітність! Я отримую нові ідеї для страв щодня і можу легко змінити меню під настрій.",
       author: "Олена К.",
       rating: 5,
       avatar: "/lena-review.avif",
@@ -95,7 +95,7 @@ const ReviewsSection = () => {
                 </div>
                 <div>
                   <p className='font-semibold text-white'>{review.author}</p>
-                  <p className='text-sm text-gray-300'>Користувач NutriDay</p>
+                  <p className='text-sm text-gray-300'>Користувач EasyMenu</p>
                 </div>
               </div>
             </div>

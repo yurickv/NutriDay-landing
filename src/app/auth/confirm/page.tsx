@@ -77,7 +77,7 @@ function ConfirmPageContent() {
           <>
             <p className="text-sm text-main-text dark:text-main-text-black">
               Натисніть кнопку нижче, щоб завершити вхід до свого кабінету
-              NutriDay.
+              EasyMenu.
             </p>
 
             {error && (

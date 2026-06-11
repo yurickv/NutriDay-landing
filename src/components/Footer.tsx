@@ -17,7 +17,7 @@ export default function Footer() {
     <footer className="bg-[#323030] text-gray-300 py-10">
       <div className="div-container mx-auto flex flex-col gap-8 md:flex-row md:justify-between">
         <div className="flex flex-col gap-1 text-sm">
-          <span className="text-base font-semibold text-white">NutriDay</span>
+          <span className="text-base font-semibold text-white">EasyMenu</span>
           <span>ФОП Теслюк Юрій Леонідович</span>
           <span>ІПН: 3090301550</span>
           <span>м. Тернопіль, вул. Сергія Корольова 8/7</span>
@@ -54,7 +54,7 @@ export default function Footer() {
       </div>
 
       <div className="div-container mx-auto mt-8 pt-6 border-t border-white/10 text-xs text-gray-400">
-        © {new Date().getFullYear()} NutriDay. Усі права захищені.
+        © {new Date().getFullYear()} EasyMenu. Усі права захищені.
       </div>
     </footer>
   );

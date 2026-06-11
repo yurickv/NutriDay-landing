@@ -9,7 +9,7 @@ export default function AboutUsSection() {
         <div className="w-full h-64 md:h-80 lg:w-[448px] lg:h-[448px] relative rounded-lg overflow-hidden">
           <Image
             src="/woman-make-menu.avif"
-            alt="Жінка складає меню з NutriDay"
+            alt="Жінка складає меню з EasyMenu"
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 448px"
             style={{ objectFit: 'cover' }}
@@ -20,7 +20,7 @@ export default function AboutUsSection() {
         <div className="text-start flex flex-col gap-4 md:gap-6 lg:flex-1 lg:justify-center">
           <Title text="Легкість і турбота у кожному меню" />
           <p className="text-base md:text-lg leading-relaxed">
-            Ми створили NutriDay для тих, хто хоче зробити здорове харчування
+            Ми створили EasyMenu для тих, хто хоче зробити здорове харчування
             звичкою без стресу, обмежень і складних підрахунків. Наш сервіс
             допоможе вам легко перейти до збалансованого раціону, підтримати
             схуднення та відчути більше енергії щодня. Наша команда експертів з
