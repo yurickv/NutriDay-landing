@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error('Magic-link request error:', error);
     return NextResponse.json(
-      { success: false, message: error?.message || 'Server error' },
+      { success: false, message: 'Server error' },
       { status: 500 }
     );
   }

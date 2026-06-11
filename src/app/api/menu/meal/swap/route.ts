@@ -7,6 +7,7 @@ import { AIMeal } from '@/types/meals';
 import { ShoppingListItem } from '@/types/shoppingList';
 import { buildShoppingList, mergeShoppingItems } from '@/lib/menu/shoppingListBuilder';
 import { scaleMealToCalories } from '@/lib/menu/generateMenuWithAI';
+import { isMealType, isNonEmptyString, safeItemIndex } from '@/lib/validation';
 
 interface SwapBody {
   dayLabel: string;
@@ -22,7 +23,18 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json() as SwapBody;
-  const { dayLabel, mealType, itemIndex, alternativeIndex } = body;
+  const { dayLabel, mealType } = body;
+  const itemIndex = safeItemIndex(body.itemIndex);
+  const alternativeIndex = safeItemIndex(body.alternativeIndex);
+
+  if (
+    !isNonEmptyString(dayLabel) ||
+    !isMealType(mealType) ||
+    itemIndex === null ||
+    alternativeIndex === null
+  ) {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+  }
 
   const db = await getDb();
   const col = db.collection('weekly_menus');

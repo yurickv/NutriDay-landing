@@ -3,6 +3,7 @@ import { ObjectId } from 'mongodb';
 import { readSessionUserId } from '@/lib/auth/session';
 import { getDb } from '@/lib/db';
 import { WeeklyMenu } from '@/types/weeklyMenu';
+import { isMealType, isNonEmptyString, safeItemIndex } from '@/lib/validation';
 
 interface RateBody {
   dayLabel: string;
@@ -18,8 +19,12 @@ export async function PATCH(req: NextRequest) {
   }
 
   const body = await req.json() as RateBody;
-  const { dayLabel, mealType, itemIndex, rating } = body;
+  const { dayLabel, mealType, rating } = body;
+  const itemIndex = safeItemIndex(body.itemIndex);
 
+  if (!isNonEmptyString(dayLabel) || !isMealType(mealType) || itemIndex === null) {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+  }
   if (![1, 2, 3].includes(rating)) {
     return NextResponse.json({ error: 'Invalid rating' }, { status: 400 });
   }

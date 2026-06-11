@@ -2,17 +2,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { checkRateLimit, getClientIp, tooManyRequestsResponse } from '@/lib/rateLimit';
+import { PLANS, isPlanId } from '@/lib/plans';
 
 const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 
 type CheckoutRequest = {
-  amount: number;
-  description: string;
+  description?: string;
   orderId: string;
-  currency?: string; // default UAH
   email?: string;
   language?: string; // default uk
   planId?: string;
+  // NOTE: `amount`/`currency` are intentionally NOT read from the client.
+  // The price is derived server-side from `planId` (see @/lib/plans) so a
+  // tampered request cannot pay an arbitrary amount.
 };
 
 const base64 = (str: string) => Buffer.from(str).toString('base64');
@@ -61,22 +63,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const {
-      amount,
-      description,
-      orderId,
-      currency = 'UAH',
-      email,
-      language = 'uk',
-      planId,
-    } = body;
+    const { description, orderId, email, language = 'uk', planId } = body;
 
-    if (!amount || !description || !orderId) {
+    if (!isPlanId(planId)) {
       return NextResponse.json(
-        { success: false, message: 'amount, description and orderId are required' },
+        { success: false, message: 'Unknown or missing planId' },
         { status: 400 }
       );
     }
+    if (!orderId) {
+      return NextResponse.json(
+        { success: false, message: 'orderId is required' },
+        { status: 400 }
+      );
+    }
+
+    // Server-authoritative price: never trust a client-supplied amount.
+    const plan = PLANS[planId];
+    const amount = plan.amount;
+    const currency = plan.currency;
+    const safeDescription =
+      typeof description === 'string' && description.trim() ? description.trim() : plan.title;
 
     // Build LiqPay payload (v3)
     const payload: Record<string, any> = {
@@ -85,7 +92,7 @@ export async function POST(request: NextRequest) {
       action: 'pay',
       amount,
       currency,
-      description,
+      description: safeDescription,
       order_id: orderId,
       language,
       // If provided, many LiqPay accounts accept sender email as a meta field

@@ -52,7 +52,9 @@ export async function PATCH(req: NextRequest) {
   const body = await req.json() as { itemId: string; isPurchased: boolean; purchasedPeriods?: string[] };
   const { itemId, isPurchased, purchasedPeriods } = body;
 
-  if (!itemId) {
+  // itemId flows into the query filter `{ 'items.id': itemId }`; a non-string
+  // (e.g. `{$ne:null}`) would act as a Mongo operator, so require a string.
+  if (typeof itemId !== 'string' || !itemId) {
     return NextResponse.json({ error: 'itemId required' }, { status: 400 });
   }
 

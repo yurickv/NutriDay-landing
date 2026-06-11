@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readSessionUserId } from '@/lib/auth/session';
+import { checkSessionSubscription } from '@/lib/subscription';
 import { parseCustomFood } from '@/lib/menu/parseCustomFood';
 
 interface ParseBody {
@@ -8,9 +8,18 @@ interface ParseBody {
 }
 
 export async function POST(req: NextRequest) {
-  const userEmail = await readSessionUserId();
+  // This route spends money on an OpenAI call, so gate it behind an ACTIVE
+  // subscription — not merely a valid session — to prevent lapsed users from
+  // racking up AI cost.
+  const { email: userEmail, active } = await checkSessionSubscription();
   if (!userEmail) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  if (!active) {
+    return NextResponse.json(
+      { error: 'Subscription expired', message: 'Ваша підписка завершилася.' },
+      { status: 402 },
+    );
   }
 
   const body = (await req.json()) as ParseBody;

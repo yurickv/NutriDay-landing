@@ -1,6 +1,6 @@
 # EasyMenu — План розробки: Тижневе меню, Список покупок та PWA
 
-> **Статус**: Фаза 1 ✅ | Фаза 2 ✅ | Фаза 3 ✅ | Фаза 4 ✅ | Фаза 5 ✅ | Власні страви ✅ | Масштабованість & безпека ✅ | Промпт v2 ✅ | UI Redesign ✅ | Фаза 6–7 — в черзі
+> **Статус**: Фаза 1 ✅ | Фаза 2 ✅ | Фаза 3 ✅ | Фаза 4 ✅ | Фаза 5 ✅ | Власні страви ✅ | Масштабованість & безпека ✅ | OWASP-аудит ✅ | Промпт v2 ✅ | UI Redesign ✅ | Фаза 6–7 — в черзі
 > **Пріоритет**: Висока
 > **Ціль**: Побудувати персоналізований кабінет для схуднення з AI-меню, списком покупок та елементами залучення, оптимізований для мобільних (PWA).
 
@@ -944,7 +944,7 @@ TDEE = BMR × коефіцієнт_активності
 - Зміна `lose_weight → gain_weight` при тій самій біометрії → `goalCalories` стрибає з `TDEE×0.85` на `TDEE×1.15`; поріг 1200 не пробивається.
 
 ### Відоме обмеження (поза цією зміною)
-- `src/app/api/onboarding/route.ts` досі заглушка (`console.log`) → `users.onboarding` не заповнюється, профіль фактично налаштовується через сторінку профілю. Каверза: онбординг до автентифікації (немає email-ключа). Потенційний окремий крок.
+- `src/app/api/onboarding/route.ts` — заглушка (no-op `{ success: true }`) → `users.onboarding` не заповнюється, профіль фактично налаштовується через сторінку профілю. Каверза: онбординг до автентифікації (немає email-ключа). Потенційний окремий крок. _(Лог тіла з PII прибрано — див. OWASP-changelog 2026-06-11.)_
 
 ---
 
@@ -1361,3 +1361,91 @@ export function scaleMealToCalories(meal: AIMeal, targetCalories: number): void
 - Edge case «сьогодні Неділя»: `pendingDayIndices = []`, без catch-up запитів.
 - Залишок: фінальний тест на iPhone PWA (перший виклик має стабільно вкладатись у
   кілька секунд незалежно від мережі).
+
+---
+
+## 🔒 Changelog — OWASP security-аудит: фікс підробки ціни, заголовки, валідація (2026-06-11)
+
+Ручний аудит за категоріями OWASP Top 10 (auth/authz, інʼєкції, витік секретів,
+небезпечні дефолти). `npm audit` відпрацював; `semgrep` недоступний у середовищі
+(Python-пакет, немає pip/pipx) — натомість ручний огляд коду.
+
+### 🔴 Критичні / Високі
+
+#### 1. Підробка ціни платежу — суму диктував клієнт
+`POST /api/liqpay/checkout` брав `amount` із тіла запиту і **підписував його як є**;
+callback активував підписку лише за `status`, не звіряючи суму. Юзер міг заплатити
+1 ₴ за місячний план.
+- **Новий `src/lib/plans.ts`** — єдине серверне джерело цін (`week: 199`, `month: 399`)
+  + `isPlanId()`, `getPlanPrice()`. Клієнт використовує лише для відображення.
+- `liqpay/checkout/route.ts` — `amount`/`currency` **не читаються з клієнта**, а
+  виводяться з `planId` через `PLANS`; невалідний `planId` → 400.
+- `liqpay/callback/route.ts` — захист у глибину: якщо підписана LiqPay сума менша за
+  ціну плану → активація скасовується (`paymentStatus = 'failed'`) + лог.
+- `src/app/payment/plan/page.tsx` — імпортує `PLANS` з `@/lib/plans`, у тіло запиту
+  `amount` більше не надсилає (усунено дубльовані ціни).
+
+#### 2. Застаріла Next.js (15.3.8) з активними CVE
+`npm install next@15.5.19`. Закрито всі high рантайму (SSRF через middleware,
+обхід middleware/proxy в App Router, cache-poisoning, content-injection, RSC DoS).
+Залишок audit — транзитивна `postcss` (moderate, build-time CSS) всередині next та
+build-залежності `next-pwa` (workbox/rollup/serialize-javascript) — рантайму не
+стосуються.
+
+### 🟠 Середні
+
+#### 3. Відсутні security-заголовки
+`next.config.ts` — `async headers()` на всі роути: HSTS, `X-Frame-Options: DENY`,
+`X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`. CSP
+застосовується **лише в production** (у dev ламала б Turbopack/HMR), `'self'` +
+дозволений `liqpay.ua` для checkout-форми, `frame-ancestors 'none'`.
+
+#### 4. Onboarding-stub логував PII
+`src/app/api/onboarding/route.ts` приймав будь-який JSON і писав `console.log` тіла
+(вік/вага/стать/цілі). Переписано на безпечний no-op `{ success: true }` без
+парсингу/логування (клієнт `creating-plan` чекає лише `response.ok`).
+
+#### 5. Витік внутрішніх помилок клієнту
+`callback`, `subscription/init`, `magic-link/request` повертали `error?.message`
+у відповідь. Замінено на generic `'Server error'`; деталі лишаються в `console.error`.
+
+### 🟡 Низькі
+
+#### 6. Перевірка типів body-параметрів (NoSQL-інʼєкція)
+**Новий `src/lib/validation.ts`** — `isMealType`, `isNonEmptyString`, `safeItemIndex`.
+Окрім id у фільтрах виявлено ширший вектор: `mealType`/`itemIndex` підставлялися в
+**Mongo update-path** (`days.X.meals.${mealType}.${itemIndex}…`) без валідації.
+Захищено: `meal/consume`, `meal/rate`, `meal/swap` (whitelist `mealType`, безпечний
+невідʼємний integer `itemIndex`/`alternativeIndex`, непорожній `dayLabel` → інакше
+400); `shopping-list` PATCH (`itemId` має бути рядком); `meal/custom` DELETE
+(`entryId`/`dayLabel` — рядки, бо йдуть у `$pull`).
+
+#### 7. Constant-time порівняння підпису
+`liqpay/callback` — `expected !== signature` замінено на `crypto.timingSafeEqual`
+(`signaturesMatch()` з ранньою перевіркою довжини); timing-leak усунено.
+
+#### 8. AI-роути за активною підпискою
+`POST /api/menu/food/parse` витрачав OpenAI лише за валідною сесією, не звіряючи
+підписку → прострочений юзер міг генерувати витрати. Переведено на
+`checkSessionSubscription()` (401/402). Перевірено решту: `meal/alternatives` вже був
+за підпискою; `meal/swap` AI **не викликає** (читає готові `quickAlternatives` +
+локальне масштабування); `food-preferences` коштів не витрачає — навмисно лишено на
+сесійній авторизації.
+
+### Перевірено й коректно (без змін)
+Сесії (httpOnly/secure/sameSite cookie, server-side гарди в кожному роуті);
+magic-link (random 32B, зберігається лише хеш, one-time, TTL 20хв, POST-підтвердження);
+секрети (`.env` у `.gitignore`, в історії не було); немає `eval`/`dangerouslySetInnerHTML`/
+`child_process`; CORS не відкритий (дефолт same-origin); ідемпотентність платежів
+(unique-індекс на `signature`).
+
+### Перевірка
+- `npx tsc --noEmit` → exit 0 (після обох партій).
+- `npm audit --omit=dev`: `next`-специфічні рантайм-CVE зникли (лишилась лише
+  транзитивна `postcss`-moderate + build-time next-pwa).
+
+### Відкриті (необовʼязкові, наступний цикл)
+- CSP без `nonce` — зараз `script-src 'unsafe-inline'`; за потреби посилити через
+  nonce-pipeline.
+- `next-pwa` тягне вразливі build-залежності — оновлення лише major-бампом
+  (`@ducanh2912/next-pwa`), відкладено.

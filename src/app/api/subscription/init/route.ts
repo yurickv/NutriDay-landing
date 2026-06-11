@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Init subscription error:', error);
     return NextResponse.json(
-      { success: false, message: error?.message || 'Server error' },
+      { success: false, message: 'Server error' },
       { status: 500 }
     );
   }

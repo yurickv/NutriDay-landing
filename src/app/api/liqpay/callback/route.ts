@@ -5,6 +5,7 @@ import { getDb } from '@/lib/db';
 import { issueMagicLinkToken } from '@/lib/auth/magic';
 import { sendMagicLinkEmail } from '@/lib/email';
 import { computeSubscriptionExpiry } from '@/lib/subscription';
+import { PLANS, isPlanId } from '@/lib/plans';
 
 type LiqpayCallback = {
   order_id?: string;
@@ -24,6 +25,14 @@ const decodeBase64Json = (b64: string) => {
 
 const buildSignature = (privateKey: string, data: string) =>
   crypto.createHash('sha1').update(privateKey + data + privateKey).digest('base64');
+
+// Constant-time compare so signature validation doesn't leak via response timing.
+const signaturesMatch = (expected: string, received: string): boolean => {
+  const a = Buffer.from(expected);
+  const b = Buffer.from(received);
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -65,7 +74,7 @@ export async function POST(request: NextRequest) {
     }
 
     const expected = buildSignature(privateKey, data);
-    if (expected !== signature) {
+    if (!signaturesMatch(expected, signature)) {
       return NextResponse.json(
         { success: false, message: 'Invalid signature' },
         { status: 400 }
@@ -118,6 +127,22 @@ export async function POST(request: NextRequest) {
     if (user) {
       const previousPaymentStatus = (user as any).paymentStatus;
       const effectivePlanId = planId || (user as any).planId || null;
+
+      // Defense in depth against price tampering: if the (LiqPay-signed) amount
+      // is below the plan's server-side price, refuse to activate. With the
+      // checkout route now forcing the correct amount this should never trigger
+      // for a legitimate flow; it catches anything that bypasses checkout.
+      if (paymentStatus === 'active' && isPlanId(effectivePlanId)) {
+        const expectedAmount = PLANS[effectivePlanId].amount;
+        const paidAmount = Number((payload as any).amount);
+        if (Number.isFinite(paidAmount) && paidAmount + 0.01 < expectedAmount) {
+          console.error(
+            `LiqPay amount mismatch: paid ${paidAmount} < expected ${expectedAmount} for plan ${effectivePlanId} (order ${orderId ?? 'n/a'})`,
+          );
+          paymentStatus = 'failed';
+        }
+      }
+
       const expiresAt =
         paymentStatus === 'active' ? computeSubscriptionExpiry(effectivePlanId, now) : null;
 
@@ -167,7 +192,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('LiqPay callback error:', error);
     return NextResponse.json(
-      { success: false, message: error?.message || 'Server error' },
+      { success: false, message: 'Server error' },
       { status: 500 }
     );
   }

@@ -4,6 +4,7 @@ import { readSessionUserId } from '@/lib/auth/session';
 import { getDb } from '@/lib/db';
 import { WeeklyMenu } from '@/types/weeklyMenu';
 import { updateStreak } from '@/lib/menu/streakUpdater';
+import { isMealType, isNonEmptyString, safeItemIndex } from '@/lib/validation';
 
 interface ConsumeBody {
   menuId: string;
@@ -21,7 +22,12 @@ export async function PATCH(req: NextRequest) {
   }
 
   const body = await req.json() as ConsumeBody;
-  const { dayLabel, mealType, itemIndex, isConsumed, consumedWeight } = body;
+  const { dayLabel, mealType, isConsumed, consumedWeight } = body;
+  const itemIndex = safeItemIndex(body.itemIndex);
+
+  if (!isNonEmptyString(dayLabel) || !isMealType(mealType) || itemIndex === null) {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+  }
 
   const db = await getDb();
   const col = db.collection('weekly_menus');

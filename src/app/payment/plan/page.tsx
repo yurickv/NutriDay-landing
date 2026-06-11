@@ -10,24 +10,10 @@ import {
   setOnboardingData,
 } from '@/utils/onboardingHelpers';
 import type { OnboardingData } from '@/types/onboarding';
+import { PLANS, type PlanId } from '@/lib/plans';
 
-type PlanId = 'week' | 'month';
-
-const PLANS: Record<
-  PlanId,
-  { title: string; description: string; amount: number }
-> = {
-  week: {
-    title: 'Меню на тиждень',
-    description: 'План харчування на 7 днів з рецептами та списком покупок',
-    amount: 199, // TODO: скоригуйте ціну під ваш тариф
-  },
-  month: {
-    title: 'Меню 4 етапами на місяць',
-    description: 'Покрокове меню на 4 тижні з рекомендаціями та підтримкою',
-    amount: 399, // TODO: скоригуйте ціну під ваш тариф
-  },
-};
+// Prices come from @/lib/plans (server source of truth). The amount sent to
+// checkout is derived server-side from planId, so the values here are display-only.
 
 function goalHeadline(data: OnboardingData) {
   const map: Record<string, string> = {
@@ -150,10 +136,8 @@ export default function DashboardPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount: plan.amount,
           description,
           orderId,
-          currency: 'UAH',
           email,
           planId: selectedPlan,
         }),

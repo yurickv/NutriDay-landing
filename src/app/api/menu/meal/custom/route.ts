@@ -113,7 +113,9 @@ export async function DELETE(req: NextRequest) {
   const body = (await req.json()) as DeleteBody;
   const { dayLabel, entryId } = body;
 
-  if (!dayLabel || !entryId) {
+  // entryId flows into the `$pull` filter `{ id: entryId }`, so it must be a
+  // plain string — never an object that could act as a Mongo operator.
+  if (typeof dayLabel !== 'string' || !dayLabel || typeof entryId !== 'string' || !entryId) {
     return NextResponse.json({ error: 'Некоректні дані' }, { status: 400 });
   }
 
