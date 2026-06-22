@@ -17,6 +17,8 @@
  * distinctive; matching is substring-based on a normalised ingredient name.
  */
 
+import { NutritionPer100 } from '@/types/meals';
+
 export interface FoodEntry {
   // Canonical label (for debugging / future UI).
   label: string;
@@ -1313,19 +1315,33 @@ function toGrams(quantity: number, unit: string, name: string): number {
   return 0; // unknown unit — skip ingredient
 }
 
-// Computes absolute calories + macros for a dish from its ingredient list.
-// Uses the FOOD_TABLE lookup (per 100 g raw). Unknown ingredients are skipped
-// with a dev-mode warning — add them to FOOD_TABLE to improve accuracy.
-export function computeMealNutrition(
+export interface NutritionDetailed {
+  calories: number;
+  protein: number;
+  fat: number;
+  carbs: number;
+  // Sum of grams of every ingredient we could convert to grams (toGrams > 0).
+  totalGrams: number;
+  // Grams of ingredients recognised in FOOD_TABLE or the zero-macro list.
+  matchedGrams: number;
+}
+
+// Computes macros AND coverage info from an ingredient list. Coverage
+// (matchedGrams / totalGrams) lets callers decide whether the deterministic
+// result is trustworthy or they should fall back to an estimate.
+export function computeNutritionDetailed(
   ingredients: { name: string; quantity: number; unit: string }[],
-): { calories: number; protein: number; fat: number; carbs: number } {
+): NutritionDetailed {
   let protein = 0;
   let fat = 0;
   let carbs = 0;
+  let totalGrams = 0;
+  let matchedGrams = 0;
 
   for (const ing of ingredients) {
     const grams = toGrams(ing.quantity, ing.unit, ing.name);
     if (grams <= 0) continue;
+    totalGrams += grams;
 
     const macros = lookupFood(ing.name);
     if (!macros) {
@@ -1334,7 +1350,7 @@ export function computeMealNutrition(
       }
       continue;
     }
-
+    matchedGrams += grams;
     protein += (macros.protein / 100) * grams;
     fat += (macros.fat / 100) * grams;
     carbs += (macros.carbs / 100) * grams;
@@ -1345,5 +1361,31 @@ export function computeMealNutrition(
     protein: Math.round(protein),
     fat: Math.round(fat),
     carbs: Math.round(carbs),
+    totalGrams,
+    matchedGrams,
+  };
+}
+
+// Computes absolute calories + macros for a dish from its ingredient list.
+// Thin wrapper over computeNutritionDetailed (kept for existing callers).
+export function computeMealNutrition(
+  ingredients: { name: string; quantity: number; unit: string }[],
+): { calories: number; protein: number; fat: number; carbs: number } {
+  const d = computeNutritionDetailed(ingredients);
+  return { calories: d.calories, protein: d.protein, fat: d.fat, carbs: d.carbs };
+}
+
+// Derives per-100g values from an absolute total and its gram weight.
+export function per100FromTotals(
+  totals: { calories: number; protein: number; fat: number; carbs: number },
+  grams: number,
+): NutritionPer100 {
+  if (grams <= 0) return { calories: 0, protein: 0, fat: 0, carbs: 0 };
+  const f = 100 / grams;
+  return {
+    calories: Math.round(totals.calories * f),
+    protein: Math.round(totals.protein * f),
+    fat: Math.round(totals.fat * f),
+    carbs: Math.round(totals.carbs * f),
   };
 }
