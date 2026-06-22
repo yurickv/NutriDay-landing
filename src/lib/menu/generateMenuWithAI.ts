@@ -218,6 +218,35 @@ function normalizeArray(raw: unknown): AIMeal[] {
   return [normalizeMeal({})];
 }
 
+// Rounds an ingredient quantity to a "clean" number. Weight-based ingredients
+// of 20 g/мл or more snap to the nearest 10 (so dish weights aren't like 342 g);
+// small ones (spices, oil, yeast) keep finer granularity so they aren't distorted
+// (e.g. 5 мл oil must not jump to 10). Count units ("шт") stay whole.
+function roundQuantity(quantity: number, unit: string): number {
+  const u = unit.trim().toLowerCase();
+  if (u === 'шт' || u === 'шт.') return Math.max(1, Math.round(quantity));
+  const isWeight = u === 'г' || u === 'гр' || u === 'мл';
+  if (isWeight && quantity >= 20) return Math.max(10, Math.round(quantity / 10) * 10);
+  if (isWeight) return Math.max(5, Math.round(quantity));
+  return Math.max(1, Math.round(quantity));
+}
+
+// Rounds every ingredient weight, then RECOMPUTES the meal's calories/macros from
+// the rounded weights via the deterministic table so the displayed numbers always
+// match the listed ingredients. servingSize is rounded to the nearest 10.
+function roundAndRecomputeMeal(meal: AIMeal): void {
+  meal.ingredients = meal.ingredients.map((ing) => ({
+    ...ing,
+    quantity: roundQuantity(ing.quantity, ing.unit),
+  }));
+  const n = computeMealNutrition(meal.ingredients);
+  meal.calories = n.calories;
+  meal.protein = n.protein;
+  meal.fat = n.fat;
+  meal.carbs = n.carbs;
+  meal.servingSize = Math.max(10, Math.round(meal.servingSize / 10) * 10);
+}
+
 // Scales all meals in a day so the daily calorie total matches targetCalories
 // within ±3%. Applies a uniform factor k to macros, servingSize, and ingredient
 // quantities — preserving the macro ratio and kcal/g consistency.
@@ -335,6 +364,13 @@ function mapDays(rawDays: Record<string, unknown>[], weekStartDate: Date, target
   //          from a neighboring day and re-scale
   adjustDeficientDays(days, targetCalories);
 
+  // Pass 3.5 — round ingredient weights to clean numbers (≥20 g/мл → nearest 10)
+  //            and recompute macros from the rounded weights so the numbers match.
+  for (const day of days) {
+    const allMeals = [...day.meals.breakfast, ...day.meals.lunch, ...day.meals.dinner, ...day.meals.snacks];
+    for (const meal of allMeals) roundAndRecomputeMeal(meal);
+  }
+
   // Pass 4 — compute final aggregate totals
   for (const day of days) {
     const allMeals = [...day.meals.breakfast, ...day.meals.lunch, ...day.meals.dinner, ...day.meals.snacks];
@@ -390,26 +426,25 @@ export async function generateMenuWithAI(
 }
 
 /**
- * Scales a meal's macros and ingredient quantities so its calories match
- * targetCalories within ±3%. Mutates the meal in place. No-ops when either
- * value is 0 or the factor is outside the safe [0.5, 2.0] range.
+ * Scales a meal's ingredient quantities so its calories approach targetCalories,
+ * then rounds weights to clean numbers and recomputes macros from the table.
+ * The round+recompute runs UNCONDITIONALLY so swapped meals get clean weights
+ * even when no scaling was needed.
  */
 export function scaleMealToCalories(meal: AIMeal, targetCalories: number): void {
-  if (targetCalories <= 0 || meal.calories <= 0) return;
-  const k = targetCalories / meal.calories;
-  if (Math.abs(k - 1) <= 0.03 || k < 0.5 || k > 2.0) return;
-
-  meal.calories    = Math.round(meal.calories    * k);
-  meal.protein     = Math.round(meal.protein     * k);
-  meal.fat         = Math.round(meal.fat         * k);
-  meal.carbs       = Math.round(meal.carbs       * k);
-  meal.servingSize = Math.round(meal.servingSize * k);
-  meal.ingredients = meal.ingredients.map((ing) => ({
-    ...ing,
-    quantity: ing.unit === 'шт'
-      ? Math.max(1, Math.round(ing.quantity * k))
-      : Math.max(5, Math.round(ing.quantity * k)),
-  }));
+  if (targetCalories > 0 && meal.calories > 0) {
+    const k = targetCalories / meal.calories;
+    if (Math.abs(k - 1) > 0.03 && k >= 0.5 && k <= 2.0) {
+      meal.servingSize = Math.round(meal.servingSize * k);
+      meal.ingredients = meal.ingredients.map((ing) => ({
+        ...ing,
+        quantity: ing.unit === 'шт'
+          ? Math.max(1, Math.round(ing.quantity * k))
+          : Math.max(5, Math.round(ing.quantity * k)),
+      }));
+    }
+  }
+  roundAndRecomputeMeal(meal);
 }
 
 /**
