@@ -78,6 +78,7 @@ export interface CustomEntry {
   carbs: number;
   grams: number | null; // eaten weight in grams (null for count-based, e.g. "2 eggs")
   per100: NutritionPer100 | null; // reference values for weight re-scaling
+  ingredients?: MealIngredient[]; // decomposition when method='ingredients' (optional)
   source: 'ai' | 'manual';
   createdAt: Date;
 }

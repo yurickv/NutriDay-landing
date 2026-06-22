@@ -3,7 +3,7 @@ import { ObjectId } from 'mongodb';
 import { readSessionUserId } from '@/lib/auth/session';
 import { getDb } from '@/lib/db';
 import { WeeklyMenu } from '@/types/weeklyMenu';
-import { CustomEntry } from '@/types/meals';
+import { CustomEntry, MealIngredient } from '@/types/meals';
 import { updateStreak } from '@/lib/menu/streakUpdater';
 
 interface PostBody {
@@ -50,6 +50,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Day not found' }, { status: 404 });
   }
 
+  const rawIngredients = Array.isArray(entry.ingredients) ? entry.ingredients : [];
+  const ingredients: MealIngredient[] = rawIngredients
+    .slice(0, 40)
+    .map((i) => ({
+      name: String(i?.name ?? '').slice(0, 60),
+      quantity: num(i?.quantity),
+      unit: String(i?.unit ?? 'г').slice(0, 8),
+      shoppingCategory: (i?.shoppingCategory as MealIngredient['shoppingCategory']) ?? 'other',
+    }))
+    .filter((i) => i.name.length > 0 && i.quantity > 0);
+
   const gramsRaw = num(entry.grams);
   const newEntry: CustomEntry = {
     id: crypto.randomUUID(),
@@ -69,6 +80,7 @@ export async function POST(req: NextRequest) {
             carbs: num(entry.per100.carbs),
           }
         : null,
+    ingredients: ingredients.length > 0 ? ingredients : undefined,
     source: entry.source === 'manual' ? 'manual' : 'ai',
     createdAt: new Date(),
   };
