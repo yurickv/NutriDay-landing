@@ -1,11 +1,13 @@
 import OpenAI from 'openai';
-import { NutritionPer100 } from '@/types/meals';
+import { MealIngredient, NutritionPer100 } from '@/types/meals';
+import { computeNutritionDetailed, per100FromTotals } from './foodNutrition';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// Result of parsing a food name. The LLM estimates only the per-100g composition;
-// absolute calories/macros are computed here from the user-provided weight. `error`
-// is set when the food can't be recognised — the UI then falls back to manual entry.
+// Result of parsing a food name. When the LLM's ingredient decomposition is well
+// covered by the nutrition table, calories/macros are computed deterministically
+// (method 'ingredients'); otherwise we fall back to the LLM's per-100g estimate
+// (method 'estimate'). `error` is set when the food can't be recognised at all.
 export interface ParsedFood {
   name: string;
   emoji: string;
@@ -15,21 +17,34 @@ export interface ParsedFood {
   carbs: number;
   grams: number;
   per100: NutritionPer100 | null;
+  ingredients: MealIngredient[];
+  method: 'ingredients' | 'estimate';
   error: string | null;
 }
 
-const SYSTEM_PROMPT = `You are a nutrition expert. The user gives the name of a dish (in Ukrainian) they ate and its eaten weight in grams. Estimate the nutrition COMPOSITION PER 100 g of that READY (cooked, ready-to-eat) dish, using typical Ukrainian / home-cooked values.
+// Below this table-coverage ratio (matched grams / total grams) the deterministic
+// computation is considered unreliable and we use the LLM per-100g estimate.
+const COVERAGE_THRESHOLD = 0.6;
+
+const SYSTEM_PROMPT = `You are a nutrition expert. The user gives the name of a dish (in Ukrainian) they ate and its eaten weight in grams.
+
+Do TWO things:
+1. Decompose the dish into its main ingredients with realistic weights that together roughly equal the eaten weight. Use raw / as-purchased weights. Unit "г" for solids, "мл" for liquids, "шт" only for naturally countable items (e.g. eggs).
+2. Also provide your own fallback estimate of the nutrition PER 100 g of the READY (cooked) dish.
 
 Reply with ONLY valid JSON (no markdown, no commentary) exactly matching this schema:
 {
   "name": "коротка назва страви, ≤30 символів, українською",
   "emoji": "один доречний food-емодзі",
+  "ingredients": [{ "name": "...", "quantity": 0, "unit": "г", "shoppingCategory": "other" }],
   "per100": { "calories": 0, "protein": 0, "fat": 0, "carbs": 0 }
 }
+shoppingCategory values: vegetables|fruits|meat|fish|dairy|grains|legumes|oils|spices|other
 
 RULES:
 - All text values MUST be in Ukrainian.
-- "per100" is the nutrition of 100 g of the ready dish (NOT the whole portion). Round all numbers to integers.
+- Ingredient names MUST be simple product names (e.g. "куряче філе", "гречана крупа", "олія соняшникова", "морква") so they can be matched against a nutrition table.
+- "per100" is the nutrition of 100 g of the READY dish. Round all numbers to integers.
 - Return { "error": "коротке пояснення українською" } ONLY if the text is not food at all or is impossible to understand (gibberish).`;
 
 function num(v: unknown): number {
@@ -53,10 +68,27 @@ function normalizePer100(raw: unknown): NutritionPer100 | null {
   return per100;
 }
 
+function normalizeIngredients(raw: unknown): MealIngredient[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .slice(0, 40)
+    .map((r) => {
+      const i = (r ?? {}) as Record<string, unknown>;
+      return {
+        name: String(i.name ?? '').slice(0, 60),
+        quantity: Math.max(0, Math.round(Number(i.quantity) || 0)),
+        unit: String(i.unit ?? 'г').slice(0, 8),
+        shoppingCategory:
+          (i.shoppingCategory as MealIngredient['shoppingCategory']) ?? 'other',
+      };
+    })
+    .filter((i) => i.name.length > 0 && i.quantity > 0);
+}
+
 function errorResult(message: string): ParsedFood {
   return {
     name: '', emoji: '🍽️', calories: 0, protein: 0, fat: 0, carbs: 0,
-    grams: 0, per100: null, error: message,
+    grams: 0, per100: null, ingredients: [], method: 'estimate', error: message,
   };
 }
 
@@ -93,22 +125,49 @@ export async function parseCustomFood(text: string, grams: number): Promise<Pars
         return errorResult(raw.error.trim());
       }
 
-      const per100 = normalizePer100(raw.per100);
-      if (!per100) {
-        lastErr = new Error('Missing or empty per100');
-        continue;
+      const name = String(raw.name ?? text).slice(0, 30);
+      const emoji = String(raw.emoji ?? '🍽️');
+      const ingredients = normalizeIngredients(raw.ingredients);
+      const llmPer100 = normalizePer100(raw.per100);
+
+      // Preferred path: deterministic table computation when coverage is high.
+      if (ingredients.length > 0) {
+        const d = computeNutritionDetailed(ingredients);
+        const coverage = d.totalGrams > 0 ? d.matchedGrams / d.totalGrams : 0;
+        if (coverage >= COVERAGE_THRESHOLD && d.calories > 0) {
+          return {
+            name,
+            emoji,
+            calories: d.calories,
+            protein: d.protein,
+            fat: d.fat,
+            carbs: d.carbs,
+            grams: d.totalGrams,
+            per100: per100FromTotals(d, d.totalGrams),
+            ingredients,
+            method: 'ingredients',
+            error: null,
+          };
+        }
       }
 
+      // Fallback: scale the LLM's per-100g estimate to the eaten weight.
+      if (!llmPer100) {
+        lastErr = new Error('No usable nutrition (low coverage and no per100)');
+        continue;
+      }
       const f = g / 100;
       return {
-        name: String(raw.name ?? text).slice(0, 30),
-        emoji: String(raw.emoji ?? '🍽️'),
-        calories: Math.round(per100.calories * f),
-        protein: Math.round(per100.protein * f),
-        fat: Math.round(per100.fat * f),
-        carbs: Math.round(per100.carbs * f),
+        name,
+        emoji,
+        calories: Math.round(llmPer100.calories * f),
+        protein: Math.round(llmPer100.protein * f),
+        fat: Math.round(llmPer100.fat * f),
+        carbs: Math.round(llmPer100.carbs * f),
         grams: g,
-        per100,
+        per100: llmPer100,
+        ingredients,
+        method: 'estimate',
         error: null,
       };
     } catch (err) {
