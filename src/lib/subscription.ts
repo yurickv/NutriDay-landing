@@ -49,6 +49,19 @@ interface LegacyUser extends SubscriptionUser {
   lastPayment?: { create_date?: number; end_date?: number } | null;
 }
 
+// Dev-only convenience: on a NON-production build (i.e. local `next dev` on
+// localhost) the project owner may use the app without an active paid
+// subscription. This deliberately NEVER fires in production
+// (NODE_ENV === 'production'), so it cannot weaken the live paywall.
+const DEV_BYPASS_EMAILS = new Set(['yurickv@gmail.com']);
+
+function isDevSubscriptionBypass(email: string): boolean {
+  return (
+    process.env.NODE_ENV !== 'production' &&
+    DEV_BYPASS_EMAILS.has(email.trim().toLowerCase())
+  );
+}
+
 /**
  * Reads the current session's user and reports whether their subscription is valid.
  *
@@ -64,6 +77,11 @@ export async function checkSessionSubscription(): Promise<{
 }> {
   const email = await readSessionUserId();
   if (!email) return { email: null, active: false, userExists: false };
+
+  // Local-dev owner bypass (never active in production — see isDevSubscriptionBypass).
+  if (isDevSubscriptionBypass(email)) {
+    return { email, active: true, userExists: true };
+  }
 
   const db = await getDb();
   const users = db.collection('users');
