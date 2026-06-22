@@ -1,6 +1,6 @@
 # EasyMenu — План розробки: Тижневе меню, Список покупок та PWA
 
-> **Статус**: Фаза 1 ✅ | Фаза 2 ✅ | Фаза 3 ✅ | Фаза 4 ✅ | Фаза 5 ✅ | Власні страви ✅ | Масштабованість & безпека ✅ | OWASP-аудит ✅ | Промпт v2 ✅ | UI Redesign ✅ | Фаза 6–7 — в черзі
+> **Статус**: Фаза 1 ✅ | Фаза 2 ✅ | Фаза 3 ✅ | Фаза 4 ✅ | Фаза 5 ✅ | Власні страви ✅ | Масштабованість & безпека ✅ | OWASP-аудит ✅ | Промпт v2 ✅ | UI Redesign ✅ | Округлення ваг + гібридний БЖВ власних страв ✅ | Фаза 6–7 — в черзі
 > **Пріоритет**: Висока
 > **Ціль**: Побудувати персоналізований кабінет для схуднення з AI-меню, списком покупок та елементами залучення, оптимізований для мобільних (PWA).
 
@@ -141,6 +141,7 @@
   carbs: number,
   grams: number | null,             // фактична вага порції
   per100: { calories, protein, fat, carbs } | null,  // склад на 100 г — для re-scale у формі
+  ingredients?: MealIngredient[],   // розклад на інгредієнти (коли БЖВ пораховано з таблиці, method='ingredients')
   source: "ai" | "manual",
   createdAt: Date
 }
@@ -446,7 +447,7 @@ src/
 │   │   ├── StreakBanner.tsx
 │   │   ├── WaterTracker.tsx
 │   │   ├── WeightProgressCard.tsx      ← міні-графік ваги на головній
-│   │   ├── AddCustomFoodSheet.tsx      ← власна страва: назва+вага → LLM → правка
+│   │   ├── AddCustomFoodSheet.tsx      ← власна страва: назва+вага → LLM; крок 2 = редагований розклад інгредієнтів / степер ваги
 │   │   ├── CustomEntryCard.tsx         ← картка власної страви (видалення)
 │   │   └── GenerateMenuLoader.tsx
 │   ├── shoppingListPage/
@@ -483,7 +484,8 @@ src/
 └── lib/
     ├── menu/
     │   ├── generateMenuWithAI.ts       ← OpenAI + retry + rate limit
-    │   ├── parseCustomFood.ts          ← gpt-4o-mini: назва+вага → per100 → БЖВ
+    │   ├── parseCustomFood.ts          ← gpt-4o-mini: розклад на інгредієнти → FOOD_TABLE, fallback per100
+    │   ├── foodNutrition.ts            ← FOOD_TABLE + computeNutritionDetailed/computeMealNutrition + per100FromTotals
     │   ├── shoppingListBuilder.ts      ← агрегація + quantityByDay + mergeShoppingItems (ре-синк)
     │   └── streakUpdater.ts
     ├── analytics.ts                    ← track() функція
@@ -504,7 +506,8 @@ src/
 | PATCH | `/api/menu/meal/consume` | Відмітити страву з'їденою |
 | PATCH | `/api/menu/meal/rate` | Рейтинг страви (1/2/3) |
 | POST | `/api/menu/complete-day` | Відмітити день |
-| POST | `/api/menu/food/parse` | LLM-оцінка калорій/БЖВ за назвою+вагою (на 100 г → масштаб) |
+| POST | `/api/menu/food/parse` | Гібридна оцінка БЖВ: LLM-розклад на інгредієнти → таблиця, fallback на per100 |
+| POST | `/api/menu/food/compute` | Детермінований перерахунок БЖВ з інгредієнтів (без OpenAI, для правок у формі) |
 | POST/DELETE | `/api/menu/meal/custom` | Додати/видалити власну з'їдену страву (inline у weekly_menus) |
 | GET | `/api/shopping-list` | Список покупок |
 | PATCH | `/api/shopping-list` | Toggle куплено |
@@ -637,13 +640,13 @@ src/
 
 Користувач може додати з'їдене **поза AI-меню** (домашня страва, продукт, перекус у кафе), і воно враховується в денних калоріях/БЖВ та в логіці стріку.
 
-**Рішення**: оцінка через **LLM `gpt-4o-mini`**, а не зовнішнє nutrition-API — англомовні бази (Nutritionix/Edamam/USDA) погано підходять для україномовних домашніх страв. Вага **обов'язкова**: користувач вводить назву + вагу (г), LLM оцінює склад **на 100 г** (його сильна сторона), а абсолютні калорії/БЖВ рахуються `per100 × grams/100`. Значення завжди можна підправити вручну перед збереженням.
+**Рішення**: оцінка через **LLM `gpt-4o-mini`**, а не зовнішнє nutrition-API — англомовні бази (Nutritionix/Edamam/USDA) погано підходять для україномовних домашніх страв. Вага **обов'язкова**: користувач вводить назву + вагу (г). **Гібридний підрахунок (2026-06-22)**: LLM розкладає страву на інгредієнти, БЖВ рахується **детерміновано** через `FOOD_TABLE` (як у меню); якщо покриття таблицею низьке — відкат на LLM-оцінку `per100`. Значення завжди можна підправити вручну перед збереженням.
 
-- **Зберігання**: inline у `weekly_menus.days[].customEntries[]` (без окремої колекції). `CustomEntry` тримає абсолютні калорії/БЖВ + `per100`/`grams` для перерахунку у формі.
+- **Зберігання**: inline у `weekly_menus.days[].customEntries[]` (без окремої колекції). `CustomEntry` тримає абсолютні калорії/БЖВ + `per100`/`grams` для перерахунку у формі + опційний `ingredients[]` (розклад при `method='ingredients'`).
 - **Підрахунок**: `calcConsumedMacros()` у `DayView` додає суму `customEntries` до з'їдених страв меню; лічильник «N з M прийомів» і завершення дня (≥3) теж їх враховують.
-- **`parseCustomFood(text, grams)`** (`src/lib/menu/parseCustomFood.ts`): окремий OpenAI-клієнт, `gpt-4o-mini`, `json_object`, 2 спроби; повертає `{ error }` лише для не-їжі → UI робить fallback на ручний ввід (вага вже введена).
-- **API**: `POST /api/menu/food/parse` (оцінка, не зберігає), `POST/DELETE /api/menu/meal/custom` ($push/$pull + дублює логіку завершення дня з consume route).
-- **UI**: `AddCustomFoodSheet` (крок 1: назва+вага → крок 2: редаговані поля зі степером ваги, що перераховує через `per100`), `CustomEntryCard` (видалення), секція «Мої страви» в `DayView`.
+- **`parseCustomFood(text, grams)`** (`src/lib/menu/parseCustomFood.ts`): `gpt-4o-mini`, `json_object`, 2 спроби. Промпт просить **розклад на `ingredients[]` + `per100` як запас**. Покриття `FOOD_TABLE` ≥ 0.6 → детермінований результат (`method:'ingredients'`); інакше → LLM-`per100` (`method:'estimate'`). `{ error }` лише для не-їжі → UI fallback на ручний ввід.
+- **API**: `POST /api/menu/food/parse` (оцінка, не зберігає), `POST /api/menu/food/compute` (**детермінований** перерахунок БЖВ з інгредієнтів, без OpenAI — для правок у формі), `POST/DELETE /api/menu/meal/custom` ($push/$pull + дублює логіку завершення дня з consume route).
+- **UI**: `AddCustomFoodSheet` — крок 1: назва+вага → крок 2 у **двох режимах**: (а) **редагований розклад інгредієнтів** із дебаунс-перерахунком через `/food/compute`; (б) степер ваги + ручні БЖВ через `per100` (fallback/ручний ввід). `CustomEntryCard` (видалення), секція «Мої страви» в `DayView`.
 
 > **Gotcha (dev)**: не запускати `next build`, поки активний `next dev` — build перезаписує `.next/`, після чого dev-сервер віддає 500 на всі роути. Для перевірки типів під час dev — `npx tsc --noEmit`.
 
@@ -1451,3 +1454,83 @@ magic-link (random 32B, зберігається лише хеш, one-time, TTL 
   nonce-pipeline.
 - `next-pwa` тягне вразливі build-залежності — оновлення лише major-бампом
   (`@ducanh2912/next-pwa`), відкладено.
+
+---
+
+## 🔧 Changelog — Округлення ваг інгредієнтів + гібридний БЖВ власних страв (2026-06-22)
+
+### Проблеми
+1. **«Брудні» ваги інгредієнтів.** `scaleDayToTarget` масштабував страви множником `k`
+   й округлював ваги через `round(quantity × k)` (мін. 5) → числа на кшталт 83 г, 147 г,
+   а сума → `servingSize` 342 г.
+2. **Неточне БЖВ власної страви.** `parseCustomFood` просив LLM **напряму** вгадати
+   `per100` готової страви — слабка сторона моделі (на відміну від детермінованого
+   підрахунку меню через `FOOD_TABLE`).
+
+### Рішення (узгоджено)
+1. Округлення ваг до 10 **з перерахунком** макро (поріг: великі до 10, дрібні точно).
+2. **Гібрид**: LLM розкладає страву на інгредієнти → детермінований підрахунок через
+   `FOOD_TABLE`; відкат на `per100` при низькому покритті таблицею. + **редагований**
+   розклад на інгредієнти в UI.
+
+> Спек: `docs/superpowers/specs/2026-06-22-menu-nutrition-fixes-design.md`
+> План: `docs/superpowers/plans/2026-06-22-menu-nutrition-fixes.md`
+
+### Зміни
+
+#### 1. `src/lib/menu/foodNutrition.ts` — детальний підрахунок + per100
+- **`computeNutritionDetailed(ingredients)`** → `{ calories, protein, fat, carbs, totalGrams, matchedGrams }`:
+  макро **+ покриття** (`matchedGrams/totalGrams` — скільки ваги страви розпізнано в таблиці).
+- **`computeMealNutrition`** — тепер тонка обгортка над `computeNutritionDetailed` (DRY).
+- **`per100FromTotals(totals, grams)`** → `NutritionPer100` — виводить склад на 100 г з абсолютних значень (для re-scale у формі).
+
+#### 2. `src/lib/menu/generateMenuWithAI.ts` — округлення ваг до 10
+- **`roundQuantity(quantity, unit)`**: `г`/`мл` ≥ 20 → найближчі **10** (мін. 10);
+  `г`/`мл` < 20 → мін. **5** (спеції/олія не спотворюються); `шт` → ціле (мін. 1).
+- **`roundAndRecomputeMeal(meal)`**: округлює ваги інгредієнтів → **перераховує**
+  `calories/БЖВ` через `computeMealNutrition` → `servingSize` до найближчих 10.
+  Гарантує: калорії страви завжди відповідають округленим вагам.
+- **`mapDays` — новий Pass 3.5** (round + recompute) після `adjustDeficientDays`,
+  виконується **завжди**, навіть коли `k` у межах ±3% (раніше «брудні» LLM-ваги лишались).
+- **`scaleMealToCalories`** (шлях свопів) — round+recompute тепер **безумовно** наприкінці
+  (раніше при `k∉[0.5,2.0]` або `|k−1|≤3%` був no-op і ваги лишались «брудними»).
+
+#### 3. `POST /api/menu/food/compute` — новий детермінований ендпоінт
+**`src/app/api/menu/food/compute/route.ts`**: `{ ingredients }` →
+`{ calories, protein, fat, carbs, grams, per100 }` через `computeNutritionDetailed`.
+**Без OpenAI**; gate — валідна сесія (`readSessionUserId`), **не** підписка (немає AI-вартості).
+UI перераховує БЖВ при правках інгредієнтів без AI-витрат.
+
+#### 4. `src/lib/menu/parseCustomFood.ts` — гібрид
+- **Промпт**: LLM розкладає страву на `ingredients[]` (схема як у меню) **і** дає власну
+  `per100` як запасний варіант. Один виклик `gpt-4o-mini`.
+- **Рішення в коді**: покриття таблицею ≥ **0.6** і `calories > 0` → детермінований
+  результат (`method: 'ingredients'`); інакше → відкат на LLM-`per100` (`method: 'estimate'`).
+- `ParsedFood` розширено: `ingredients: MealIngredient[]`, `method`.
+
+#### 5. `CustomEntry` + `ingredients`
+- **`src/types/meals.ts`**: `ingredients?: MealIngredient[]` (розклад при `method='ingredients'`).
+- **`meal/custom` POST** санітизує й зберігає `ingredients` inline у `weekly_menus`.
+
+#### 6. `src/components/menuPage/AddCustomFoodSheet.tsx` — редагований розклад
+Крок 2 — **два режими**:
+- **Режим інгредієнтів** (`method='ingredients'`): редагований список (правка ваги/назви,
+  видалення, додавання) → дебаунс-виклик `/api/menu/food/compute` → оновлює БЖВ і `per100`;
+  загальна вага = сума інгредієнтів; підсумкові калорії/БЖВ read-only.
+- **Режим оцінки/ручний** (`method='estimate'` або «ввести вручну»): як раніше — степер ваги
+  + редаговані БЖВ через `per100`.
+
+#### 7. Dev-обхід перевірки підписки для owner-email
+**`src/lib/subscription.ts`**: `checkSessionSubscription()` повертає `{ active: true }`
+для `yurickv@gmail.com`, але **тільки коли `NODE_ENV !== 'production'`** (локальний
+`next dev` на localhost). У проді (`NODE_ENV === 'production'`) обхід не діє — пейвол
+не послаблюється. Зручність розробки без реальної підписки/LiqPay.
+
+### Перевірка
+- `npx tsc --noEmit` → exit 0 (після кожного завдання й на змердженому `main`).
+- Ручна перевірка користувачем — працює як треба.
+
+### Інваріант
+Округлення+перерахунок — окремий **безумовний** прохід наприкінці pipeline генерації;
+`meal.calories === computeMealNutrition(округлені інгредієнти)`. Список покупок будується
+з уже округлених ваг меню — узгоджений автоматично, окремих змін не потребує.
