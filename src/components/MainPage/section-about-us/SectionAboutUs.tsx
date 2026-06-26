@@ -28,9 +28,7 @@ export default function AboutUsSection() {
             простий, смачний і корисний раціон.
           </p>
           <Link
-            href="https://t.me/Nutri_day_bot"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="/onboarding"
             className="inline-block w-fit mx-auto lg:mx-0"
           >
             <button className="bg-main-button hover:bg-main-button-hover text-black text-lg md:text-xl font-semibold py-3 px-3 rounded-lg transition-colors duration-300">

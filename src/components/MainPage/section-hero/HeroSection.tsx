@@ -26,11 +26,7 @@ export default function HeroSection() {
             EasyMenu допоможе скласти просте та різноманітне меню для вашого
             комфорту й результату.
           </p>
-          <Link
-            href='https://t.me/Nutri_day_bot'
-            target='_blank'
-            rel='noopener noreferrer'
-          >
+          <Link href='/onboarding'>
             <button className='bg-main-button hover:bg-main-button-hover text-black text-lg md:text-2xl py-3 px-6 rounded-full transition-colors duration-300'>
               Спробувати зараз
             </button>
