@@ -101,7 +101,7 @@ const ExampleWorkSection = () => {
     <section className="py-8 xl:py-12 bg-white">
       <div className="container mx-auto px-4">
         {/* Заголовок секції */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-6 md:mb-16">
           <Title text="Як це працює?" />
           <p className="text-xl max-w-3xl mx-auto">Скріншоти роботи сервісу</p>
         </div>
@@ -116,7 +116,7 @@ const ExampleWorkSection = () => {
             >
               {workExamples.map((work) => (
                 <div key={work.id} className="w-full flex-shrink-0">
-                  <div className="grid md:grid-cols-2 gap-8 p-0 md:p-12">
+                  <div className="grid md:grid-cols-2 gap-8 p-0 md:p-6">
                     {/* Зображення */}
                     <div className="relative w-full h-[480px] md:h-auto md:rounded-xl overflow-hidden md:p-0">
                       <div className="relative w-full h-[480px] md:h-[560px]">
@@ -131,8 +131,8 @@ const ExampleWorkSection = () => {
                     </div>
 
                     {/* Контент */}
-                    <div className="flex flex-col justify-center p-8 md:p-0">
-                      <h3 className="text-3xl font-bold text-gray-900 mb-4">
+                    <div className="flex flex-col justify-center px-4 md:px-0">
+                      <h3 className="text-3xl font-bold text-gray-900 mb-4 text-center md:text-left">
                         {work.title}
                       </h3>
                       <p className="text-gray-600 text-lg leading-relaxed max-w-[400px]">
@@ -148,22 +148,22 @@ const ExampleWorkSection = () => {
             <div className="flex justify-between px-4 mt-4">
               <button
                 onClick={prevSlide}
-                className="absolute left-4 top-[240px] md:top-1/2 -translate-y-1/2 bg-white disabled:bg-gray-200
-                border border-gray-300 text-gray-700 p-3 rounded-full hover:bg-gray-50 shadow-md transition-all duration-300 group"
+                className="absolute left-2 md:left-4 top-[240px] md:top-1/2 -translate-y-1/2 bg-white/90 md:bg-white disabled:bg-gray-200
+                border border-gray-300 text-gray-700 p-1.5 md:p-3 rounded-full hover:bg-gray-50 shadow-md transition-all duration-300 group"
                 aria-label="Попередній слайд"
                 disabled={currentSlide === 0} // Опціонально: вимкнути якщо на першому слайді
               >
-                <ChevronLeft className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                <ChevronLeft className="w-4 h-4 md:w-6 md:h-6 group-hover:scale-110 transition-transform" />
               </button>
 
               <button
                 onClick={nextSlide}
-                className="absolute right-4 top-[240px] md:top-1/2 -translate-y-1/2 bg-white disabled:bg-gray-200
-                border border-gray-300 text-gray-700 p-3 rounded-full hover:bg-gray-50 shadow-md transition-all duration-300 group"
+                className="absolute right-2 md:right-4 top-[240px] md:top-1/2 -translate-y-1/2 bg-white/90 md:bg-white disabled:bg-gray-200
+                border border-gray-300 text-gray-700 p-1.5 md:p-3 rounded-full hover:bg-gray-50 shadow-md transition-all duration-300 group"
                 aria-label="Наступний слайд"
                 disabled={currentSlide === workExamples.length - 1} // Опціонально: вимкнути якщо на останньому слайді
               >
-                <ChevronRight className="w-6 h-6 group-hover:scale-110 transition-transform group-disabled:scale-100" />
+                <ChevronRight className="w-4 h-4 md:w-6 md:h-6 group-hover:scale-110 transition-transform group-disabled:scale-100" />
               </button>
             </div>
           </div>
