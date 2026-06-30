@@ -6,6 +6,8 @@ import { createSession } from '@/lib/auth/session';
 import { getDb } from '@/lib/db';
 import { computeSubscriptionExpiry, checkSessionSubscription, inactiveRedirectTarget } from '@/lib/subscription';
 import { calcCalories, normalizeSex } from '@/lib/calories';
+import { capturePaymentEvent } from '@/lib/analytics/posthog.server';
+import { PLANS, isPlanId } from '@/lib/plans';
 
 const base64 = (str: string) => Buffer.from(str).toString('base64');
 
@@ -85,6 +87,18 @@ async function processMagicToken(token: string): Promise<ConsumeResult> {
               }
             );
             paymentStatus = updateTo;
+
+            if (updateTo === 'active') {
+              await capturePaymentEvent({
+                email: String(user.email).trim().toLowerCase(),
+                event: 'payment_succeeded',
+                orderId: String(latestUser?.orderId ?? ''),
+                plan: latestUser?.planId ?? null,
+                amount: isPlanId(latestUser?.planId) ? PLANS[latestUser.planId as 'week' | 'month'].amount : undefined,
+                currency: isPlanId(latestUser?.planId) ? PLANS[latestUser.planId as 'week' | 'month'].currency : undefined,
+                utmSource: (latestUser as any)?.utmSource ?? null,
+              });
+            }
           }
         }
       } catch (err) {
