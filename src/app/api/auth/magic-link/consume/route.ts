@@ -10,7 +10,7 @@ import { calcCalories, normalizeSex } from '@/lib/calories';
 const base64 = (str: string) => Buffer.from(str).toString('base64');
 
 type ConsumeResult =
-  | { ok: true; redirect: string }
+  | { ok: true; redirect: string; email: string }
   | { ok: false; error: string };
 
 // Consumes the one-time token, reconciles payment status, creates the session,
@@ -152,11 +152,11 @@ async function processMagicToken(token: string): Promise<ConsumeResult> {
   // (checkSessionSubscription also backfills expiry for legacy paid users).
   const { active: subscriptionActive, userExists } = await checkSessionSubscription();
   if (subscriptionActive) {
-    return { ok: true, redirect: '/menu' };
+    return { ok: true, redirect: '/menu', email: String(user.email) };
   }
 
   // No valid subscription: returning user → payment page, unknown user → onboarding.
-  return { ok: true, redirect: inactiveRedirectTarget(userExists) };
+  return { ok: true, redirect: inactiveRedirectTarget(userExists), email: String(user.email) };
 }
 
 // POST is the real entry point: the confirmation page sends the token in the
@@ -175,7 +175,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: result.error }, { status: 401 });
     }
 
-    return NextResponse.json({ success: true, redirect: result.redirect });
+    return NextResponse.json({ success: true, redirect: result.redirect, email: result.email });
   } catch (error: any) {
     console.error('Magic-link consume error:', error);
     return NextResponse.json({ success: false, error: 'server_error' }, { status: 500 });
