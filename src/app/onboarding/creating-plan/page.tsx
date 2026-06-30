@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { OnboardingLayout } from '@/components/onboardingPage/OnboardingLayout';
 import { getOnboardingData } from '@/utils/onboardingHelpers';
+import { track } from '@/lib/analytics';
 
 export default function CreatingPlan() {
   const router = useRouter();
@@ -30,6 +31,7 @@ export default function CreatingPlan() {
             // Clear local storage after successful submission
             // clearOnboardingData(); // Uncomment when ready
 
+            track('onboarding_completed');
             // Redirect to dashboard or results page
             router.push('/payment/plan');
           }
