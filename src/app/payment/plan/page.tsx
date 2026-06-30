@@ -11,6 +11,8 @@ import {
 } from '@/utils/onboardingHelpers';
 import type { OnboardingData } from '@/types/onboarding';
 import { PLANS, type PlanId } from '@/lib/plans';
+import { track, identify } from '@/lib/analytics';
+import { readAttribution } from '@/lib/analytics/attribution';
 
 // Prices come from @/lib/plans (server source of truth). The amount sent to
 // checkout is derived server-side from planId, so the values here are display-only.
@@ -36,6 +38,8 @@ export default function DashboardPage() {
   );
   const [agreePersonalData, setAgreePersonalData] = useState(false);
   const [agreeOferta, setAgreeOferta] = useState(false);
+  const emailEnteredFired = React.useRef(false);
+  const consentsFired = React.useRef(false);
 
   useEffect(() => {
     const d = getOnboardingData();
@@ -69,10 +73,21 @@ export default function DashboardPage() {
     const id = setTimeout(() => {
       if (email && email.includes('@')) {
         setOnboardingData('email', email);
+        if (!emailEnteredFired.current) {
+          emailEnteredFired.current = true;
+          track('payment_email_entered');
+        }
       }
     }, 400);
     return () => clearTimeout(id);
   }, [email]);
+
+  useEffect(() => {
+    if (agreePersonalData && agreeOferta && !consentsFired.current) {
+      consentsFired.current = true;
+      track('payment_consents_checked');
+    }
+  }, [agreePersonalData, agreeOferta]);
 
   const goalsList = useMemo(() => {
     const goals: string[] = [];
@@ -87,10 +102,12 @@ export default function DashboardPage() {
   const onPay = async () => {
     setError(null);
     if (!agreePersonalData || !agreeOferta) {
+      track('checkout_blocked', { reason: 'no_consent' });
       setError('Будь ласка, підтвердіть згоди перед оплатою.');
       return;
     }
     if (!email || !email.includes('@')) {
+      track('checkout_blocked', { reason: 'invalid_email' });
       setError('Вкажіть коректний email для отримання доступу.');
       return;
     }
@@ -102,6 +119,11 @@ export default function DashboardPage() {
       try {
         localStorage.setItem('lastOrderId', orderId);
       } catch {}
+
+      const attribution = readAttribution(window.localStorage);
+      track('checkout_started', { plan: selectedPlan, amount: plan.amount });
+      identify(email);
+
       const description = `${plan.title} | ${goalHeadline(data)}`;
 
       // Initialize subscription in DB with payment status pending
@@ -113,6 +135,9 @@ export default function DashboardPage() {
           onboardingData: data,
           planId: selectedPlan,
           orderId,
+          utmSource: attribution.utmSource,
+          utmMedium: attribution.utmMedium,
+          utmCampaign: attribution.utmCampaign,
         }),
       });
 
@@ -168,6 +193,7 @@ export default function DashboardPage() {
       inputSign.value = signature;
       form.appendChild(inputSign);
 
+      track('redirected_to_liqpay', { plan: selectedPlan, orderId });
       document.body.appendChild(form);
       form.submit();
     } catch (e: any) {
@@ -214,7 +240,10 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   key={id}
-                  onClick={() => setSelectedPlan(id)}
+                  onClick={() => {
+                    setSelectedPlan(id);
+                    track('plan_selected', { plan: id });
+                  }}
                   className={`w-full text-left border rounded-lg p-4 transition ${
                     active
                       ? 'border-orange-500 bg-orange-50 dark:bg-[#5a4d48]'
@@ -242,7 +271,7 @@ export default function DashboardPage() {
           <input
             type="email"
             placeholder="you@example.com"
-            className="w-full p-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-transparent outline-none"
+            className="ph-no-capture w-full p-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-transparent outline-none"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             onBlur={() => email && setOnboardingData('email', email)}
