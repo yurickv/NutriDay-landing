@@ -6,6 +6,7 @@ import { issueMagicLinkToken } from '@/lib/auth/magic';
 import { sendMagicLinkEmail } from '@/lib/email';
 import { computeSubscriptionExpiry } from '@/lib/subscription';
 import { PLANS, isPlanId } from '@/lib/plans';
+import { capturePaymentEvent } from '@/lib/analytics/posthog.server';
 
 type LiqpayCallback = {
   order_id?: string;
@@ -183,8 +184,31 @@ export async function POST(request: NextRequest) {
           if (loginEmail) {
             const { token } = await issueMagicLinkToken(loginEmail);
             await sendMagicLinkEmail(loginEmail, token);
+
+            await capturePaymentEvent({
+              email: String(loginEmail).trim().toLowerCase(),
+              event: 'payment_succeeded',
+              orderId: orderId ?? '',
+              plan: effectivePlanId,
+              amount: isPlanId(effectivePlanId) ? PLANS[effectivePlanId].amount : undefined,
+              currency: isPlanId(effectivePlanId) ? PLANS[effectivePlanId].currency : undefined,
+              utmSource: (user as any).utmSource ?? null,
+            });
           }
         }
+      }
+    }
+
+    if (user && paymentStatus === 'failed' && (user as any).paymentStatus !== 'failed') {
+      const failEmail = (user as any).email || email || senderEmail;
+      if (failEmail) {
+        await capturePaymentEvent({
+          email: String(failEmail).trim().toLowerCase(),
+          event: 'payment_failed',
+          orderId: orderId ?? '',
+          status: status ?? undefined,
+          utmSource: (user as any).utmSource ?? null,
+        });
       }
     }
 

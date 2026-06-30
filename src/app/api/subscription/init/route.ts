@@ -14,12 +14,15 @@ interface InitSubscriptionBody {
   onboardingData?: Record<string, any>;
   planId?: PlanId;
   orderId?: string;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as InitSubscriptionBody;
-    const { onboardingData, planId, orderId } = body || {};
+    const { onboardingData, planId, orderId, utmSource, utmMedium, utmCampaign } = body || {};
 
     // Prefer the authenticated session email when present (e.g. an expired
     // subscriber re-paying) so a logged-in user can never write to another
@@ -56,6 +59,9 @@ export async function POST(request: NextRequest) {
         status: 'pending',
         paymentStatus: 'pending',
         onboarding: onboardingData || {},
+        utmSource: utmSource || null,
+        utmMedium: utmMedium || null,
+        utmCampaign: utmCampaign || null,
         createdAt: now,
         updatedAt: now,
       });
@@ -78,6 +84,9 @@ export async function POST(request: NextRequest) {
           paymentStatus: 'pending',
           onboarding: onboardingData || {},
           updatedAt: now,
+          ...(utmSource ? { utmSource } : {}),
+          ...(utmMedium ? { utmMedium } : {}),
+          ...(utmCampaign ? { utmCampaign } : {}),
         },
       }
     );

@@ -3,6 +3,7 @@
 import React, { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { OnboardingLayout } from '@/components/onboardingPage/OnboardingLayout';
+import { track, identify } from '@/lib/analytics';
 
 export default function ConfirmPage() {
   return (
@@ -40,10 +41,12 @@ function ConfirmPageContent() {
         body: JSON.stringify({ token }),
       });
       const data = (await res.json().catch(() => null)) as
-        | { success?: boolean; redirect?: string; error?: string }
+        | { success?: boolean; redirect?: string; error?: string; email?: string }
         | null;
 
       if (res.ok && data?.success && data.redirect) {
+        if (data.email) identify(data.email);
+        track('login_completed');
         router.push(data.redirect);
         return;
       }

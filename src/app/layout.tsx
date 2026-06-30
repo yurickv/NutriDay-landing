@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Nunito, Poppins } from 'next/font/google';
 import './globals.css';
+import { AnalyticsProvider } from '@/components/analytics/AnalyticsProvider';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -54,7 +55,7 @@ export default function RootLayout({
   return (
     <html lang="uk">
       <body className={`${nunito.className} ${poppins.variable} antialiased`}>
-        {children}
+        <AnalyticsProvider>{children}</AnalyticsProvider>
       </body>
     </html>
   );
