@@ -5,6 +5,9 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { OnboardingLayout } from '@/components/onboardingPage/OnboardingLayout';
 import { getOnboardingData } from '@/utils/onboardingHelpers';
+import { track, identify } from '@/lib/analytics';
+import { parseOrderId, paymentSuccessInsertId, paymentFailedInsertId } from '@/lib/analytics/payment';
+import { PLANS, isPlanId } from '@/lib/plans';
 
 export default function PaymentResultPage() {
   return (
@@ -32,6 +35,7 @@ function PaymentResultContent() {
   const [magicSent, setMagicSent] = useState(false);
   const [magicError, setMagicError] = useState<string | null>(null);
   const [autoMagicSent, setAutoMagicSent] = useState(false);
+  const paymentEventFired = React.useRef(false);
 
   useEffect(() => {
     if (orderIdParam) return;
@@ -165,6 +169,35 @@ function PaymentResultContent() {
     setAutoMagicSent(true);
     void requestMagicLink(true);
   }, [isPaid, resolvedEmail, autoMagicSent]);
+
+  // Fire the payment outcome event once (closes the funnel client-side).
+  useEffect(() => {
+    if (paymentEventFired.current) return;
+    if (!orderId) return;
+    if (!isPaid && !isFailed) return;
+
+    paymentEventFired.current = true;
+    const { plan, ts } = parseOrderId(orderId);
+    const amount = plan && isPlanId(plan) ? PLANS[plan].amount : undefined;
+    const currency = plan && isPlanId(plan) ? PLANS[plan].currency : 'UAH';
+    const timestamp = ts ? new Date(ts) : undefined;
+
+    if (resolvedEmail) identify(resolvedEmail);
+
+    if (isPaid) {
+      track(
+        'payment_succeeded',
+        { plan: plan ?? undefined, amount, currency, orderId },
+        { insertId: paymentSuccessInsertId(orderId), timestamp },
+      );
+    } else {
+      track(
+        'payment_failed',
+        { status: effectiveStatus, orderId },
+        { insertId: paymentFailedInsertId(orderId), timestamp },
+      );
+    }
+  }, [isPaid, isFailed, orderId, resolvedEmail, effectiveStatus]);
 
   const message = useMemo(() => {
     switch (effectiveStatus) {
