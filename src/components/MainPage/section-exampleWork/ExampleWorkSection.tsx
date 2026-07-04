@@ -124,6 +124,7 @@ const ExampleWorkSection = () => {
                           src={work.image}
                           alt={work.title}
                           fill
+                          sizes="(max-width: 768px) 100vw, (max-width: 1152px) 50vw, 576px"
                           className="object-contain md:rounded-xl"
                           priority
                         />
