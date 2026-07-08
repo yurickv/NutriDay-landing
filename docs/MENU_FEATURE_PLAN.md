@@ -1,6 +1,6 @@
 # EasyMenu — План розробки: Тижневе меню, Список покупок та PWA
 
-> **Статус**: Фаза 1 ✅ | Фаза 2 ✅ | Фаза 3 ✅ | Фаза 4 ✅ | Фаза 5 ✅ | Власні страви ✅ | Масштабованість & безпека ✅ | OWASP-аудит ✅ | Промпт v2 ✅ | UI Redesign ✅ | Округлення ваг + гібридний БЖВ власних страв ✅ | Фаза 6–7 — в черзі
+> **Статус**: Фаза 1 ✅ | Фаза 2 ✅ | Фаза 3 ✅ | Фаза 4 ✅ | Фаза 5 ✅ | Власні страви ✅ | Масштабованість & безпека ✅ | OWASP-аудит ✅ | Промпт v2 ✅ | UI Redesign ✅ | Округлення ваг + гібридний БЖВ власних страв ✅ | Аналітика воронки (PostHog+GA4) ✅ | Фаза 6–7 — в черзі
 > **Пріоритет**: Висока
 > **Ціль**: Побудувати персоналізований кабінет для схуднення з AI-меню, списком покупок та елементами залучення, оптимізований для мобільних (PWA).
 
@@ -691,8 +691,13 @@ src/
 
 ## Аналітика (event tracking)
 
+> **Оновлено (2026-06-30):** `src/lib/analytics.ts` **замінено** на модуль `src/lib/analytics/`
+> (фасад `index.ts` фан-аутить у PostHog + GA4). Ці in-app події нижче лишаються чинними —
+> тепер вони реально відправляються, а не тільки `console.debug`. Повний опис воронки
+> acquisition→оплата — у changelog «Аналітика воронки та атрибуція джерел» у кінці файлу.
+
 ```ts
-// src/lib/analytics.ts — track() функція
+// src/lib/analytics/ (фасад index.ts) — track() функція
 track('menu_generated', { week, goalCalories, aiModel });
 track('meal_viewed', { mealName, mealType });
 track('meal_consumed', { mealName, mealType });
@@ -1534,3 +1539,96 @@ UI перераховує БЖВ при правках інгредієнтів 
 Округлення+перерахунок — окремий **безумовний** прохід наприкінці pipeline генерації;
 `meal.calories === computeMealNutrition(округлені інгредієнти)`. Список покупок будується
 з уже округлених ваг меню — узгоджений автоматично, окремих змін не потребує.
+
+---
+
+## 📊 Changelog — Аналітика воронки та атрибуція джерел (PostHog + GA4) (2026-06-30)
+
+### Мотивація
+Сервіс задеплоєно в прод (`nutriday.com.ua`), трафік іде з Instagram і партнерського
+сайту. Потрібно було відстежувати: **звідки** прийшов користувач (джерела), **куди дійшов**
+по сторінках (зокрема ~16-кроковий onboarding) і **де зупинився перед оплатою**.
+
+### Рішення (узгоджено після грилінг-сесії)
+**PostHog Cloud (EU) + GA4 паралельно**, обидва годуються з **одного** виклику `track()`.
+PostHog — «мозок» продуктових воронок і drop-off; GA4 — маркетингова атрибуція/Google Ads.
+Власний сервіс аналітики відкинуто (дорого за часом, найгірша глибина на старті).
+Режим **«воронки-only»**: `autocapture: false`, `capture_pageview: false`,
+`disable_session_recording: true`, `person_profiles: 'always'` (session replay/heatmaps —
+відкладена Фаза 3).
+
+> Спек: `docs/superpowers/specs/2026-06-30-analytics-funnel-tracking-design.md`
+> План: `docs/superpowers/plans/2026-06-30-analytics-funnel-tracking.md`
+> Мітки для SMM: `docs/UTM_CONVENTION.md`
+
+### Ключовий нюанс воронки
+Оплата в NutriDay відбувається **до логіну** (email → LiqPay → magic-link → сесія). Email
+стає відомий уже на `/payment/plan`, тож анонімний шлях «склеюється» з людиною ще до сесії.
+
+### Архітектура (нове — `src/lib/analytics/`, замінило `src/lib/analytics.ts`)
+- **`index.ts`** — фасад: `track(event, props, options?)` фан-аутить у `posthog.capture()`
+  і `gtag('event', …)`; `identify` (PostHog — чистий email; GA4 — лише `sha256(email)`,
+  ніколи raw email); `resetIdentity`; `capturePageview`. `TrackOptions` (`insertId`,
+  `timestamp`) — для дедупу подій оплати.
+- **`env.ts`** — `resolveAnalyticsEnv` → `local | staging | prod`. `local` (немає
+  `NEXT_PUBLIC_POSTHOG_KEY`) → `track()` лише `console.debug`, нуль мережі.
+- **`ga4.ts`** — `toGa4Event` (мапінг: `checkout_started`→`begin_checkout`,
+  `payment_succeeded`→`purchase`) + `hashEmailForGa4`.
+- **`attribution.ts`** — `parseUtm` / `captureAttribution` (first-touch у localStorage
+  `nd_attribution`) / `readAttribution`.
+- **`payment.ts`** — `parseOrderId` (формат `ND-<plan>-<epochMs>`) +
+  `paymentSuccessInsertId`/`paymentFailedInsertId` для детермінованого дедупу.
+- **`posthog.server.ts`** — `posthog-node`: `buildPaymentCaptureArgs` + `capturePaymentEvent`
+  (з `await flush()` для serverless).
+- **`src/components/analytics/AnalyticsProvider.tsx`** — ініціалізація PostHog + GA4
+  (`next/script`), **ручні pageview** на зміну роуту (App Router їх не робить), захоплення
+  UTM у `localStorage`. Змонтовано в `src/app/layout.tsx`.
+- **`src/components/analytics/TrackEvent.tsx`** — fire-once-on-mount хелпер.
+
+### Події воронки (нові, поверх наявних in-app)
+`$pageview` (ручний) → `onboarding_started` → `onboarding_completed` (на **останньому**
+кроці онбордингу, не на маунті `/payment/plan`) → `payment_email_entered` →
+`payment_consents_checked` → `checkout_started` (+`identify`) → `redirected_to_liqpay` →
+`payment_succeeded` → `login_completed`. Плюс `checkout_blocked` (`reason`) і `plan_selected`
+(як сегмент, не крок воронки). Кожна подія несе проп `env`.
+
+### Надійність оплати + дедуп
+- Клієнтський `payment_succeeded` на `/payment/result` (Фаза 1, закриває воронку одразу).
+- **Авторитетний серверний** `payment_succeeded/failed` — у `liqpay/callback` і в
+  реконсиляції `magic-link/consume` (Фаза 2), лише на переході статусу
+  (`previousPaymentStatus !== 'active'`).
+- **Дедуп клієнт↔сервер** через детермінований `$insert_id` + `timestamp`, виведені з
+  `orderId` (той містить epochMs) → однакові події схлопуються в PostHog; GA4 `purchase`
+  дедупиться за `transaction_id`.
+
+### Атрибуція джерел
+`utm_*` ловляться PostHog (person-level `$initial_utm_source`) і GA4 автоматично; додатково
+дублюємо first-touch у `localStorage` (`nd_attribution`) і в запис `users`
+(`utmSource/Medium/Campaign`) через `subscription/init` — щоб серверна подія оплати несла
+джерело незалежно від cookie/девайсу. Конвенція міток — `docs/UTM_CONVENTION.md`.
+
+### Змінені файли (інтеграція)
+`layout.tsx`, `onboarding/page.tsx`, `onboarding/creating-plan/page.tsx`,
+`payment/plan/page.tsx` (події + `identify` + `ph-no-capture` на email-інпуті + UTM у init),
+`payment/result/page.tsx`, `auth/confirm/page.tsx`, `api/subscription/init/route.ts`,
+`api/liqpay/callback/route.ts`, `api/auth/magic-link/consume/route.ts` (повертає `email`).
+
+### Тестування (нове — проєкт тепер має Vitest)
+Додано **Vitest** (`npm test`) для pure-logic: `env`, `ga4`, `attribution`, `payment`,
+`posthog.server` — **24 тести**. Інтеграція (SDK/route) — через `npx tsc --noEmit` + ручний
+staging *Live Events* чек-лист. ENV — у `.env.example`. ESLint у проєкті не налаштований.
+
+### Env (потрібно заповнити в `.env`, приклад — `.env.example`)
+`NEXT_PUBLIC_POSTHOG_KEY` (Project token `phc_…`), `NEXT_PUBLIC_POSTHOG_HOST`
+(`https://eu.i.posthog.com`), `POSTHOG_API_KEY` (той самий `phc_…`), `NEXT_PUBLIC_GA_ID`,
+`NEXT_PUBLIC_ANALYTICS_ENV` (`staging`/`prod`). Без ключа аналітика мовчить (console-only).
+
+### Перевірка
+- `npm test` → 24 passed; `npx tsc --noEmit` → exit 0 (на гілці й на змердженому `main`).
+- Злито в `main` (merge `850d9f1`, феча-гілку видалено).
+
+### Лишилось вручну (поза кодом)
+Завести PostHog-проєкт (+ окремий staging) і GA4-property, вписати ключі в `.env`; зібрати
+воронку + дашборд у PostHog UI (порядок кроків — як вище); позначити `purchase` ключовою
+подією в GA4; тегувати всі лінки за `docs/UTM_CONVENTION.md`. Фаза 3 (відкладена): GA4
+Measurement Protocol, session replay, A/B через feature flags, Google Consent Mode v2.

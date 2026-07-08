@@ -121,7 +121,8 @@ export default function DashboardPage() {
       } catch {}
 
       const attribution = readAttribution(window.localStorage);
-      track('checkout_started', { plan: selectedPlan, amount: plan.amount });
+      // Beacon: the LiqPay redirect can happen before the batch queue flushes.
+      track('checkout_started', { plan: selectedPlan, amount: plan.amount }, { beacon: true });
       identify(email);
 
       const description = `${plan.title} | ${goalHeadline(data)}`;
@@ -193,7 +194,8 @@ export default function DashboardPage() {
       inputSign.value = signature;
       form.appendChild(inputSign);
 
-      track('redirected_to_liqpay', { plan: selectedPlan, orderId });
+      // form.submit() below navigates away immediately — beacon survives it.
+      track('redirected_to_liqpay', { plan: selectedPlan, orderId }, { beacon: true });
       document.body.appendChild(form);
       form.submit();
     } catch (e: any) {
