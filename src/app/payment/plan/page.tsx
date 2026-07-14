@@ -17,6 +17,32 @@ import { readAttribution } from '@/lib/analytics/attribution';
 // Prices come from @/lib/plans (server source of truth). The amount sent to
 // checkout is derived server-side from planId, so the values here are display-only.
 
+// Human-readable labels for onboarding answer keys (mirror the option labels
+// on the onboarding pages, without emoji).
+const MAIN_GOAL_LABELS: Record<string, string> = {
+  lose_weight: 'Схуднути',
+  maintain_weight: 'Підтримувати вагу',
+  gain_weight: 'Набрати вагу',
+  build_muscle: 'Наростити м’язи',
+  something_else: 'Щось інше',
+};
+
+const SHORT_GOAL_LABELS: Record<string, string> = {
+  balanced_eating: 'Збалансовано харчуватися і жити здоровіше',
+  boost_energy: 'Підвищити енергію і настрій',
+  stay_motivated: 'Залишатися мотивованим і послідовним',
+  better_body_image: 'Краще ставитися до свого тіла',
+  meal_planning: 'Не думати що приготувати завтра',
+};
+
+const ADDITIONAL_GOAL_LABELS: Record<string, string> = {
+  improve_food_relationship: 'Поліпшити своє ставлення до їжі',
+  learn_cooking: 'Навчитися готувати здорову їжу',
+  boost_immunity: 'Зміцнити імунну систему',
+  better_sleep: 'Краще спати і мати більше енергії',
+  feel_comfortable: 'Почуватися комфортно у власній шкірі',
+};
+
 function goalHeadline(data: OnboardingData) {
   const map: Record<string, string> = {
     lose_weight: 'здорового схуднення',
@@ -91,11 +117,23 @@ export default function DashboardPage() {
 
   const goalsList = useMemo(() => {
     const goals: string[] = [];
-    if (data.mainGoal) goals.push(`Головна ціль: ${data.mainGoal}`);
+    if (data.mainGoal)
+      goals.push(
+        `Головна ціль: ${MAIN_GOAL_LABELS[data.mainGoal] ?? data.mainGoal}`
+      );
     if (data.shortGoal?.length)
-      goals.push(`Короткі цілі: ${data.shortGoal.join(', ')}`);
-    if (data.additionalGoal?.length)
-      goals.push(`Додатково: ${data.additionalGoal.join(', ')}`);
+      goals.push(
+        `Короткі цілі: ${data.shortGoal
+          .map((g) => SHORT_GOAL_LABELS[g] ?? g)
+          .join(', ')}`
+      );
+    const additional = (data.additionalGoal ?? []).filter((g) => g !== 'none');
+    if (additional.length)
+      goals.push(
+        `Додатково: ${additional
+          .map((g) => ADDITIONAL_GOAL_LABELS[g] ?? g)
+          .join(', ')}`
+      );
     return goals;
   }, [data]);
 
