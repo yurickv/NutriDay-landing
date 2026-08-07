@@ -239,7 +239,8 @@ Gluten Free        — I avoid gluten-containing grains
 ## 7. Бренд-бук Nutriday — що з нього зобов'язує онбординг
 
 Джерело: [Google Slides](https://docs.google.com/presentation/d/10x-aalJKETrAc7ea9bP7OJwheNq7RE6yw17N3YHVwYM/edit)
-(11 слайдів; локальний `docs/Розробка бренд буку Nutriday.pdf` має текст у кривих і не парситься).
+(11 слайдів). Це єдине джерело правди — PDF-експорт з браузера тримати в репозиторії
+немає сенсу: у ньому текст переведено в криві й не читається автоматично.
 
 ### Палітра (слайд 5)
 
