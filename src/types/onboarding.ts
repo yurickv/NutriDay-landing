@@ -18,4 +18,17 @@ export interface OnboardingData {
   activity?: string;
   // Contact
   email?: string;
+  // Новий квіз (docs/ONBOARDING_QUIZ_SPEC.md §2, §6)
+  targetWeight?: string;
+  breakfastTime?: string;
+  lunchTime?: string;
+  dinnerTime?: string;
+  dietaryPreferences?: string[];
+  eatingHabits?: string[];
+  cravings?: string[];
+  foodTracking?: string;
+  mealsPerDay?: string;
+  batchCooking?: string;
+  confidence?: string;
+  personalDataConsent?: boolean;
 }
