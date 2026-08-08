@@ -28,23 +28,22 @@ export function LoaderScreen() {
       }).catch(() => {});
     }
 
+    // Апдейтер мусить бути чистим (React виконує його під час рендеру) —
+    // навігація і трекінг живуть в окремому ефекті нижче.
     const id = setInterval(() => {
-      setStage((s) => {
-        if (s >= STAGES.length - 1) {
-          clearInterval(id);
-          if (!completed.current) {
-            completed.current = true;
-            track('onboarding_completed');
-            router.push('/payment/plan');
-          }
-          return s;
-        }
-        return s + 1;
-      });
+      setStage((s) => Math.min(s + 1, STAGES.length));
     }, STAGE_MS);
 
     return () => clearInterval(id);
-  }, [router]);
+  }, []);
+
+  // stage === STAGES.length — усі стадії пройдені: трек + перехід до оплати.
+  useEffect(() => {
+    if (stage < STAGES.length || completed.current) return;
+    completed.current = true;
+    track('onboarding_completed');
+    router.push('/payment/plan');
+  }, [stage, router]);
 
   return (
     <div className="flex flex-1 flex-col justify-center gap-3 pb-16">
