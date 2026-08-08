@@ -7,7 +7,7 @@ import { getOnboardingData } from '@/utils/onboardingHelpers';
 import { track } from '@/lib/analytics';
 
 const STAGES = ['Профіль', 'Харчові звички', 'Обмеження', 'Норма калорій', 'Меню'];
-const STAGE_MS = 1200;
+const STAGE_MS = 2000;
 const TICK_MS = 60;
 const TICK_PCT = 100 / (STAGE_MS / TICK_MS); // 5% за тік → 1.2 с на стадію
 const TOTAL = STAGES.length * 100; // прогрес суцільний: 100 одиниць на стадію
