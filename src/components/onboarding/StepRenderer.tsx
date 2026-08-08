@@ -30,7 +30,7 @@ export function StepRenderer({ stepKey }: { stepKey: string }) {
   const router = useRouter();
   // null = ще не читали localStorage (перший клієнтський рендер).
   const [answers, setAnswers] = useState<Answers | null>(null);
-  const trackedKey = useRef<string | null>(null);
+  const trackedKeys = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     setAnswers(getOnboardingData() as Answers);
@@ -49,8 +49,8 @@ export function StepRenderer({ stepKey }: { stepKey: string }) {
 
   // onboarding_step_view — один раз на ключ.
   useEffect(() => {
-    if (!ready || !accessible || !step || trackedKey.current === stepKey) return;
-    trackedKey.current = stepKey;
+    if (!ready || !accessible || !step || trackedKeys.current.has(stepKey)) return;
+    trackedKeys.current.add(stepKey);
     const index = visibleSteps(answers).findIndex((s) => s.key === stepKey);
     track('onboarding_step_view', { key: stepKey, index, group: step.group });
   }, [ready, accessible, answers, step, stepKey]);
