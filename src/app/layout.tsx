@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Nunito, Poppins } from 'next/font/google';
+import { Nunito, Poppins, Comfortaa, Manrope } from 'next/font/google';
 import './globals.css';
 import { AnalyticsProvider } from '@/components/analytics/AnalyticsProvider';
 
@@ -15,8 +15,21 @@ const nunito = Nunito({
   variable: '--font-nunito',
 });
 
+const comfortaa = Comfortaa({
+  subsets: ['cyrillic', 'latin'], // variable font 300–700
+  variable: '--font-comfortaa',
+});
+
+const manrope = Manrope({
+  subsets: ['cyrillic', 'latin'], // variable font 200–800
+  variable: '--font-manrope',
+});
+
 export const viewport: Viewport = {
-  themeColor: '#f97316',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#f5ead8' },
+    { media: '(prefers-color-scheme: dark)', color: '#2e2b25' },
+  ],
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
@@ -54,7 +67,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="uk">
-      <body className={`${nunito.className} ${poppins.variable} antialiased`}>
+      <body className={`${nunito.className} ${poppins.variable} ${comfortaa.variable} ${manrope.variable} antialiased`}>
         <AnalyticsProvider>{children}</AnalyticsProvider>
       </body>
     </html>

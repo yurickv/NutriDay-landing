@@ -19,6 +19,36 @@
   --color-error: #e53935;
   --color-background-form: #676465;
 }
+
+/* Бренд-бук NutriDay: слайд 5 (палітра) + слайд 8 (темна тема).
+   Спільні для всього застосунку; квіз онбордингу використовує ці ж токени. */
+@theme {
+  --color-sage-dark: #56633f;
+  --color-sage: #7a8a5e;
+  --color-sage-light: #ccdbb2;
+
+  --color-terracotta-dark: #8c491a;
+  --color-terracotta: #c67139;
+  --color-terracotta-light: #ffc6a5;
+
+  --color-ink: #201e1d;    /* основний текст, світла тема */
+  --color-cream: #f5ead8;  /* фон сторінки, світла тема */
+  --color-card: #f9f4ed;   /* поверхня карток, світла тема */
+
+  --color-night: #2e2b25;       /* фон сторінки, темна (neutral-900 бренд-буку) */
+  --color-night-card: #474238;  /* картки, темна (neutral-800) */
+  --color-night-ink: #f9f4ed;   /* основний текст, темна (neutral-100) */
+  --color-night-muted: #a19786; /* другорядний текст, темна (neutral-400) */
+
+  --color-danger: #b23b3b;
+  --color-danger-dark: #e08585; /* помилки на темних поверхнях */
+
+  --shadow-soft: 0 4px 20px rgba(32, 30, 29, 0.06);
+
+  --font-heading: var(--font-comfortaa), sans-serif;
+  --font-body: var(--font-manrope), sans-serif;
+}
+
 /* Перемикання теми світла/темна */
 @custom-variant dark (&:where(.dark, .dark *));
 
