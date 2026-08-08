@@ -103,7 +103,7 @@ export function MealCard({
       onClick={() => onOpenDetail(meal)}
       className={`rounded-xl px-3 py-[11px] flex items-center gap-2.5 cursor-pointer active:scale-[0.98] transition-all select-none shadow-soft ${
         meal.isConsumed
-          ? 'bg-sage-light/30 dark:bg-sage/15 border border-sage-light dark:border-sage/40'
+          ? 'bg-sage-light/60 dark:bg-sage/15 border border-sage/60 dark:border-sage/40'
           : 'bg-card dark:bg-night-card'
       }`}
       aria-label={`${MEAL_LABELS[mealType]}: ${meal.name}`}
