@@ -1,24 +1,14 @@
 export interface OnboardingData {
   mainGoal?: string;
-  goalReason?: string;
   shortGoal?: string[];
   nutritionKnowledge?: string;
-  shortBarriers?: string[];
-  additionalGoal?: string[];
-  buildMuscleExperience?: string;
-  pastExperience?: string;
-  gainWeightExperience?: string;
-  pastChallenges?: string[];
-  roleModel?: string;
-  // From CaloriesCalc
+  // Тіло (зберігаються рядками — calcProfile робить parseFloat)
   sex?: string;
   age?: string;
   weight?: string;
   height?: string;
   activity?: string;
-  // Contact
-  email?: string;
-  // Новий квіз (docs/ONBOARDING_QUIZ_SPEC.md §2, §6)
+  // Новий квіз (docs/ONBOARDING_QUIZ_SPEC.md §2)
   targetWeight?: string;
   breakfastTime?: string;
   lunchTime?: string;
@@ -30,5 +20,7 @@ export interface OnboardingData {
   mealsPerDay?: string;
   batchCooking?: string;
   confidence?: string;
+  // Contact
+  email?: string;
   personalDataConsent?: boolean;
 }

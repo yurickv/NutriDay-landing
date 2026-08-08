@@ -33,7 +33,8 @@ function calcProfile(onboarding: OnboardingData, userEmail: string): UserProfile
     goalCalories,
     favoriteFoods: [],
     dislikedFoods: [],
-    dietaryPreferences: [],
+    // 'none' («Їм усе») — службове значення квізу, у профіль не пишемо.
+    dietaryPreferences: (onboarding.dietaryPreferences ?? []).filter((v) => v !== 'none'),
     allergies: [],
     waterGoalMl: 2000,
     menuGenerationsThisWeek: 0,
