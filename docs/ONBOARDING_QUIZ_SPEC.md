@@ -352,7 +352,7 @@ neutral:     text #201E1D · bg #F5EAD8 (крем) · card #F9F4ED
 ```
 
 Пропорція 60% крем / 30% sage / 10% terracotta. Нових hex не вводимо.
-Шрифти: Caprasimo (заголовки, H3 28–32px на екрані питання), Figtree (текст, caption 18–20px).
+Шрифти: **Comfortaa** (заголовки, H3 28–32px на екрані питання) та **Manrope** (текст, caption 18–20px) — Caprasimo/Figtree з бренд-буку не мають кирилиці, заміну затверджено на рев'ю 2026-08-08 (деталі й токени `--font-heading`/`--font-body` — [MENU_REDESIGN_PLAN.md](MENU_REDESIGN_PLAN.md), Р1 та §1.2; токени спільні для квізу й меню).
 Радіуси й тіні: soft-shadows, скруглені кути — «стерильний білий фон і гострі кути» заборонені.
 
 Що переписати: [OnboardingLayout.tsx](../src/components/onboardingPage/OnboardingLayout.tsx)

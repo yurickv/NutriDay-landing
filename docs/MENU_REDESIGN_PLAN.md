@@ -15,14 +15,14 @@
 
 ## Global Constraints
 
-- Мова UI — українська, звертання «ти» (сл. 3: «Твоя вага, кг»).
+- Мова UI — українська. Існуючі тексти НЕ переписуємо; правки копірайтингу — лише повідомлення про помилки (Таск 3, крок 2), у дружньому тоні на «ти».
 - Кольори **тільки з токенів** розділу 1. Нових hex не вводити (сл. 12); напівпрозорість токена (`text-ink/60`, `bg-terracotta-light/20`) — дозволена.
 - Темна тема: міняються **лише поверхні і текст** (night-токени); sage/terracotta однакові в обох темах (сл. 8).
 - Пропорція 60% крем / 30% sage / 10% terracotta. Семантика акцентів: **sage = стан/прогрес/успіх, terracotta = дія (CTA) і перевищення норми**. Один акцент на екран не перевантажувати.
 - Заборонено: чисто білі фони (`bg-white`), гострі кути (мінімум `rounded-xl`), легасі-градієнти `from-*-50 to-*-50`.
 - Радіуси: картки `rounded-2xl`, великі summary-блоки/шіти `rounded-3xl` (`rounded-t-3xl` знизу), дрібні контроли `rounded-xl`, чіпи/кружечки `rounded-full`.
 - Тінь карток — тільки `shadow-soft` (токен з Таску 1), для модалок допустимий `shadow-2xl`.
-- Заголовки: `font-heading` (без `font-bold` поверх — див. правило синтезу у Таску 1). Текст: `font-body` успадковується від AppShell.
+- Заголовки: `font-heading` + `font-semibold`/`font-bold` (справжні ваги Comfortaa; `font-extrabold` заборонений — максимум 700). Текст: `font-body` успадковується від AppShell.
 - Верифікація після КОЖНОГО таску: `npx tsc --noEmit` (exit 0). **НЕ запускати `next build`, поки працює `next dev`** — build перезаписує `.next/` і dev починає віддавати 500 на всі роути.
 - Комміт після кожного таску, стиль існуючий: `feat(menu): …` / `refactor(theme): …`.
 
@@ -32,7 +32,7 @@
 
 | # | Питання | Рішення |
 |---|---------|---------|
-| Р1 | Caprasimo і Figtree **не мають кирилиці** (перевірено: обидва тільки latin/latin-ext), а весь UI українською | Кириличні компаньйони з Google Fonts через per-glyph fallback: заголовки `Caprasimo → Podkova` (тепла брускова антиква, cyrillic, 400–800), текст `Onest` (гуманістичний гротеск, cyrillic, 100–900, найближчий за характером до Figtree). Латиниця й **цифри** (напр. «1 847» на кільці) рендеряться Caprasimo/… , українські слова — компаньйоном. Якщо мікс у одному рядку виглядатиме погано на пробі (Таск 1, крок 4) — план Б: увесь заголовок Podkova, Caprasimo лишається тільки для логотипу NUTRIDAY |
+| Р1 | Caprasimo і Figtree **не мають кирилиці** (перевірено: обидва тільки latin/latin-ext), а весь UI українською | **Рішення рев'ю 2026-08-08:** повністю кириличні заміни без per-glyph міксів — заголовки **Comfortaa** (округлий геометричний, cyrillic, variable 300–700; пасує до «округлих форм» бренду), текст **Manrope** (cyrillic, variable 200–800). Caprasimo і Figtree в стеках НЕ використовуються й не вантажаться (Caprasimo — опція лише для латинського лого NUTRIDAY при рестайлі лендінгу) |
 | Р2 | Іменування токенів: бренд-бук каже «neutral-900/800/100/400», але перевизначення `--color-neutral-*` у `@theme` перефарбувало б УВЕСЬ застосунок (лендінг активно вживає `neutral-*`) | Нові неймспейси без колізій: `cream/card/ink` (світла) + `night/night-card/night-ink/night-muted` (темна). Sage/terracotta — як у спеці квізу |
 | Р3 | Стиль запису темної теми: семантичні токени-перемикачі чи явні `dark:`-пари | Явні `dark:`-пари — так уже написані CalorieRingSummary і вся кодова база |
 | Р4 | AppShell/BottomNavBar спільні для /menu, /shopping-list, /profile — рестайл шелла зачепить сусідні сторінки | Приймаємо: помаранчевий неб на бренд-сторінці гірший, ніж кремовий шелл навколо ще старих сторінок. Обидві сторінки — наступні в глобальному рестайлі |
@@ -40,7 +40,7 @@
 | Р6 | Кольори типів прийомів їжі `SECTION_COLORS` (синій/помаранч/фіолет/зелений у DayView і MealCard) | Видалити обидві мапи повністю. Заголовки секцій — єдиний стиль sage; ккал у картці — напівжирний ink (макет картки на сл. 7: «320 ккал · 15 хв» — спокійний підпис, без кольорового акценту) |
 | Р7 | Легасі CSS-змінні `--color-meal-*`, `--color-kcal`, `--color-eaten-*`, `--color-rating-*` | Видалити з `globals.css` у Таску 4 (єдиний споживач — MealCard, перевірено grep-ом) |
 | Р8 | Помилки: у бренд-буку без підпису, hex витягнуті з PDF | `--color-danger #b23b3b` (світла) / `--color-danger-dark #e08585` (темна) — уже зафіксовані в пам'яті проєкту і спеці |
-| Р9 | Копірайтинг у tone of voice (сл. 3) | Точкові заміни рядків у Таску 3 (перелік там). «Ви» → «ти», без «Рекомендований КБЖУ становить…» |
+| Р9 | Копірайтинг у tone of voice (сл. 3) | **Рішення рев'ю:** чіпаємо лише формулювання помилок (Таск 3, крок 2). Заголовки, сабтайтли, hero-тексти — без змін до окремого копірайтинг-пасу |
 | Р10 | PWA: `viewport.themeColor` зараз `#f97316` | Міняємо на пару media-запитів (крем/night) у Таску 1. Іконки PWA (помаранчеві PNG) і `manifest.json` — окремий фоллоу-ап, не тут |
 
 ---
@@ -75,8 +75,8 @@
 
   --shadow-soft: 0 4px 20px rgba(32, 30, 29, 0.06);
 
-  --font-heading: var(--font-caprasimo), var(--font-podkova), serif;
-  --font-body: var(--font-onest), sans-serif;
+  --font-heading: var(--font-comfortaa), sans-serif;
+  --font-body: var(--font-manrope), sans-serif;
 }
 ```
 
@@ -85,45 +85,26 @@
 ### 1.2 Шрифти — `src/app/layout.tsx`
 
 ```ts
-import { Nunito, Poppins, Caprasimo, Podkova, Onest } from 'next/font/google';
+import { Nunito, Poppins, Comfortaa, Manrope } from 'next/font/google';
 
-const caprasimo = Caprasimo({
-  subsets: ['latin'],          // кирилиці НЕ має — тільки латиниця й цифри
-  weight: '400',
-  variable: '--font-caprasimo',
+const comfortaa = Comfortaa({
+  subsets: ['cyrillic', 'latin'], // variable font 300–700
+  variable: '--font-comfortaa',
 });
 
-const podkova = Podkova({
-  subsets: ['cyrillic', 'latin'], // variable font 400–800
-  variable: '--font-podkova',
-});
-
-const onest = Onest({
-  subsets: ['cyrillic', 'latin'], // variable font 100–900
-  variable: '--font-onest',
+const manrope = Manrope({
+  subsets: ['cyrillic', 'latin'], // variable font 200–800
+  variable: '--font-manrope',
 });
 ```
 
 `<body>` отримує додаткові змінні (Nunito лишається базовим класом до глобального рестайлу):
 
 ```tsx
-<body className={`${nunito.className} ${poppins.variable} ${caprasimo.variable} ${podkova.variable} ${onest.variable} antialiased`}>
+<body className={`${nunito.className} ${poppins.variable} ${comfortaa.variable} ${manrope.variable} antialiased`}>
 ```
 
-Правило синтезу жирності: Caprasimo існує лише у 400, тому браузерний faux-bold треба вимкнути, а масу українських літер добирати вагою Podkova:
-
-```css
-/* globals.css, поряд з @layer utilities */
-@layer base {
-  .font-heading {
-    font-synthesis: none; /* Caprasimo не «жирніє» штучно; Podkova (variable) реагує на font-weight сама */
-  }
-}
-```
-
-Рецепт заголовка: `font-heading font-semibold` (Podkova ≈600 візуально врівноважує «жирну» Caprasimo 400; підбирається на пробі в Таску 1).
-
-Контингенція: якщо `next/font/google` у Next 15.5 не експортує `Onest` або `Podkova` (перевіряється першим же `tsc`), взяти CSS-імпорт `fonts.googleapis.com/css2` у `globals.css` і виставити ті самі `--font-*` змінні вручну.
+Обидві гарнітури мають справжні ваги (Comfortaa 300–700, Manrope 200–800) — синтез жирності не потрібен. Рецепт заголовка: `font-heading font-bold` (Comfortaa 700; для дрібніших заголовків шітів допустимий `font-semibold` — фінальна вага фіксується на пробі в Таску 1, крок 4). `font-extrabold`/800 на `font-heading` не використовувати — Comfortaa обмежена 700.
 
 ### 1.3 Система поверхонь (три шари глибини)
 
@@ -177,8 +158,8 @@ const onest = Onest({
 
 **Interfaces:** *Produces:* усі класи-токени (`bg-cream`, `text-ink`, `shadow-soft`, `font-heading`, `font-body`, …), які споживають Таски 2–7 і задача квізу. Перед виконанням перевірити, чи квіз уже не додав цей блок — тоді лише звірити значення й пропустити крок 1.
 
-- [ ] **Крок 1:** У `globals.css` додати блок з 1.1 одразу ПІСЛЯ існуючого `@theme` (не чіпаючи старі токени — їх ще використовують лендінг/onboarding), і base-правило `font-synthesis` з 1.2.
-- [ ] **Крок 2:** У `layout.tsx` додати три шрифти з 1.2 та підключити змінні до `<body>`; `viewport.themeColor` замінити на:
+- [ ] **Крок 1:** У `globals.css` додати блок з 1.1 одразу ПІСЛЯ існуючого `@theme` (не чіпаючи старі токени — їх ще використовують лендінг/onboarding).
+- [ ] **Крок 2:** У `layout.tsx` додати два шрифти з 1.2 та підключити змінні до `<body>`; `viewport.themeColor` замінити на:
 
 ```ts
 themeColor: [
@@ -188,10 +169,10 @@ themeColor: [
 ```
 
 (Обмеження: meta слідує за системною темою, а не за `.dark`-тумблером — прийнятно, фіксуємо як відоме.)
-- [ ] **Крок 3:** В `AppShell.tsx` до кореневого `div` додати клас `font-body` (текст усіх захищених сторінок переходить на Onest — прийнято в Р4).
-- [ ] **Крок 4 (проба шрифтів):** тимчасово вставити в `menu/page.tsx` рядок `<h1 className="font-heading font-semibold text-3xl">Тижневе меню · 1 847 ккал</h1>`, подивитись у браузері мікс Caprasimo-цифр і Podkova-літер у світлій/темній темі; підібрати вагу (600 ↔ 700). Якщо мікс дисонує — рішення Р1 план Б: прибрати `var(--font-caprasimo)` з `--font-heading`. Пробний рядок видалити.
+- [ ] **Крок 3:** В `AppShell.tsx` до кореневого `div` додати клас `font-body` (текст усіх захищених сторінок переходить на Manrope — прийнято в Р4).
+- [ ] **Крок 4 (проба шрифтів):** тимчасово вставити в `menu/page.tsx` рядок `<h1 className="font-heading font-bold text-3xl">Тижневе меню · 1 847 ккал</h1>`, подивитись у браузері в світлій/темній темі; зафіксувати вагу заголовків (700 ↔ 600). Пробний рядок видалити.
 - [ ] **Крок 5:** `npx tsc --noEmit` → exit 0. Візуально: /menu рендериться, шрифт тексту змінився.
-- [ ] **Крок 6:** Комміт `feat(theme): add brand-book tokens and Caprasimo/Podkova/Onest fonts`.
+- [ ] **Крок 6:** Комміт `feat(theme): add brand-book tokens and Comfortaa/Manrope fonts`.
 
 ### Таск 2: Шелл — AppShell + BottomNavBar
 
@@ -202,7 +183,7 @@ themeColor: [
 **Interfaces:** *Consumes:* токени Таску 1.
 
 - [ ] **Крок 1:** AppShell: `bg-neutral-50 dark:bg-neutral-950` → `bg-cream dark:bg-night`.
-- [ ] **Крок 2:** BottomNavBar: бар `bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-700` → `bg-card dark:bg-night-card border-t border-ink/10 dark:border-night-ink/10`; активний лінк `text-main` → `text-sage-dark dark:text-sage-light`; неактивний `text-neutral-400 dark:text-neutral-500 hover:text-main` → `text-ink/40 dark:text-night-muted hover:text-sage-dark dark:hover:text-sage-light` (навігація = стан, не дія → sage, Р6/семантика).
+- [ ] **Крок 2:** BottomNavBar: бар `bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-700` → `bg-card dark:bg-night-card border-t border-ink/10 dark:border-night-ink/10`; активний лінк `text-main` → `text-terracotta dark:text-terracotta-light`; неактивний `text-neutral-400 dark:text-neutral-500 hover:text-main` → `text-ink/40 dark:text-night-muted hover:text-terracotta dark:hover:text-terracotta-light` (рішення рев'ю: актив навігації — terracotta, помітніший; свідомий виняток із правила «terracotta = дія»).
 - [ ] **Крок 3:** `npx tsc --noEmit`; візуально в обох темах: кремовий фон, новий неб.
 - [ ] **Крок 4:** Комміт `feat(menu): restyle app shell and bottom nav to brand book`.
 
@@ -217,11 +198,11 @@ themeColor: [
 **Interfaces:** *Consumes:* токени/рецепти. *Produces:* нічого нового для інших тасків.
 
 - [ ] **Крок 1 — хедер** (`page.tsx:233-253`): контейнер `bg-white dark:bg-neutral-900 border-b border-neutral-100 dark:border-neutral-800` → `bg-card dark:bg-night-card border-b border-ink/10 dark:border-night-ink/10`; `<h1>` → `font-heading font-semibold text-lg text-ink dark:text-night-ink`; сабтайтл → `text-ink/60 dark:text-night-muted`; кнопка «Нове меню» → `text-ink/60 dark:text-night-muted hover:text-terracotta bg-cream dark:bg-night px-3 py-2 rounded-xl transition-colors`.
-- [ ] **Крок 2 — копірайтинг** (tone of voice, сл. 3):
-  - сабтайтл `Ціль: ${goalCalories} ккал/день` → `` `Твоя норма — ${goalCalories} ккал на день` ``; фолбек `Персоналізоване харчування` → `Меню під твої цілі`
-  - no-menu: «Ваше персональне меню» → «Твоє персональне меню»; «…спеціально для вас…» → «…спеціально для тебе…»
-  - profileMissing: «Будь ласка, заповніть профіль перед генерацією меню.» → «Спершу заповни профіль — і зробимо меню під тебе.»; «…вкажіть свої дані…» → «…вкажи свої дані…»; кнопка «Заповнити профіль» без змін
-  - error-стан: «Не вдалося завантажити меню. Спробуйте пізніше.» → «Щось пішло не так. Спробуймо ще раз?»; «Сталася помилка. Перевірте підключення до інтернету.» → «Немає з'єднання. Перевір інтернет і спробуй ще раз.»
+- [ ] **Крок 2 — копірайтинг помилок** (рішення рев'ю: чіпаємо ЛИШЕ повідомлення про помилки, решту текстів не змінюємо):
+  - «Не вдалося завантажити меню. Спробуйте пізніше.» → «Щось пішло не так. Спробуймо ще раз?»
+  - «Сталася помилка. Перевірте підключення до інтернету.» → «Немає з'єднання. Перевір інтернет і спробуй ще раз.»
+  - setError при незаповненому профілі: «Будь ласка, заповніть профіль перед генерацією меню.» → «Спершу заповни профіль — і зробимо меню під тебе.»
+  - Сабтайтл хедера («Ціль: … ккал/день»), «Ваше персональне меню», тексти жовтої картки профілю тощо — БЕЗ змін
 - [ ] **Крок 3 — стани** (`page.tsx`):
   - loading: `text-neutral-500` → `text-ink/60 dark:text-night-muted`
   - error: кнопка «Спробувати знову» `bg-main text-white …` → primary-рецепт 1.4
@@ -249,7 +230,7 @@ themeColor: [
 - [ ] **Крок 2 — MealCard:** видалити дубль `SECTION_COLORS` (:22-27) та inline `style={{ color: sectionColor }}` на ккал (:139) — ккал стає `font-semibold text-ink dark:text-night-ink`, решта макро-рядка `text-ink/60 dark:text-night-muted`. Картка нез'їдена `bg-white … dark:bg-neutral-900 …` + разові тіні (:114-115) → `bg-card dark:bg-night-card shadow-soft`; з'їдена `bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-900` → `bg-sage-light/30 dark:bg-sage/15 border-sage-light dark:border-sage/40`. Бейдж «замінено» amber (:162) → highlight-рецепт 1.4. Бейдж «з'їдено» на `var(--color-eaten-*)` (:170-172) → рецепт «успіх» 1.4 явними класами. Кнопка-чек consume `bg-green-500 border-green-500` (:225) → `bg-sage border-sage` (тумблер стану, не CTA). Активний рейтинг `text-orange-500 bg-orange-50 border-orange-200 …` (:201) → `text-terracotta bg-terracotta-light/30 border-terracotta-light dark:bg-terracotta/15 dark:border-terracotta/40`. Акордеон рейтингу на `var(--color-rating-*)` (:241-242) → `bg-terracotta-light/15 dark:bg-terracotta/10 border-terracotta-light/60 dark:border-terracotta/30`. Нейтральні тексти — за мапінгом 1.5.
 - [ ] **Крок 3 — CustomEntryCard:** картка `bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 shadow-sm` → `bg-card dark:bg-night-card border-sage-light dark:border-sage/40 shadow-soft`; ккал `text-main` → `font-semibold text-ink dark:text-night-ink`; delete-hover `hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20` → `hover:text-danger hover:bg-danger/10`.
 - [ ] **Крок 4 — DayMealProgress:** `text-green-500` (іконка й лейбл) → `text-sage-dark dark:text-sage-light`.
-- [ ] **Крок 5 — CalorieRingSummary (рефактор без зміни вигляду):** `bg-[#f9f4ed] dark:bg-[#474238]` → `bg-card dark:bg-night-card`; `text-[#201e1d] dark:text-[#f9f4ed]` → `text-ink dark:text-night-ink`; `text-[#645c50] dark:text-[#a19786]` → `text-ink/60 dark:text-night-muted`; `bg-[#ccdbb2] dark:bg-[#2e2b25]` / `stroke-[#ccdbb2] dark:stroke-[#2e2b25]` → `bg-sage-light dark:bg-night` / `stroke-sage-light dark:stroke-night`; тінь → `shadow-soft`; JS-константи `SAGE`/`TERRACOTTA` → `'var(--color-sage)'`/`'var(--color-terracotta)'` в іменованих константах; велике число кільця → додати `font-heading` (цифри — Caprasimo, брендовий момент). Прибрати застарілий коментар про hex.
+- [ ] **Крок 5 — CalorieRingSummary (рефактор без зміни вигляду):** `bg-[#f9f4ed] dark:bg-[#474238]` → `bg-card dark:bg-night-card`; `text-[#201e1d] dark:text-[#f9f4ed]` → `text-ink dark:text-night-ink`; `text-[#645c50] dark:text-[#a19786]` → `text-ink/60 dark:text-night-muted`; `bg-[#ccdbb2] dark:bg-[#2e2b25]` / `stroke-[#ccdbb2] dark:stroke-[#2e2b25]` → `bg-sage-light dark:bg-night` / `stroke-sage-light dark:stroke-night`; тінь → `shadow-soft`; JS-константи `SAGE`/`TERRACOTTA` → `'var(--color-sage)'`/`'var(--color-terracotta)'` в іменованих константах; велике число кільця → `font-heading font-bold` замість `font-extrabold` (Comfortaa обмежена 700). Прибрати застарілий коментар про hex.
 - [ ] **Крок 6 — чистка globals.css:** видалити з `:root` і `.dark` змінні `--color-meal-breakfast/lunch/dinner/snack`, `--color-kcal`, `--color-rating-bg/border`, `--color-eaten-bg/text/border`. Видалити порожній `src/components/menuPage/InputSkeleton.tsx`.
 - [ ] **Крок 7:** `grep -rn "color-meal\|color-kcal\|color-eaten\|color-rating" src/` → 0 збігів. `npx tsc --noEmit` → exit 0. Візуально: день зі з'їденими/незʼїденими стравами, рейтинг, кастомна страва — обидві теми.
 - [ ] **Крок 8:** Комміт `feat(menu): restyle meal cards and day view, drop legacy meal color vars`.
@@ -329,9 +310,9 @@ grep -rnE "text-main|bg-main" src/components/common/Toast.tsx src/components/com
 5. **Заміна `.dark`-мета themeColor на динамічну** (слідувати тумблеру, а не системі).
 6. **Шрифт лендінгу** — Nunito на `<body>` лишається, доки лендінг не рестайлиться.
 
-## 4. Відкриті питання (на рев'ю перед стартом)
+## 4. Рішення рев'ю (2026-08-08) — питання закриті, план готовий до виконання
 
-1. **Р1 (шрифти):** затвердити компаньйонів Onest (текст) і Podkova (кириличні заголовки поряд із Caprasimo)? Альтернативи, перевірені на кирилицю: Manrope (текст, стриманіший), Comfortaa (заголовки, округлий але легкий, макс 700). Фінальне слово — після візуальної проби (Таск 1, крок 4).
-2. **Активний пункт нижньої навігації:** sage (як стан, у плані) чи terracotta (помітніший)?
-3. **Р4 (шелл):** ок, що /shopping-list і /profile тимчасово отримають кремовий фон + новий неб + шрифт Onest при старому контенті?
-4. **Копірайтинг Таску 3, крок 2:** правки текстів затвердити/відредагувати.
+1. **Шрифти:** Comfortaa (заголовки) + Manrope (текст); Caprasimo/Podkova/Onest у стеках не використовуються. Вага заголовків (700 ↔ 600) фіксується на пробі — Таск 1, крок 4.
+2. **Активний пункт нижньої навігації:** terracotta (у темній темі — terracotta-light).
+3. **Шелл (Р4):** підтверджено — /shopping-list і /profile тимчасово отримують кремовий фон + новий неб + шрифт Manrope при старому контенті.
+4. **Копірайтинг:** лише дружні формулювання помилок (Таск 3, крок 2); решта текстів без змін.
