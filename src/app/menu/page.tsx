@@ -243,7 +243,7 @@ export default function MenuPage() {
             <ThemeToggle />
             <button
               onClick={handleGenerate}
-              className="flex items-center gap-1.5 text-xs text-ink/60 dark:text-night-muted hover:text-terracotta bg-cream dark:bg-night px-3 py-2 rounded-xl transition-colors"
+              className="flex items-center gap-1.5 text-xs text-ink/60 dark:text-night-muted hover:text-terracotta dark:hover:text-terracotta-light bg-cream dark:bg-night px-3 py-2 rounded-xl transition-colors"
               title="Перегенерувати меню"
             >
               <RefreshCw size={13} />
