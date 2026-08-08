@@ -12,9 +12,9 @@ export function DayMealProgress({ consumed, total, isCompleted }: DayMealProgres
   return (
     <div className="flex items-center gap-1.5">
       {isCompleted ? (
-        <CheckCircle size={14} className="text-green-500" aria-hidden="true" />
+        <CheckCircle size={14} className="text-sage-dark dark:text-sage-light" aria-hidden="true" />
       ) : null}
-      <span className={`text-xs font-semibold ${isCompleted ? 'text-green-500' : 'text-neutral-500 dark:text-neutral-400'}`}>
+      <span className={`text-xs font-semibold ${isCompleted ? 'text-sage-dark dark:text-sage-light' : 'text-ink/60 dark:text-night-muted'}`}>
         {isCompleted ? 'День виконано!' : `${consumed} з ${total} прийомів ✓`}
       </span>
     </div>

@@ -9,13 +9,6 @@ import { DayMealProgress } from './DayMealProgress';
 import { CalorieRingSummary } from './CalorieRingSummary';
 import { Clock, Zap, Plus } from 'lucide-react';
 
-const SECTION_COLORS: Record<string, string> = {
-  breakfast: '#3B82F6',
-  lunch: '#F97316',
-  dinner: '#8B5CF6',
-  snack: '#10B981',
-};
-
 interface DayViewProps {
   day: MenuDay;
   dayDate: string;
@@ -82,22 +75,20 @@ function calcGoalMacros(goalCalories: number) {
 
 function SectionHeader({
   label,
-  color,
   kcal,
   allEaten,
 }: {
   label: string;
-  color: string;
   kcal: number;
   allEaten: boolean;
 }) {
   return (
     <div className="flex items-center gap-2 mb-2 px-0.5">
-      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
-      <span className="text-sm font-bold" style={{ color }}>
+      <span className="w-2 h-2 rounded-full flex-shrink-0 bg-sage" />
+      <span className="text-sm font-bold text-sage-dark dark:text-sage-light">
         {label}
       </span>
-      <span className="text-xs text-neutral-400 dark:text-neutral-500 ml-auto">
+      <span className="text-xs text-ink/50 dark:text-night-muted ml-auto">
         {kcal} ккал{allEaten ? ' · з\'їдено ✓' : ''}
       </span>
     </div>
@@ -133,7 +124,7 @@ export function DayView({ day, dayDate, goalCalories, onConsume, onOpenConsume, 
         {/* Day header */}
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
+            <h2 className="text-base font-heading font-semibold text-ink dark:text-night-ink">
               {day.dayLabel}
             </h2>
             <DayMealProgress
@@ -143,13 +134,13 @@ export function DayView({ day, dayDate, goalCalories, onConsume, onOpenConsume, 
             />
           </div>
           <div className="flex flex-col items-end gap-1">
-            <span className="text-xs text-neutral-500">
+            <span className="text-xs text-ink/60 dark:text-night-muted">
               {day.totalCalories} ккал
             </span>
-            <div className="flex items-center gap-1 text-xs text-neutral-400">
+            <div className="flex items-center gap-1 text-xs text-ink/60 dark:text-night-muted">
               {isQuickDay ? (
                 <>
-                  <Zap size={11} className="text-yellow-500" aria-hidden="true" />
+                  <Zap size={11} className="text-terracotta" aria-hidden="true" />
                   <span>Швидкий день</span>
                 </>
               ) : (
@@ -167,7 +158,6 @@ export function DayView({ day, dayDate, goalCalories, onConsume, onOpenConsume, 
           <section aria-label="Сніданок">
             <SectionHeader
               label="Сніданок"
-              color={SECTION_COLORS.breakfast}
               kcal={day.meals.breakfast.reduce((s, m) => s + m.calories * m.servings, 0)}
               allEaten={day.meals.breakfast.every(m => m.isConsumed)}
             />
@@ -194,7 +184,6 @@ export function DayView({ day, dayDate, goalCalories, onConsume, onOpenConsume, 
           <section aria-label="Обід">
             <SectionHeader
               label="Обід"
-              color={SECTION_COLORS.lunch}
               kcal={day.meals.lunch.reduce((s, m) => s + m.calories * m.servings, 0)}
               allEaten={day.meals.lunch.every(m => m.isConsumed)}
             />
@@ -221,7 +210,6 @@ export function DayView({ day, dayDate, goalCalories, onConsume, onOpenConsume, 
           <section aria-label="Вечеря">
             <SectionHeader
               label="Вечеря"
-              color={SECTION_COLORS.dinner}
               kcal={day.meals.dinner.reduce((s, m) => s + m.calories * m.servings, 0)}
               allEaten={day.meals.dinner.every(m => m.isConsumed)}
             />
@@ -248,7 +236,6 @@ export function DayView({ day, dayDate, goalCalories, onConsume, onOpenConsume, 
           <section aria-label="Перекус">
             <SectionHeader
               label="Перекус"
-              color={SECTION_COLORS.snack}
               kcal={day.meals.snacks.reduce((s, m) => s + m.calories * m.servings, 0)}
               allEaten={day.meals.snacks.every(m => m.isConsumed)}
             />
@@ -274,8 +261,8 @@ export function DayView({ day, dayDate, goalCalories, onConsume, onOpenConsume, 
         {/* Custom eaten foods (outside the AI menu) */}
         <section aria-label="Мої страви">
           <div className="flex items-center gap-2 mb-2 px-0.5">
-            <span className="w-2 h-2 rounded-full flex-shrink-0 bg-neutral-300 dark:bg-neutral-600" />
-            <span className="text-[10px] font-semibold uppercase tracking-[.07em] text-neutral-400 dark:text-neutral-500">
+            <span className="w-2 h-2 rounded-full flex-shrink-0 bg-sage-light dark:bg-sage/40" />
+            <span className="text-[10px] font-semibold uppercase tracking-[.07em] text-ink/50 dark:text-night-muted">
               Мої страви
             </span>
           </div>
@@ -289,7 +276,7 @@ export function DayView({ day, dayDate, goalCalories, onConsume, onOpenConsume, 
             ))}
             <button
               onClick={() => onOpenAddCustom(day.dayLabel)}
-              className="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-2xl border-2 border-dashed border-neutral-200 dark:border-neutral-700 text-neutral-400 dark:text-neutral-500 text-sm font-medium hover:border-orange-300 hover:text-orange-400 transition-colors"
+              className="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-2xl border-2 border-dashed border-sage-light dark:border-sage/40 text-ink/50 dark:text-night-muted text-sm font-medium hover:border-sage hover:text-sage-dark dark:hover:text-sage-light transition-colors"
             >
               <Plus size={16} />
               Додати свою страву

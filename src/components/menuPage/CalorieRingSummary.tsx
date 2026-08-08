@@ -1,12 +1,7 @@
 'use client';
 
-/**
- * Brand book tokens (slide 5 + dark theme slide 8).
- * Dark mode swaps only surfaces (neutral-900/800) and text (neutral-100/400);
- * sage & terracotta accents stay the same in both themes.
- */
-const SAGE = '#7a8a5e';
-const TERRACOTTA = '#c67139';
+const SAGE = 'var(--color-sage)';
+const TERRACOTTA = 'var(--color-terracotta)';
 
 function formatKcal(n: number) {
   return n.toLocaleString('uk-UA');
@@ -21,10 +16,10 @@ function MacroStat({ label, consumed, goal }: {
   const isOver = consumed > goal;
   return (
     <div className="flex-1 flex flex-col items-center gap-1">
-      <span className="text-xs font-semibold text-[#201e1d] dark:text-[#f9f4ed]">
+      <span className="text-xs font-semibold text-ink dark:text-night-ink">
         {label}
       </span>
-      <div className="w-full h-1.5 rounded-full overflow-hidden bg-[#ccdbb2] dark:bg-[#2e2b25]">
+      <div className="w-full h-1.5 rounded-full overflow-hidden bg-sage-light dark:bg-night">
         <div
           className="h-full rounded-full transition-all duration-500"
           style={{ width: `${pct}%`, backgroundColor: isOver ? TERRACOTTA : SAGE }}
@@ -35,8 +30,8 @@ function MacroStat({ label, consumed, goal }: {
           aria-label={`${label}: ${consumed} з ${goal} г`}
         />
       </div>
-      <span className="text-xs text-[#645c50] dark:text-[#a19786]">
-        <span className="font-bold text-[#201e1d] dark:text-[#f9f4ed]">{consumed}</span>
+      <span className="text-xs text-ink/60 dark:text-night-muted">
+        <span className="font-bold text-ink dark:text-night-ink">{consumed}</span>
         {' / '}{goal} г
       </span>
     </div>
@@ -57,7 +52,7 @@ export function CalorieRingSummary({ consumed, goalCalories, goalMacros }: {
   const circumference = 2 * Math.PI * r;
 
   return (
-    <div className="mx-4 mt-4 px-4 py-5 rounded-3xl shadow-[0_4px_20px_rgba(32,30,29,0.06)] bg-[#f9f4ed] dark:bg-[#474238]">
+    <div className="mx-4 mt-4 px-4 py-5 rounded-3xl shadow-soft bg-card dark:bg-night-card">
       <div className="flex justify-center">
         <div className="relative" style={{ width: size, height: size }}>
           <svg
@@ -76,7 +71,7 @@ export function CalorieRingSummary({ consumed, goalCalories, goalMacros }: {
               r={r}
               fill="none"
               strokeWidth={stroke}
-              className="stroke-[#ccdbb2] dark:stroke-[#2e2b25]"
+              className="stroke-sage-light dark:stroke-night"
             />
             <circle
               cx={size / 2}
@@ -92,10 +87,10 @@ export function CalorieRingSummary({ consumed, goalCalories, goalMacros }: {
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-4xl font-extrabold tracking-tight text-[#201e1d] dark:text-[#f9f4ed]">
+            <span className="text-4xl font-heading font-bold tracking-tight text-ink dark:text-night-ink">
               {formatKcal(consumed.calories)}
             </span>
-            <span className="text-sm text-[#645c50] dark:text-[#a19786]">
+            <span className="text-sm text-ink/60 dark:text-night-muted">
               з {formatKcal(goalCalories)} ккал
             </span>
           </div>
