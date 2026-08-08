@@ -14,7 +14,7 @@ export function BottomNavBar() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-700 pb-safe">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card dark:bg-night-card border-t border-ink/10 dark:border-night-ink/10 pb-safe">
       <div className="flex items-stretch justify-around max-w-[1400px] mx-auto">
         {navItems.map(({ href, label, icon: Icon }) => {
           const isActive = pathname.startsWith(href);
@@ -24,8 +24,8 @@ export function BottomNavBar() {
               href={href}
               className={`flex flex-col items-center justify-center gap-1 flex-1 py-3 min-h-[56px] transition-colors ${
                 isActive
-                  ? 'text-main'
-                  : 'text-neutral-400 dark:text-neutral-500 hover:text-main'
+                  ? 'text-terracotta dark:text-terracotta-light'
+                  : 'text-ink/40 dark:text-night-muted hover:text-terracotta dark:hover:text-terracotta-light'
               }`}
             >
               <Icon
