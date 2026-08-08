@@ -54,7 +54,7 @@ export function CustomEntryCard({ entry, onDelete }: CustomEntryCardProps) {
       <button
         onClick={handleDelete}
         disabled={loading}
-        className="p-2 rounded-full text-ink/40 dark:text-night-muted hover:text-danger hover:bg-danger/10 transition-colors flex-shrink-0 disabled:opacity-40"
+        className="p-2 rounded-full text-ink/40 dark:text-night-muted hover:text-danger dark:hover:text-danger-dark hover:bg-danger/10 transition-colors flex-shrink-0 disabled:opacity-40"
         aria-label="Видалити запис"
       >
         <Trash2 size={16} />
