@@ -35,7 +35,7 @@ export default function MenuPage() {
       setState(data.menu ? 'has-menu' : 'no-menu');
     } catch {
       setState('error');
-      setError('Не вдалося завантажити меню. Спробуйте пізніше.');
+      setError('Щось пішло не так. Спробуймо ще раз?');
     }
   }, []);
 
@@ -96,7 +96,7 @@ export default function MenuPage() {
 
   const handleGenerate = async () => {
     if (profileMissing) {
-      setError('Будь ласка, заповніть профіль перед генерацією меню.');
+      setError('Спершу заповни профіль — і зробимо меню під тебе.');
       return;
     }
     setState('generating');
@@ -117,7 +117,7 @@ export default function MenuPage() {
       }
       await fetchMenu();
     } catch {
-      setError('Сталася помилка. Перевірте підключення до інтернету.');
+      setError("Немає з'єднання. Перевір інтернет і спробуй ще раз.");
       setState(menu ? 'has-menu' : 'no-menu');
     }
   };
@@ -135,7 +135,7 @@ export default function MenuPage() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center space-y-3">
           <div className="text-4xl animate-spin inline-block">🌀</div>
-          <p className="text-sm text-neutral-500">Завантажуємо…</p>
+          <p className="text-sm text-ink/60 dark:text-night-muted">Завантажуємо…</p>
         </div>
       </div>
     );
@@ -149,10 +149,10 @@ export default function MenuPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-6 gap-4">
         <span className="text-5xl">😔</span>
-        <p className="text-center text-neutral-600 dark:text-neutral-400">{error}</p>
+        <p className="text-center text-ink/60 dark:text-night-muted">{error}</p>
         <button
           onClick={() => { setState('loading'); void fetchMenu(); }}
-          className="flex items-center gap-2 bg-main text-white px-5 py-3 rounded-2xl font-semibold text-sm"
+          className="flex items-center gap-2 bg-terracotta hover:bg-terracotta-dark text-card font-semibold rounded-2xl shadow-soft active:scale-95 transition-all px-5 py-3 text-sm"
         >
           <RefreshCw size={16} />
           Спробувати знову
@@ -166,23 +166,23 @@ export default function MenuPage() {
       <div className="flex flex-col items-center justify-center min-h-[70vh] px-6 gap-5">
         <div className="text-center space-y-2">
           <div className="text-6xl mb-4">🥗</div>
-          <h1 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
+          <h1 className="font-heading font-semibold text-xl text-ink dark:text-night-ink">
             Ваше персональне меню
           </h1>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400 max-w-xs">
+          <p className="text-sm text-ink/60 dark:text-night-muted max-w-xs">
             AI-дієтолог складе 7-денний план харчування спеціально для вас — з рецептами, калоріями та списком покупок.
           </p>
         </div>
 
         {profileMissing ? (
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-2xl p-4 max-w-xs w-full text-center">
-            <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-300 mb-1">Профіль не заповнено</p>
-            <p className="text-xs text-yellow-600 dark:text-yellow-400 mb-3">
+          <div className="bg-terracotta-light/20 dark:bg-terracotta/15 border border-terracotta-light dark:border-terracotta/40 rounded-2xl p-4 max-w-xs w-full text-center">
+            <p className="text-sm font-semibold text-terracotta-dark dark:text-terracotta-light mb-1">Профіль не заповнено</p>
+            <p className="text-xs text-terracotta-dark dark:text-terracotta-light mb-3">
               Щоб згенерувати меню, спочатку вкажіть свої дані (стать, вік, вагу, зріст)
             </p>
             <a
               href="/profile"
-              className="inline-block bg-yellow-400 hover:bg-yellow-500 text-white text-sm font-bold px-5 py-2 rounded-xl transition-colors"
+              className="inline-block bg-terracotta hover:bg-terracotta-dark text-card text-sm font-semibold rounded-2xl shadow-soft active:scale-95 transition-all px-5 py-2"
             >
               Заповнити профіль
             </a>
@@ -190,14 +190,14 @@ export default function MenuPage() {
         ) : (
           <>
             {error && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-3 max-w-xs w-full">
-                <p className="text-sm text-red-600 dark:text-red-400 text-center">{error}</p>
+              <div className="bg-danger/10 border border-danger/30 rounded-2xl p-3 max-w-xs w-full">
+                <p className="text-sm text-danger dark:text-danger-dark text-center">{error}</p>
               </div>
             )}
 
             <button
               onClick={handleGenerate}
-              className="flex items-center gap-2 bg-main text-white px-8 py-4 rounded-2xl font-bold text-base shadow-lg active:scale-95 transition-transform"
+              className="flex items-center gap-2 bg-terracotta hover:bg-terracotta-dark text-card font-semibold rounded-2xl shadow-soft active:scale-95 transition-all px-8 py-4 text-base"
             >
               <Sparkles size={20} />
               Згенерувати меню
@@ -206,7 +206,7 @@ export default function MenuPage() {
         )}
 
         {generationsLeft !== null && (
-          <p className="text-xs text-neutral-400 text-center">
+          <p className="text-xs text-ink/60 dark:text-night-muted text-center">
             Залишилось генерацій цього тижня: {generationsLeft}
           </p>
         )}
@@ -217,9 +217,9 @@ export default function MenuPage() {
             { emoji: '📊', text: 'Ккал і БЖВ' },
             { emoji: '🛒', text: 'Список покупок' },
           ].map(({ emoji, text }) => (
-            <div key={text} className="bg-neutral-100 dark:bg-neutral-800 rounded-2xl p-3">
+            <div key={text} className="bg-card dark:bg-night-card shadow-soft rounded-2xl p-3">
               <div className="text-2xl mb-1">{emoji}</div>
-              <p className="text-xs text-neutral-500 font-semibold">{text}</p>
+              <p className="text-xs text-ink/60 dark:text-night-muted font-semibold">{text}</p>
             </div>
           ))}
         </div>
@@ -230,12 +230,12 @@ export default function MenuPage() {
   if (state === 'has-menu' && menu) {
     return (
       <>
-        <div className="flex items-center justify-between px-4 py-3 bg-white dark:bg-neutral-900 border-b border-neutral-100 dark:border-neutral-800">
+        <div className="flex items-center justify-between px-4 py-3 bg-card dark:bg-night-card border-b border-ink/10 dark:border-night-ink/10">
           <div>
-            <h1 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
+            <h1 className="font-heading font-semibold text-lg text-ink dark:text-night-ink">
               Тижневе меню
             </h1>
-            <p className="text-xs text-neutral-400">
+            <p className="text-xs text-ink/60 dark:text-night-muted">
               {profile?.goalCalories ? `Ціль: ${profile.goalCalories} ккал/день` : 'Персоналізоване харчування'}
             </p>
           </div>
@@ -243,7 +243,7 @@ export default function MenuPage() {
             <ThemeToggle />
             <button
               onClick={handleGenerate}
-              className="flex items-center gap-1.5 text-xs text-neutral-500 hover:text-main bg-neutral-100 dark:bg-neutral-800 px-3 py-2 rounded-xl transition-colors"
+              className="flex items-center gap-1.5 text-xs text-ink/60 dark:text-night-muted hover:text-terracotta bg-cream dark:bg-night px-3 py-2 rounded-xl transition-colors"
               title="Перегенерувати меню"
             >
               <RefreshCw size={13} />
@@ -256,9 +256,9 @@ export default function MenuPage() {
         <DailyTipCard />
 
         {catchingUp && (
-          <div className="mx-4 mt-3 flex items-center gap-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-2xl px-4 py-2.5">
+          <div className="mx-4 mt-3 flex items-center gap-2 bg-terracotta-light/20 dark:bg-terracotta/15 border border-terracotta-light dark:border-terracotta/40 rounded-2xl px-4 py-2.5">
             <span className="text-lg animate-spin">🌀</span>
-            <p className="text-xs text-orange-700 dark:text-orange-300 font-medium">
+            <p className="text-xs text-terracotta-dark dark:text-terracotta-light font-medium">
               Доганяємо решту тижня…
             </p>
           </div>

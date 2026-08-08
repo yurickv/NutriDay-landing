@@ -44,7 +44,7 @@ export function DayTabBar({ days, activeIndex, onSelect }: DayTabBarProps) {
   return (
     <div
       ref={scrollRef}
-      className="flex gap-2 overflow-x-auto scroll-smooth px-4 py-3 bg-white dark:bg-neutral-900 border-b border-neutral-100 dark:border-neutral-800 scrollbar-none"
+      className="flex gap-2 overflow-x-auto scroll-smooth px-4 py-3 bg-card dark:bg-night-card border-b border-ink/10 dark:border-night-ink/10 scrollbar-none"
       style={{ scrollbarWidth: 'none' }}
     >
       {days.map((day, i) => {
@@ -60,17 +60,17 @@ export function DayTabBar({ days, activeIndex, onSelect }: DayTabBarProps) {
             onClick={() => onSelect(i)}
             className={`flex-shrink-0 flex flex-col items-center px-3 py-2 rounded-2xl min-w-[52px] transition-all ${
               isActive
-                ? 'bg-main text-white shadow-md'
+                ? 'bg-sage text-card shadow-soft'
                 : isCompleted
-                ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
-                : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700'
-            } ${isToday && !isActive ? 'ring-2 ring-green-500 dark:ring-green-400' : ''}`}
+                ? 'bg-sage-light/60 dark:bg-sage/25 text-sage-dark dark:text-sage-light'
+                : 'bg-cream dark:bg-night text-ink/60 dark:text-night-muted hover:bg-sage-light/40 dark:hover:bg-sage/20'
+            } ${isToday && !isActive ? 'ring-2 ring-sage dark:ring-sage-light' : ''}`}
             aria-label={`${day.dayLabel}${isToday ? ', сьогодні' : ''}${isCompleted ? ', виконано' : ''}`}
             aria-pressed={isActive}
           >
             <span className="text-[10px] font-semibold flex items-center gap-0.5">
               {isCompleted && (
-                <span className={isActive ? 'text-white' : 'text-green-500 dark:text-green-400'}>✓</span>
+                <span className={isActive ? 'text-card' : 'text-sage-dark dark:text-sage-light'}>✓</span>
               )}
               {formatShort(day.dayLabel)}
             </span>
