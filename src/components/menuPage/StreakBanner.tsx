@@ -32,18 +32,18 @@ export function StreakBanner({ streak }: StreakBannerProps) {
   const latestBadge = badges.length > 0 ? badges[badges.length - 1] : null;
 
   return (
-    <div className="mx-4 my-3 rounded-2xl bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-950/40 dark:to-yellow-950/30 border border-orange-100 dark:border-orange-900/40 p-4">
+    <div className="mx-4 my-3 rounded-2xl bg-card dark:bg-night-card shadow-soft p-4">
       {/* Main streak */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="text-3xl leading-none">🔥</div>
           <div>
-            <p className="text-sm font-bold text-neutral-800 dark:text-neutral-100">
+            <p className="text-sm font-bold text-ink dark:text-night-ink">
               {currentStreak > 0
                 ? `${currentStreak} ${pluralDays(currentStreak)} поспіль`
                 : 'Починай сьогодні!'}
             </p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            <p className="text-xs text-ink/60 dark:text-night-muted">
               Всього виконано: {totalDaysCompleted} {pluralDays(totalDaysCompleted)}
             </p>
           </div>
@@ -51,23 +51,23 @@ export function StreakBanner({ streak }: StreakBannerProps) {
 
         {longestStreak > 0 && (
           <div className="text-right">
-            <p className="text-xs text-neutral-400">Рекорд</p>
-            <p className="text-sm font-bold text-main">{longestStreak}д</p>
+            <p className="text-xs text-ink/60 dark:text-night-muted">Рекорд</p>
+            <p className="text-sm font-bold text-terracotta">{longestStreak}д</p>
           </div>
         )}
       </div>
 
       {/* Latest badge */}
       {latestBadge && (
-        <div className="mt-3 pt-3 border-t border-orange-100 dark:border-orange-900/40 flex items-center gap-2">
+        <div className="mt-3 pt-3 border-t border-ink/10 dark:border-night-ink/10 flex items-center gap-2">
           <span className="text-xl">
             {BADGE_EMOJIS[latestBadge.id] ?? '🏅'}
           </span>
           <div>
-            <p className="text-xs font-semibold text-orange-600 dark:text-orange-400">
+            <p className="text-xs font-semibold text-terracotta-dark dark:text-terracotta-light">
               Бейдж розблоковано!
             </p>
-            <p className="text-xs text-neutral-500">
+            <p className="text-xs text-ink/60 dark:text-night-muted">
               {BADGE_LABELS[latestBadge.id] ?? latestBadge.id} — ти молодець!
             </p>
           </div>
@@ -90,13 +90,13 @@ function NextBadgeProgress({ currentStreak, badges }: { currentStreak: number; b
 
   return (
     <div className="mt-3 space-y-1">
-      <div className="flex justify-between text-xs text-neutral-400">
+      <div className="flex justify-between text-xs text-ink/60 dark:text-night-muted">
         <span>До {BADGE_EMOJIS[`streak_${next}`]} {BADGE_LABELS[`streak_${next}`]}</span>
         <span>{next - currentStreak} д.</span>
       </div>
-      <div className="h-1.5 bg-orange-100 dark:bg-orange-900/40 rounded-full overflow-hidden">
+      <div className="h-1.5 bg-sage-light/40 dark:bg-night rounded-full overflow-hidden">
         <div
-          className="h-full bg-gradient-to-r from-orange-400 to-yellow-400 rounded-full transition-all duration-500"
+          className="h-full bg-sage rounded-full transition-all duration-500"
           style={{ width: `${progress}%` }}
         />
       </div>

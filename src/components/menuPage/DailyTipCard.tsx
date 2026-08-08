@@ -28,23 +28,23 @@ export function DailyTipCard({ context }: DailyTipCardProps) {
 
   if (loading) {
     return (
-      <div className="mx-4 my-3 h-16 bg-neutral-100 dark:bg-neutral-800 rounded-2xl animate-pulse" />
+      <div className="mx-4 my-3 h-16 bg-ink/10 dark:bg-night-ink/10 rounded-2xl animate-pulse" />
     );
   }
 
   if (!tip) return null;
 
   return (
-    <div className="mx-4 my-3 rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/40 dark:to-emerald-950/30 border border-green-100 dark:border-green-900/40 p-4">
+    <div className="mx-4 my-3 rounded-2xl bg-card dark:bg-night-card shadow-soft p-4">
       <div className="flex gap-3">
         <span className="text-2xl flex-shrink-0 leading-none mt-0.5">
           {CATEGORY_ICON[tip.category]}
         </span>
         <div>
-          <p className="text-xs font-semibold text-green-600 dark:text-green-400 mb-1">
+          <p className="text-xs font-semibold text-sage-dark dark:text-sage-light mb-1">
             {CATEGORY_LABEL[tip.category]} · Лайфхак дня
           </p>
-          <p className="text-sm text-neutral-700 dark:text-neutral-300 leading-snug">
+          <p className="text-sm text-ink/60 dark:text-night-muted leading-snug">
             {tip.text}
           </p>
         </div>

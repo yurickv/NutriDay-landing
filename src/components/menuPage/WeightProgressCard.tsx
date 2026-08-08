@@ -12,7 +12,7 @@ export function WeightProgressCard() {
 
   if (loading) {
     return (
-      <div className="mx-4 my-3 h-28 bg-neutral-100 dark:bg-neutral-800 rounded-2xl animate-pulse" />
+      <div className="mx-4 my-3 h-28 bg-ink/10 dark:bg-night-ink/10 rounded-2xl animate-pulse" />
     );
   }
 
@@ -31,23 +31,23 @@ export function WeightProgressCard() {
   };
 
   const deltaColor = totalDelta === null
-    ? 'text-neutral-400'
+    ? 'text-ink/60 dark:text-night-muted'
     : totalDelta < 0
-    ? 'text-green-600 dark:text-green-400'
+    ? 'text-sage-dark dark:text-sage-light'
     : totalDelta > 0
-    ? 'text-orange-500'
-    : 'text-neutral-500';
+    ? 'text-terracotta'
+    : 'text-ink/60 dark:text-night-muted';
 
   return (
-    <div className="mx-4 my-3 rounded-2xl bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/40 dark:to-pink-950/30 border border-purple-100 dark:border-purple-900/40 p-4">
+    <div className="mx-4 my-3 rounded-2xl bg-card dark:bg-night-card shadow-soft p-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-xl">⚖️</span>
           <div>
-            <p className="text-sm font-bold text-neutral-800 dark:text-neutral-100">Вага</p>
+            <p className="text-sm font-bold text-ink dark:text-night-ink">Вага</p>
             {lastWeight ? (
-              <p className="text-xs text-neutral-500">
+              <p className="text-xs text-ink/60 dark:text-night-muted">
                 Зараз: <span className="font-semibold">{lastWeight} кг</span>
                 {totalDelta !== null && totalDelta !== 0 && (
                   <span className={`ml-1 ${deltaColor}`}>
@@ -56,14 +56,14 @@ export function WeightProgressCard() {
                 )}
               </p>
             ) : (
-              <p className="text-xs text-neutral-400">Зважтесь та зафіксуйте результат</p>
+              <p className="text-xs text-ink/60 dark:text-night-muted">Зважтесь та зафіксуйте результат</p>
             )}
           </div>
         </div>
 
         <button
           onClick={() => setShowInput(!showInput)}
-          className="text-xs font-semibold text-purple-600 dark:text-purple-400 bg-white dark:bg-neutral-800 border border-purple-200 dark:border-purple-800 px-3 py-1.5 rounded-xl active:scale-95 transition-transform"
+          className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-card dark:bg-night-card border border-sage-light dark:border-sage/40 text-sage-dark dark:text-sage-light active:scale-95 transition-all"
         >
           + Додати
         </button>
@@ -81,7 +81,7 @@ export function WeightProgressCard() {
             return (
               <div
                 key={i}
-                className="flex-1 rounded-t bg-purple-300 dark:bg-purple-700 opacity-70"
+                className="flex-1 rounded-t bg-sage-light dark:bg-sage/40 opacity-70"
                 style={{ height: `${heightPct}%` }}
                 title={`${log.weight} кг`}
               />
@@ -92,7 +92,7 @@ export function WeightProgressCard() {
 
       {/* Input */}
       {showInput && (
-        <div className="mt-3 pt-3 border-t border-purple-100 dark:border-purple-900/40 space-y-2">
+        <div className="mt-3 pt-3 border-t border-ink/10 dark:border-night-ink/10 space-y-2">
           <div className="flex gap-2">
             <input
               type="number"
@@ -102,12 +102,12 @@ export function WeightProgressCard() {
               value={inputWeight}
               onChange={(e) => setInputWeight(e.target.value)}
               placeholder="Кг (напр. 68.5)"
-              className="flex-1 px-3 py-2 text-sm rounded-xl border border-purple-200 dark:border-purple-800 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-purple-300"
+              className="flex-1 px-3 py-2 text-sm rounded-xl border border-ink/10 dark:border-night-ink/10 bg-card dark:bg-night-card text-ink dark:text-night-ink focus:outline-none focus:border-sage focus:ring-2 focus:ring-sage-light/50"
             />
             <button
               onClick={() => { void handleSave(); }}
               disabled={saving || !inputWeight}
-              className="px-4 py-2 text-sm font-semibold bg-purple-500 text-white rounded-xl active:scale-95 transition-transform disabled:opacity-50"
+              className="px-4 py-2 text-sm font-semibold bg-terracotta hover:bg-terracotta-dark text-card rounded-2xl shadow-soft active:scale-95 transition-all disabled:opacity-50"
             >
               {saving ? '…' : 'Зберегти'}
             </button>
@@ -117,7 +117,7 @@ export function WeightProgressCard() {
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Нотатка (необов'язково)"
-            className="w-full px-3 py-2 text-sm rounded-xl border border-purple-200 dark:border-purple-800 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-purple-300"
+            className="w-full px-3 py-2 text-sm rounded-xl border border-ink/10 dark:border-night-ink/10 bg-card dark:bg-night-card text-ink dark:text-night-ink focus:outline-none focus:border-sage focus:ring-2 focus:ring-sage-light/50"
           />
         </div>
       )}
