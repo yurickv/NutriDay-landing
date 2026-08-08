@@ -49,13 +49,10 @@ export default function InstallBanner() {
 
   return (
     <div className="fixed bottom-24 left-4 right-4 z-50 animate-in slide-in-from-bottom-4 duration-300">
-      <div
-        className="relative rounded-2xl bg-white dark:bg-gray-900 shadow-xl border border-gray-100 dark:border-gray-700 p-4"
-        style={{ boxShadow: '0 8px 32px rgba(133,119,123,0.30)' }}
-      >
+      <div className="relative rounded-2xl bg-card dark:bg-night-card shadow-soft border border-ink/10 dark:border-night-ink/10 p-4">
         <button
           onClick={dismiss}
-          className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+          className="absolute top-3 right-3 text-ink/40 hover:text-ink/60 dark:text-night-muted dark:hover:text-night-ink"
           aria-label="Закрити"
         >
           <X className="w-4 h-4" />
@@ -65,16 +62,16 @@ export default function InstallBanner() {
           {/* App icon */}
           <div
             className="w-12 h-12 rounded-2xl flex-shrink-0 flex items-center justify-center text-white font-bold text-lg"
-            style={{ background: '#f97316' }}
+            style={{ background: 'var(--color-terracotta)' }}
           >
             E
           </div>
 
           <div className="flex-1 pr-4">
-            <p className="font-semibold text-sm text-gray-900 dark:text-gray-100 mb-0.5">
+            <p className="font-semibold text-sm text-ink dark:text-night-ink mb-0.5">
               Встановіть EasyMenu
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 leading-snug">
+            <p className="text-xs text-ink/60 dark:text-night-muted leading-snug">
               Додайте на головний екран для швидкого доступу без браузера
             </p>
           </div>
@@ -85,7 +82,7 @@ export default function InstallBanner() {
           <button
             onClick={handleInstall}
             disabled={busy}
-            className="mt-3 w-full rounded-xl bg-orange-500 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-orange-600 disabled:opacity-60 flex items-center justify-center gap-2"
+            className="mt-3 w-full rounded-2xl bg-terracotta hover:bg-terracotta-dark text-card font-semibold shadow-soft active:scale-95 transition-all py-2.5 text-sm disabled:opacity-60 flex items-center justify-center gap-2"
           >
             <Download className="w-4 h-4" />
             {busy ? 'Встановлення…' : 'Встановити'}
@@ -93,29 +90,29 @@ export default function InstallBanner() {
         ) : (
           // iOS Safari — manual steps.
           <div className="mt-3 space-y-2">
-            <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
-              <div className="w-6 h-6 rounded-md bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
-                <span className="text-blue-500 font-bold text-xs">1</span>
+            <div className="flex items-center gap-2 text-xs text-ink/60 dark:text-night-muted">
+              <div className="w-6 h-6 rounded-md bg-sage-light/30 dark:bg-sage/20 flex items-center justify-center flex-shrink-0">
+                <span className="text-sage-dark dark:text-sage-light font-bold text-xs">1</span>
               </div>
               <span>Натисніть</span>
-              <Share className="w-3.5 h-3.5 text-blue-500 inline" />
-              <span className="font-medium text-blue-500">«Поділитися»</span>
+              <Share className="w-3.5 h-3.5 text-sage-dark dark:text-sage-light inline" />
+              <span className="font-medium text-sage-dark dark:text-sage-light">«Поділитися»</span>
               <span>в нижній панелі Safari</span>
             </div>
 
-            <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
-              <div className="w-6 h-6 rounded-md bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
-                <span className="text-blue-500 font-bold text-xs">2</span>
+            <div className="flex items-center gap-2 text-xs text-ink/60 dark:text-night-muted">
+              <div className="w-6 h-6 rounded-md bg-sage-light/30 dark:bg-sage/20 flex items-center justify-center flex-shrink-0">
+                <span className="text-sage-dark dark:text-sage-light font-bold text-xs">2</span>
               </div>
               <span>Оберіть</span>
-              <PlusSquare className="w-3.5 h-3.5 text-blue-500 inline" />
-              <span className="font-medium text-blue-500">«На головний екран»</span>
+              <PlusSquare className="w-3.5 h-3.5 text-sage-dark dark:text-sage-light inline" />
+              <span className="font-medium text-sage-dark dark:text-sage-light">«На головний екран»</span>
             </div>
           </div>
         )}
 
         {/* iOS-style bottom arrow indicator */}
-        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white dark:bg-gray-900 border-r border-b border-gray-100 dark:border-gray-700 rotate-45" />
+        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-card dark:bg-night-card border-r border-b border-ink/10 dark:border-night-ink/10 rotate-45" />
       </div>
     </div>
   );

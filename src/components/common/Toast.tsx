@@ -27,21 +27,16 @@ function ToastItem({ toast, onRemove }: ToastProps) {
     return () => clearTimeout(timer);
   }, [toast.id, onRemove]);
 
-  const bgColor =
+  const colorClasses =
     toast.type === 'error'
-      ? 'bg-red-500'
+      ? 'bg-danger text-card'
       : toast.type === 'info'
-      ? 'bg-blue-500'
-      : 'bg-neutral-900 dark:bg-neutral-100';
-
-  const textColor =
-    toast.type === 'error' || toast.type === 'info'
-      ? 'text-white'
-      : 'text-white dark:text-neutral-900';
+      ? 'bg-sage text-card'
+      : 'bg-ink text-card dark:bg-card dark:text-ink';
 
   return (
     <div
-      className={`flex items-center gap-3 px-4 py-3 rounded-2xl shadow-lg max-w-sm transition-all duration-300 ${bgColor} ${textColor} ${
+      className={`flex items-center gap-3 px-4 py-3 rounded-2xl shadow-lg max-w-sm transition-all duration-300 ${colorClasses} ${
         visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
       }`}
     >

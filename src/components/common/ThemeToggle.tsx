@@ -22,7 +22,7 @@ export function ThemeToggle() {
   return (
     <button
       onClick={toggle}
-      className="text-xl leading-none p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+      className="text-xl leading-none p-1.5 rounded-lg hover:bg-cream dark:hover:bg-night transition-colors"
       aria-label="Змінити тему"
     >
       {dark ? '☀️' : '🌙'}
