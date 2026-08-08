@@ -1,4 +1,6 @@
-// components/onboarding/OnboardingLayout.tsx
+// components/onboardingPage/OnboardingLayout.tsx
+// Обгортка сторінок оплати й auth. Бренд-бук NutriDay: крем/night фон,
+// картка на bg-card, заголовки Comfortaa (font-heading).
 import React from 'react';
 
 interface OnboardingLayoutProps {
@@ -13,24 +15,22 @@ export const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
   subtitle,
 }) => {
   return (
-    <div className='min-h-screen bg-white dark:bg-dark-body'>
-      <main className='text-[#21201C] dark:text-main-title-black'>
-        <section className='relative'>
-          <div className='div-container py-[44px] mx-auto text-center flex flex-col gap-5 md:gap-10 z-10 relative bg-white dark:bg-dark-body'>
-            <h1 className='text-3xl md:text-4xl font-bold text-center mt-14 text-main-title dark:text-main-title-black'>
+    <div className="min-h-screen bg-cream font-body text-ink dark:bg-night dark:text-night-ink">
+      <main>
+        <section className="relative">
+          <div className="div-container relative z-10 mx-auto flex flex-col gap-5 py-[44px] text-center md:gap-10">
+            <h1 className="mt-14 text-center font-heading text-3xl font-bold md:text-4xl">
               {title}
             </h1>
             {subtitle && (
-              <p className='text-lg text-main-text dark:text-main-text-black'>
-                {subtitle}
-              </p>
+              <p className="text-lg text-ink/70 dark:text-night-muted">{subtitle}</p>
             )}
           </div>
         </section>
-        <section className='bg-white dark:bg-dark-body'>
-          <div className='div-container py-[20px] md:py-[44px] mx-auto'>
-            <div className='flex justify-center'>
-              <div className='p-8 md:p-12 bg-[#F5F5F5] dark:bg-[#676465] flex flex-col max-w-[600px] w-full rounded-xl shadow-[0px_4px_20px_0px_rgba(133,119,123,0.30)] dark:shadow-[0px_4px_15px_0px_rgba(116,116,116,0.30)]'>
+        <section>
+          <div className="div-container mx-auto py-[20px] md:py-[44px]">
+            <div className="flex justify-center">
+              <div className="flex w-full max-w-[600px] flex-col rounded-3xl bg-card p-8 shadow-soft dark:bg-night-card md:p-12">
                 {children}
               </div>
             </div>

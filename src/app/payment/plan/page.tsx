@@ -13,35 +13,10 @@ import type { OnboardingData } from '@/types/onboarding';
 import { PLANS, type PlanId } from '@/lib/plans';
 import { track, identify } from '@/lib/analytics';
 import { readAttribution } from '@/lib/analytics/attribution';
+import { labelFor } from '@/lib/onboarding/steps';
 
 // Prices come from @/lib/plans (server source of truth). The amount sent to
 // checkout is derived server-side from planId, so the values here are display-only.
-
-// Human-readable labels for onboarding answer keys (mirror the option labels
-// on the onboarding pages, without emoji).
-const MAIN_GOAL_LABELS: Record<string, string> = {
-  lose_weight: 'Схуднути',
-  maintain_weight: 'Підтримувати вагу',
-  gain_weight: 'Набрати вагу',
-  build_muscle: 'Наростити м’язи',
-  something_else: 'Щось інше',
-};
-
-const SHORT_GOAL_LABELS: Record<string, string> = {
-  balanced_eating: 'Збалансовано харчуватися і жити здоровіше',
-  boost_energy: 'Підвищити енергію і настрій',
-  stay_motivated: 'Залишатися мотивованим і послідовним',
-  better_body_image: 'Краще ставитися до свого тіла',
-  meal_planning: 'Не думати що приготувати завтра',
-};
-
-const ADDITIONAL_GOAL_LABELS: Record<string, string> = {
-  improve_food_relationship: 'Поліпшити своє ставлення до їжі',
-  learn_cooking: 'Навчитися готувати здорову їжу',
-  boost_immunity: 'Зміцнити імунну систему',
-  better_sleep: 'Краще спати і мати більше енергії',
-  feel_comfortable: 'Почуватися комфортно у власній шкірі',
-};
 
 function goalHeadline(data: OnboardingData) {
   const map: Record<string, string> = {
@@ -71,6 +46,7 @@ export default function DashboardPage() {
     const d = getOnboardingData();
     setData(d);
     if ((d as any).email) setEmail((d as any).email);
+    if (d.personalDataConsent) setAgreePersonalData(true);
 
     // Prefill from the DB record for returning/logged-in users (localStorage wins
     // when it has a value, so a fresh onboarding isn't overwritten).
@@ -118,21 +94,10 @@ export default function DashboardPage() {
   const goalsList = useMemo(() => {
     const goals: string[] = [];
     if (data.mainGoal)
-      goals.push(
-        `Головна ціль: ${MAIN_GOAL_LABELS[data.mainGoal] ?? data.mainGoal}`
-      );
+      goals.push(`Головна ціль: ${labelFor('mainGoal', data.mainGoal)}`);
     if (data.shortGoal?.length)
       goals.push(
-        `Короткі цілі: ${data.shortGoal
-          .map((g) => SHORT_GOAL_LABELS[g] ?? g)
-          .join(', ')}`
-      );
-    const additional = (data.additionalGoal ?? []).filter((g) => g !== 'none');
-    if (additional.length)
-      goals.push(
-        `Додатково: ${additional
-          .map((g) => ADDITIONAL_GOAL_LABELS[g] ?? g)
-          .join(', ')}`
+        `Короткі цілі: ${data.shortGoal.map((g) => labelFor('shortGoal', g)).join(', ')}`
       );
     return goals;
   }, [data]);
@@ -369,7 +334,7 @@ export default function DashboardPage() {
             type="button"
             disabled={submitting}
             onClick={onPay}
-            className={`w-full rounded-xl p-4 text-white text-center transition-all duration-200 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 ${
+            className={`w-full rounded-xl bg-terracotta p-4 text-center text-white transition-colors hover:bg-terracotta-dark ${
               submitting ? 'opacity-70 cursor-not-allowed' : ''
             }`}
           >
