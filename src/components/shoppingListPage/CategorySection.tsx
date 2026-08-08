@@ -5,7 +5,7 @@ import { ShoppingListItem } from '@/types/shoppingList';
 import { ShoppingItem } from './ShoppingItem';
 
 const CATEGORY_LABELS: Record<ShoppingCategory, string> = {
-  meat: 'М\'ясо',
+  meat: "М'ясо",
   fish: 'Риба',
   dairy: 'Молочне',
   vegetables: 'Овочі',
@@ -36,7 +36,11 @@ interface CategorySectionProps {
   onToggle: (id: string, isPurchased: boolean) => void;
 }
 
-export function CategorySection({ category, items, onToggle }: CategorySectionProps) {
+export function CategorySection({
+  category,
+  items,
+  onToggle,
+}: CategorySectionProps) {
   if (items.length === 0) return null;
 
   const purchasedCount = items.filter((i) => i.isPurchased).length;
@@ -45,12 +49,16 @@ export function CategorySection({ category, items, onToggle }: CategorySectionPr
   return (
     <div className="mb-2">
       {/* Category header */}
-      <div className="flex items-center gap-2 px-4 py-2 sticky top-0 bg-neutral-50 dark:bg-neutral-950 z-10">
-        <span aria-hidden="true" className="text-base">{CATEGORY_EMOJI[category]}</span>
+      <div className="flex items-center gap-2 px-4 py-2 mt-2sticky top-0 bg-cream dark:bg-night z-10">
+        <span aria-hidden="true" className="text-base">
+          {CATEGORY_EMOJI[category]}
+        </span>
         <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 flex-1">
           {CATEGORY_LABELS[category]}
         </h3>
-        <span className={`text-xs font-semibold ${allDone ? 'text-green-500' : 'text-neutral-400'}`}>
+        <span
+          className={`text-xs font-semibold ${allDone ? 'text-green-500' : 'text-neutral-400'}`}
+        >
           {purchasedCount}/{items.length}
         </span>
       </div>
