@@ -18,15 +18,15 @@ export function IngredientsTab({ meal }: IngredientsTabProps) {
   return (
     <div className="px-5 py-4 space-y-4">
       {/* Servings selector */}
-      <div className="flex items-center justify-between bg-neutral-50 dark:bg-neutral-800 rounded-2xl p-3">
-        <span className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">
+      <div className="flex items-center justify-between bg-cream dark:bg-night rounded-2xl p-3">
+        <span className="text-sm font-semibold text-ink dark:text-night-ink">
           Порцій
         </span>
         <div className="flex items-center gap-3">
           <button
             onClick={() => adjust(-1)}
             disabled={servings <= 1}
-            className="w-8 h-8 rounded-full bg-white dark:bg-neutral-700 shadow flex items-center justify-center disabled:opacity-40"
+            className="w-8 h-8 rounded-full bg-card dark:bg-night-card shadow-soft flex items-center justify-center disabled:opacity-40"
             aria-label="Зменшити порції"
           >
             <Minus size={14} />
@@ -35,7 +35,7 @@ export function IngredientsTab({ meal }: IngredientsTabProps) {
           <button
             onClick={() => adjust(1)}
             disabled={servings >= 10}
-            className="w-8 h-8 rounded-full bg-white dark:bg-neutral-700 shadow flex items-center justify-center disabled:opacity-40"
+            className="w-8 h-8 rounded-full bg-card dark:bg-night-card shadow-soft flex items-center justify-center disabled:opacity-40"
             aria-label="Збільшити порції"
           >
             <Plus size={14} />
@@ -45,9 +45,9 @@ export function IngredientsTab({ meal }: IngredientsTabProps) {
 
       {/* Total dish weight */}
       {meal.servingSize > 0 && (
-        <p className="text-xs text-neutral-500 text-center -mt-1">
+        <p className="text-xs text-ink/60 dark:text-night-muted text-center -mt-1">
           Вага страви:{' '}
-          <span className="font-semibold text-neutral-700 dark:text-neutral-300">
+          <span className="font-semibold text-ink dark:text-night-ink">
             {Math.round(meal.servingSize * servings)} г
           </span>
           {servings > 1 && ` (${meal.servingSize} г × ${servings})`}
@@ -59,12 +59,12 @@ export function IngredientsTab({ meal }: IngredientsTabProps) {
         {meal.ingredients.map((ing, i) => (
           <li
             key={i}
-            className="flex items-center justify-between py-2 border-b border-neutral-100 dark:border-neutral-800 last:border-0"
+            className="flex items-center justify-between py-2 border-b border-ink/10 dark:border-night-ink/10 last:border-0"
           >
-            <span className="text-sm text-neutral-700 dark:text-neutral-300 capitalize">
+            <span className="text-sm text-ink/60 dark:text-night-muted capitalize">
               {ing.name}
             </span>
-            <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+            <span className="text-sm font-semibold text-ink dark:text-night-ink">
               {Math.round(ing.quantity * servings * 10) / 10} {ing.unit}
             </span>
           </li>
@@ -79,9 +79,9 @@ export function IngredientsTab({ meal }: IngredientsTabProps) {
           { label: 'Жири', val: `${Math.round(meal.fat * servings)}г` },
           { label: 'Вуглев.', val: `${Math.round(meal.carbs * servings)}г` },
         ].map(({ label, val }) => (
-          <div key={label} className="text-center bg-neutral-50 dark:bg-neutral-800 rounded-xl p-2">
-            <div className="text-xs text-neutral-500 mb-0.5">{label}</div>
-            <div className="text-sm font-bold text-neutral-800 dark:text-neutral-200">{val}</div>
+          <div key={label} className="text-center bg-cream dark:bg-night rounded-xl p-2">
+            <div className="text-xs text-ink/60 dark:text-night-muted mb-0.5">{label}</div>
+            <div className="text-sm font-bold text-ink dark:text-night-ink">{val}</div>
           </div>
         ))}
       </div>

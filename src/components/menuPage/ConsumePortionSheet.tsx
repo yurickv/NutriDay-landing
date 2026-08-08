@@ -49,10 +49,10 @@ export function ConsumePortionSheet({ meal, isOpen, onClose, onConfirm }: Consum
         <div className="flex items-center gap-3">
           <span className="text-3xl" aria-hidden="true">{meal.emoji}</span>
           <div className="min-w-0">
-            <p className="text-sm font-bold text-neutral-900 dark:text-neutral-100 truncate">
+            <p className="text-sm font-bold text-ink dark:text-night-ink truncate">
               {meal.name}
             </p>
-            <p className="text-xs text-neutral-500">
+            <p className="text-xs text-ink/60 dark:text-night-muted">
               Повна порція: {planned} г · {Math.round(kcalPerGram * planned)} ккал
             </p>
           </div>
@@ -68,8 +68,8 @@ export function ConsumePortionSheet({ meal, isOpen, onClose, onConfirm }: Consum
                 onClick={() => setGrams(p.value)}
                 className={`py-2 rounded-xl text-sm font-semibold transition-colors ${
                   active
-                    ? 'bg-main text-white'
-                    : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300'
+                    ? 'bg-sage text-card'
+                    : 'bg-cream dark:bg-night text-ink/60 dark:text-night-muted'
                 }`}
               >
                 {p.label}
@@ -79,11 +79,11 @@ export function ConsumePortionSheet({ meal, isOpen, onClose, onConfirm }: Consum
         </div>
 
         {/* Weight stepper */}
-        <div className="flex items-center justify-between bg-neutral-50 dark:bg-neutral-800 rounded-2xl p-3">
+        <div className="flex items-center justify-between bg-cream dark:bg-night rounded-2xl p-3">
           <button
             onClick={() => adjust(-STEP)}
             disabled={grams <= STEP}
-            className="w-10 h-10 rounded-full bg-white dark:bg-neutral-700 shadow flex items-center justify-center disabled:opacity-40"
+            className="w-10 h-10 rounded-full bg-card dark:bg-night-card shadow-soft flex items-center justify-center disabled:opacity-40"
             aria-label="Зменшити вагу"
           >
             <Minus size={16} />
@@ -96,18 +96,18 @@ export function ConsumePortionSheet({ meal, isOpen, onClose, onConfirm }: Consum
                 value={grams}
                 onChange={(e) => setGrams(Math.max(0, Number(e.target.value) || 0))}
                 onBlur={() => setGrams((g) => Math.max(STEP, g))}
-                className="w-20 bg-transparent text-center text-2xl font-bold text-neutral-900 dark:text-neutral-100 focus:outline-none"
+                className="w-20 bg-transparent text-center text-2xl font-bold text-ink dark:text-night-ink focus:outline-none"
                 aria-label="Вага в грамах"
               />
-              <span className="text-sm font-semibold text-neutral-400">г</span>
+              <span className="text-sm font-semibold text-ink/60 dark:text-night-muted">г</span>
             </div>
-            <p className="text-xs text-main font-semibold mt-0.5">
+            <p className="text-xs text-terracotta font-semibold mt-0.5">
               {kcal} ккал · {protein} г Б
             </p>
           </div>
           <button
             onClick={() => adjust(STEP)}
-            className="w-10 h-10 rounded-full bg-white dark:bg-neutral-700 shadow flex items-center justify-center"
+            className="w-10 h-10 rounded-full bg-card dark:bg-night-card shadow-soft flex items-center justify-center"
             aria-label="Збільшити вагу"
           >
             <Plus size={16} />
@@ -117,7 +117,7 @@ export function ConsumePortionSheet({ meal, isOpen, onClose, onConfirm }: Consum
         {/* Confirm */}
         <button
           onClick={() => onConfirm(Math.max(STEP, grams))}
-          className="w-full flex items-center justify-center gap-2 bg-green-500 text-white font-bold py-3.5 rounded-2xl active:scale-[0.98] transition-transform"
+          className="w-full flex items-center justify-center gap-2 bg-terracotta hover:bg-terracotta-dark text-card font-semibold py-3.5 rounded-2xl shadow-soft active:scale-95 transition-all"
         >
           <Check size={18} strokeWidth={3} />
           Відмітити з&apos;їдено

@@ -251,8 +251,8 @@ export function AddCustomFoodSheet({ isOpen, onClose, onAdd }: AddCustomFoodShee
         { key: 'carbs', label: 'В, г' },
       ] as const).map(({ key, label }) => (
         <div key={key} className="flex flex-col items-center gap-1">
-          <span className="text-[10px] font-semibold text-neutral-400 uppercase">{label}</span>
-          <span className="text-sm font-bold text-neutral-800 dark:text-neutral-200">{draft[key]}</span>
+          <span className="text-[10px] font-semibold text-ink/50 dark:text-night-muted uppercase">{label}</span>
+          <span className="text-sm font-bold text-ink dark:text-night-ink">{draft[key]}</span>
         </div>
       ))}
     </div>
@@ -262,7 +262,7 @@ export function AddCustomFoodSheet({ isOpen, onClose, onAdd }: AddCustomFoodShee
     <BottomSheet isOpen={isOpen} onClose={onClose} title="Додати свою страву">
       {step === 'input' ? (
         <div className="px-5 py-4 space-y-4">
-          <p className="text-xs text-neutral-500">
+          <p className="text-xs text-ink/60 dark:text-night-muted">
             Вкажіть назву страви та її вагу — AI оцінить калорії та БЖВ, які можна підправити.
           </p>
 
@@ -274,9 +274,9 @@ export function AddCustomFoodSheet({ isOpen, onClose, onAdd }: AddCustomFoodShee
               placeholder="Назва страви, напр.: гречка з куркою"
               autoFocus
               maxLength={200}
-              className="w-full text-sm px-3 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 placeholder:text-neutral-400 focus:outline-none focus:border-orange-400"
+              className="w-full text-sm px-3 py-2.5 rounded-xl border border-ink/10 dark:border-night-ink/10 bg-cream dark:bg-night text-ink dark:text-night-ink placeholder:text-ink/60 dark:placeholder:text-night-muted focus:outline-none focus:border-sage focus:ring-2 focus:ring-sage-light/50"
             />
-            <div className="flex items-center gap-1 px-3 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 focus-within:border-orange-400">
+            <div className="flex items-center gap-1 px-3 py-2.5 rounded-xl border border-ink/10 dark:border-night-ink/10 bg-cream dark:bg-night focus-within:border-sage focus-within:ring-2 focus-within:ring-sage-light/50">
               <input
                 type="number"
                 inputMode="numeric"
@@ -284,13 +284,13 @@ export function AddCustomFoodSheet({ isOpen, onClose, onAdd }: AddCustomFoodShee
                 onChange={(e) => setWeight(e.target.value)}
                 placeholder="Вага порції"
                 min={1}
-                className="flex-1 min-w-0 bg-transparent text-sm text-neutral-800 dark:text-neutral-200 placeholder:text-neutral-400 focus:outline-none"
+                className="flex-1 min-w-0 bg-transparent text-sm text-ink dark:text-night-ink placeholder:text-ink/60 dark:placeholder:text-night-muted focus:outline-none"
               />
-              <span className="text-sm font-semibold text-neutral-400">г</span>
+              <span className="text-sm font-semibold text-ink/60 dark:text-night-muted">г</span>
             </div>
           </div>
 
-          <p className="text-[11px] text-neutral-400 flex items-start gap-1.5">
+          <p className="text-[11px] text-ink/60 dark:text-night-muted flex items-start gap-1.5">
             <Scale size={13} className="mt-0.5 flex-shrink-0" />
             Точна вага страви робить підрахунок калорій і БЖВ значно точнішим.
           </p>
@@ -298,7 +298,7 @@ export function AddCustomFoodSheet({ isOpen, onClose, onAdd }: AddCustomFoodShee
           <button
             onClick={handleParse}
             disabled={!text.trim() || !(Number(weight) > 0) || loading}
-            className="w-full flex items-center justify-center gap-2 bg-main text-white font-bold py-3.5 rounded-2xl disabled:opacity-50 active:scale-[0.98] transition-transform"
+            className="w-full flex items-center justify-center gap-2 bg-terracotta hover:bg-terracotta-dark text-card font-semibold py-3.5 rounded-2xl shadow-soft disabled:opacity-50 active:scale-95 transition-all"
           >
             <Sparkles size={18} />
             {loading ? 'Рахуємо…' : 'Розрахувати'}
@@ -310,7 +310,7 @@ export function AddCustomFoodSheet({ isOpen, onClose, onAdd }: AddCustomFoodShee
               setNote(null);
               setStep('edit');
             }}
-            className="w-full flex items-center justify-center gap-1.5 text-xs text-neutral-400 hover:text-neutral-600 py-1"
+            className="w-full flex items-center justify-center gap-1.5 text-xs text-ink/60 dark:text-night-muted hover:text-ink dark:hover:text-night-ink py-1"
           >
             <Pencil size={12} />
             Ввести вручну
@@ -319,7 +319,7 @@ export function AddCustomFoodSheet({ isOpen, onClose, onAdd }: AddCustomFoodShee
       ) : (
         <div className="px-5 py-4 space-y-4">
           {note && (
-            <p className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/40 rounded-lg px-3 py-2">
+            <p className="text-xs text-terracotta-dark dark:text-terracotta-light bg-terracotta-light/20 dark:bg-terracotta/15 border border-terracotta-light dark:border-terracotta/40 rounded-xl px-3 py-2">
               {note}
             </p>
           )}
@@ -330,7 +330,7 @@ export function AddCustomFoodSheet({ isOpen, onClose, onAdd }: AddCustomFoodShee
               type="text"
               value={draft.emoji}
               onChange={(e) => handleManualField('emoji', e.target.value)}
-              className="w-14 text-center text-2xl px-2 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 focus:outline-none focus:border-orange-400"
+              className="w-14 text-center text-2xl px-2 py-2.5 rounded-xl border border-ink/10 dark:border-night-ink/10 bg-cream dark:bg-night focus:outline-none focus:border-sage focus:ring-2 focus:ring-sage-light/50"
               aria-label="Емодзі"
             />
             <input
@@ -339,7 +339,7 @@ export function AddCustomFoodSheet({ isOpen, onClose, onAdd }: AddCustomFoodShee
               onChange={(e) => handleManualField('name', e.target.value)}
               placeholder="Назва страви"
               maxLength={30}
-              className="flex-1 text-sm px-3 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 placeholder:text-neutral-400 focus:outline-none focus:border-orange-400"
+              className="flex-1 text-sm px-3 py-2.5 rounded-xl border border-ink/10 dark:border-night-ink/10 bg-cream dark:bg-night text-ink dark:text-night-ink placeholder:text-ink/60 dark:placeholder:text-night-muted focus:outline-none focus:border-sage focus:ring-2 focus:ring-sage-light/50"
             />
           </div>
 
@@ -348,8 +348,8 @@ export function AddCustomFoodSheet({ isOpen, onClose, onAdd }: AddCustomFoodShee
               {/* Editable ingredient list */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-neutral-500">Інгредієнти</span>
-                  <span className="text-[11px] text-neutral-400">
+                  <span className="text-xs font-semibold text-ink/60 dark:text-night-muted">Інгредієнти</span>
+                  <span className="text-[11px] text-ink/60 dark:text-night-muted">
                     {recomputing ? 'Перерахунок…' : `${draft.grams} г разом`}
                   </span>
                 </div>
@@ -360,22 +360,22 @@ export function AddCustomFoodSheet({ isOpen, onClose, onAdd }: AddCustomFoodShee
                       value={ing.name}
                       onChange={(e) => updateIngredient(idx, 'name', e.target.value)}
                       placeholder="Інгредієнт"
-                      className="flex-1 min-w-0 text-sm px-2.5 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 placeholder:text-neutral-400 focus:outline-none focus:border-orange-400"
+                      className="flex-1 min-w-0 text-sm px-2.5 py-2 rounded-xl border border-ink/10 dark:border-night-ink/10 bg-cream dark:bg-night text-ink dark:text-night-ink placeholder:text-ink/60 dark:placeholder:text-night-muted focus:outline-none focus:border-sage focus:ring-2 focus:ring-sage-light/50"
                     />
-                    <div className="flex items-center gap-1 w-24 px-2 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 focus-within:border-orange-400">
+                    <div className="flex items-center gap-1 w-24 px-2 py-2 rounded-xl border border-ink/10 dark:border-night-ink/10 bg-cream dark:bg-night focus-within:border-sage focus-within:ring-2 focus-within:ring-sage-light/50">
                       <input
                         type="number"
                         inputMode="numeric"
                         value={ing.quantity}
                         onChange={(e) => updateIngredient(idx, 'quantity', e.target.value)}
-                        className="w-full min-w-0 bg-transparent text-sm text-right text-neutral-800 dark:text-neutral-200 focus:outline-none"
+                        className="w-full min-w-0 bg-transparent text-sm text-right text-ink dark:text-night-ink focus:outline-none"
                         aria-label="Кількість"
                       />
-                      <span className="text-[11px] font-semibold text-neutral-400">{ing.unit}</span>
+                      <span className="text-[11px] font-semibold text-ink/60 dark:text-night-muted">{ing.unit}</span>
                     </div>
                     <button
                       onClick={() => removeIngredient(idx)}
-                      className="p-2 text-neutral-400 hover:text-red-500"
+                      className="p-2 text-ink/40 dark:text-night-muted hover:text-danger dark:hover:text-danger-dark"
                       aria-label="Видалити інгредієнт"
                     >
                       <Trash2 size={15} />
@@ -384,7 +384,7 @@ export function AddCustomFoodSheet({ isOpen, onClose, onAdd }: AddCustomFoodShee
                 ))}
                 <button
                   onClick={addIngredient}
-                  className="w-full flex items-center justify-center gap-1.5 text-xs text-neutral-500 hover:text-orange-500 py-2 rounded-lg border border-dashed border-neutral-300 dark:border-neutral-700"
+                  className="w-full flex items-center justify-center gap-1.5 text-xs text-ink/60 dark:text-night-muted hover:text-sage-dark dark:hover:text-sage-light py-2 rounded-xl border border-dashed border-ink/10 dark:border-night-ink/10"
                 >
                   <Plus size={14} />
                   Додати інгредієнт
@@ -392,16 +392,16 @@ export function AddCustomFoodSheet({ isOpen, onClose, onAdd }: AddCustomFoodShee
               </div>
 
               {/* Read-only computed totals */}
-              <div className="bg-neutral-50 dark:bg-neutral-800 rounded-2xl p-3">{macroSummary}</div>
+              <div className="bg-cream dark:bg-night rounded-2xl p-3">{macroSummary}</div>
             </>
           ) : (
             <>
               {/* Weight stepper */}
-              <div className="flex items-center justify-between bg-neutral-50 dark:bg-neutral-800 rounded-2xl p-3">
+              <div className="flex items-center justify-between bg-cream dark:bg-night rounded-2xl p-3">
                 <button
                   onClick={() => setGrams(draft.grams - STEP)}
                   disabled={draft.grams <= 0}
-                  className="w-10 h-10 rounded-full bg-white dark:bg-neutral-700 shadow flex items-center justify-center disabled:opacity-40"
+                  className="w-10 h-10 rounded-full bg-card dark:bg-night-card shadow-soft flex items-center justify-center disabled:opacity-40"
                   aria-label="Зменшити вагу"
                 >
                   <Minus size={16} />
@@ -413,18 +413,18 @@ export function AddCustomFoodSheet({ isOpen, onClose, onAdd }: AddCustomFoodShee
                       inputMode="numeric"
                       value={draft.grams}
                       onChange={(e) => setGrams(Math.max(0, Number(e.target.value) || 0))}
-                      className="w-20 bg-transparent text-center text-2xl font-bold text-neutral-900 dark:text-neutral-100 focus:outline-none"
+                      className="w-20 bg-transparent text-center text-2xl font-bold text-ink dark:text-night-ink focus:outline-none"
                       aria-label="Вага в грамах"
                     />
-                    <span className="text-sm font-semibold text-neutral-400">г</span>
+                    <span className="text-sm font-semibold text-ink/60 dark:text-night-muted">г</span>
                   </div>
-                  <p className="text-[11px] text-neutral-400 mt-0.5">
+                  <p className="text-[11px] text-ink/60 dark:text-night-muted mt-0.5">
                     {draft.per100 ? 'вага перераховує калорії' : 'вага порції'}
                   </p>
                 </div>
                 <button
                   onClick={() => setGrams(draft.grams + STEP)}
-                  className="w-10 h-10 rounded-full bg-white dark:bg-neutral-700 shadow flex items-center justify-center"
+                  className="w-10 h-10 rounded-full bg-card dark:bg-night-card shadow-soft flex items-center justify-center"
                   aria-label="Збільшити вагу"
                 >
                   <Plus size={16} />
@@ -440,7 +440,7 @@ export function AddCustomFoodSheet({ isOpen, onClose, onAdd }: AddCustomFoodShee
                   { key: 'carbs', label: 'В, г' },
                 ] as const).map(({ key, label }) => (
                   <label key={key} className="flex flex-col gap-1">
-                    <span className="text-[10px] font-semibold text-neutral-400 text-center uppercase">
+                    <span className="text-[10px] font-semibold text-ink/50 dark:text-night-muted text-center uppercase">
                       {label}
                     </span>
                     <input
@@ -448,7 +448,7 @@ export function AddCustomFoodSheet({ isOpen, onClose, onAdd }: AddCustomFoodShee
                       inputMode="numeric"
                       value={draft[key]}
                       onChange={(e) => handleManualField(key, e.target.value)}
-                      className="w-full text-center text-sm font-bold px-1 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:border-orange-400"
+                      className="w-full text-center text-sm font-bold px-1 py-2 rounded-xl border border-ink/10 dark:border-night-ink/10 bg-cream dark:bg-night text-ink dark:text-night-ink focus:outline-none focus:border-sage focus:ring-2 focus:ring-sage-light/50"
                     />
                   </label>
                 ))}
@@ -460,7 +460,7 @@ export function AddCustomFoodSheet({ isOpen, onClose, onAdd }: AddCustomFoodShee
           <button
             onClick={handleSave}
             disabled={!draft.name.trim() || saving || recomputing}
-            className="w-full flex items-center justify-center gap-2 bg-green-500 text-white font-bold py-3.5 rounded-2xl disabled:opacity-50 active:scale-[0.98] transition-transform"
+            className="w-full flex items-center justify-center gap-2 bg-terracotta hover:bg-terracotta-dark text-card font-semibold py-3.5 rounded-2xl shadow-soft disabled:opacity-50 active:scale-95 transition-all"
           >
             <Check size={18} strokeWidth={3} />
             {saving ? 'Додаємо…' : 'Додати'}
