@@ -36,7 +36,7 @@ function ToastItem({ toast, onRemove }: ToastProps) {
 
   return (
     <div
-      className={`flex items-center gap-3 px-4 py-3 rounded-2xl shadow-lg max-w-sm transition-all duration-300 ${colorClasses} ${
+      className={`flex items-center gap-3 px-4 py-3 rounded-2xl shadow-soft max-w-sm transition-all duration-300 ${colorClasses} ${
         visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
       }`}
     >

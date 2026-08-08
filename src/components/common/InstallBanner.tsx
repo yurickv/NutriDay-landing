@@ -61,7 +61,7 @@ export default function InstallBanner() {
         <div className="flex items-start gap-3">
           {/* App icon */}
           <div
-            className="w-12 h-12 rounded-2xl flex-shrink-0 flex items-center justify-center text-white font-bold text-lg"
+            className="w-12 h-12 rounded-2xl flex-shrink-0 flex items-center justify-center text-card font-bold text-lg"
             style={{ background: 'var(--color-terracotta)' }}
           >
             E
@@ -91,7 +91,7 @@ export default function InstallBanner() {
           // iOS Safari — manual steps.
           <div className="mt-3 space-y-2">
             <div className="flex items-center gap-2 text-xs text-ink/60 dark:text-night-muted">
-              <div className="w-6 h-6 rounded-md bg-sage-light/30 dark:bg-sage/20 flex items-center justify-center flex-shrink-0">
+              <div className="w-6 h-6 rounded-full bg-sage-light/30 dark:bg-sage/20 flex items-center justify-center flex-shrink-0">
                 <span className="text-sage-dark dark:text-sage-light font-bold text-xs">1</span>
               </div>
               <span>Натисніть</span>
@@ -101,7 +101,7 @@ export default function InstallBanner() {
             </div>
 
             <div className="flex items-center gap-2 text-xs text-ink/60 dark:text-night-muted">
-              <div className="w-6 h-6 rounded-md bg-sage-light/30 dark:bg-sage/20 flex items-center justify-center flex-shrink-0">
+              <div className="w-6 h-6 rounded-full bg-sage-light/30 dark:bg-sage/20 flex items-center justify-center flex-shrink-0">
                 <span className="text-sage-dark dark:text-sage-light font-bold text-xs">2</span>
               </div>
               <span>Оберіть</span>
