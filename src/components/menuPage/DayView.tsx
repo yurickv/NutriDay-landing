@@ -6,8 +6,7 @@ import { MealCard } from './MealCard';
 import { CustomEntryCard } from './CustomEntryCard';
 import { WaterTracker } from './WaterTracker';
 import { DayMealProgress } from './DayMealProgress';
-import { CalorieProgressBar } from './CalorieProgressBar';
-import { MacroProgressBar } from './MacroProgressBar';
+import { CalorieRingSummary } from './CalorieRingSummary';
 import { Clock, Zap, Plus } from 'lucide-react';
 
 const SECTION_COLORS: Record<string, string> = {
@@ -123,14 +122,12 @@ export function DayView({ day, dayDate, goalCalories, onConsume, onOpenConsume, 
 
   return (
     <div className="flex-1">
-      {/* Sticky progress header */}
-      <div className="sticky top-0 z-10">
-        <CalorieProgressBar consumed={macros.calories} goal={goalCalories} />
-        <MacroProgressBar
-          consumed={{ protein: macros.protein, fat: macros.fat, carbs: macros.carbs }}
-          goal={goalMacros}
-        />
-      </div>
+      {/* Daily calorie ring + macro summary */}
+      <CalorieRingSummary
+        consumed={macros}
+        goalCalories={goalCalories}
+        goalMacros={goalMacros}
+      />
 
       <div className="px-4 pt-4 pb-2 space-y-4">
         {/* Day header */}
