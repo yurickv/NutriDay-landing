@@ -18,6 +18,7 @@ export type AnalyticsEvent =
   | 'weekly_summary_viewed'
   // Funnel events
   | 'onboarding_started'
+  | 'onboarding_step_view'
   | 'onboarding_completed'
   | 'payment_email_entered'
   | 'payment_consents_checked'
