@@ -36,7 +36,6 @@ export interface Step {
   min?: number; // для number
   max?: number;
   unit?: string; // 'см' | 'кг' | 'років'
-  consent?: { text: string; href: string }; // точкова згода на екрані питання
 
   // --- info / loader ---
   body?: string; // основний текст
@@ -44,6 +43,7 @@ export interface Step {
   variants?: Record<string, { title?: string; body?: string }>; // текст під відповідь
   variantOn?: string; // поле, від якого залежить variants
   image?: { src: string; alt: string }; // скрін застосунку (B5, B9)
+  consent?: { text: string; href: string }; // точкова згода на екрані питання
 
   condition?: Predicate[]; // крок показується, якщо всі предикати істинні
   analyticsEvent?: string; // за замовчуванням `onboarding_${key}`

@@ -64,7 +64,23 @@ export function ProfileSummaryScreen({ step, answers, onDone }: Props) {
             onChange={(e) => setConsent(e.target.checked)}
             className="mt-0.5 h-4 w-4 accent-sage"
           />
-          <span>{step.consent?.text ?? 'Я надаю згоду на обробку моїх персональних даних'}</span>
+          <span>
+            {step.consent?.text ?? 'Я надаю згоду на обробку моїх персональних даних'}
+            {step.consent?.href && (
+              <>
+                {' '}(
+                <a
+                  href={step.consent.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline text-sage-dark dark:text-sage-light"
+                >
+                  умови
+                </a>
+                )
+              </>
+            )}
+          </span>
         </label>
       </div>
 

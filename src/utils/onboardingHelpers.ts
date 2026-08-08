@@ -9,8 +9,12 @@ export const setOnboardingData = (key: string, value: any) => {
 };
 
 export const getOnboardingData = (): OnboardingData => {
-  const data = localStorage.getItem('onboardingData');
-  return data ? JSON.parse(data) : {};
+  try {
+    const data = localStorage.getItem('onboardingData');
+    return data ? JSON.parse(data) : {};
+  } catch {
+    return {};
+  }
 };
 
 export const clearOnboardingData = () => {

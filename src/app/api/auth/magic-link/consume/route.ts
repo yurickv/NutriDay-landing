@@ -117,7 +117,7 @@ async function processMagicToken(token: string): Promise<ConsumeResult> {
     const profileCol = db.collection('user_profiles');
     const existingProfile = await profileCol.findOne({ userEmail: user.email });
     if (!existingProfile && latestUser?.onboarding) {
-      const od = latestUser.onboarding as Record<string, string>;
+      const od = latestUser.onboarding as Record<string, any>;
       const weightKg = parseFloat(od.weight ?? '60');
       const heightCm = parseFloat(od.height ?? '165');
       const ageYears = parseInt(od.age ?? '25', 10);
@@ -149,7 +149,7 @@ async function processMagicToken(token: string): Promise<ConsumeResult> {
         goalCalories,
         favoriteFoods: [],
         dislikedFoods: [],
-        dietaryPreferences: [],
+        dietaryPreferences: (Array.isArray(od.dietaryPreferences) ? od.dietaryPreferences : []).filter((v: string) => v !== 'none'),
         allergies: [],
         waterGoalMl: 2000,
         menuGenerationsThisWeek: 0,

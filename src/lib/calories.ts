@@ -6,8 +6,8 @@
 
 export type Sex = 'male' | 'female';
 
-// Onboarding stores sex as the Ukrainian label "Чоловік"/"Жінка"; everything
-// downstream needs the canonical 'male'/'female'.
+// The quiz stores canonical 'male'/'female'; legacy records may still hold
+// "Чоловік"/"Жінка" — both normalize here.
 export function normalizeSex(raw?: string): Sex {
   return raw === 'Чоловік' || raw === 'male' ? 'male' : 'female';
 }
@@ -24,7 +24,7 @@ export function calcBmr(
 }
 
 // Goal correction applied to TDEE. Keys match the values stored by
-// onboarding/main-goal (mainGoal). Unknown/empty goal → no change (×1.0).
+// the quiz's main_goal step (mainGoal). Unknown/empty goal → no change (×1.0).
 export const GOAL_FACTORS: Record<string, number> = {
   lose_weight: 0.85,
   gain_weight: 1.15,
