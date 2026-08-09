@@ -10,6 +10,7 @@ export interface Option {
   label: string;
   description?: string; // пояснення під варіантом (патерн /diet_type)
   isNone?: boolean; // «нічого з переліченого» — знімає інші вибори
+  image?: string; // фото-картка: опції рендеряться грідом 2 колонки (крок gender)
 }
 
 /** Усі предикати в масиві поєднуються через AND. */

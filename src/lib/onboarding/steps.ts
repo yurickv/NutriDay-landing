@@ -10,13 +10,14 @@ export const STEPS: Step[] = [
     key: 'gender',
     type: 'question',
     group: 'goal',
-    title: 'Для кого складаємо меню?',
-    hint: 'Норма калорій у жінок і чоловіків рахується за різними формулами.',
+    title: 'EasyMenu план',
+    hint: 'Гнучке меню під твої смаки і цілі.',
+    hintAlways: true,
     questionType: 'single',
     field: 'sex',
     options: [
-      { value: 'female', label: '👩 Жінка' },
-      { value: 'male', label: '👨 Чоловік' },
+      { value: 'female', label: 'Жінка', image: '/onboarding/women.avif' },
+      { value: 'male', label: 'Чоловік', image: '/onboarding/men.avif' },
     ],
   },
   {

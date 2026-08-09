@@ -18,9 +18,39 @@ export function QuestionSingle({ step, value, onAnswer }: Props) {
     setTimeout(() => onAnswer(v), 150);
   };
 
+  const options = step.options ?? [];
+
+  // Опції з фото (крок gender) — картки поруч у 2 колонки.
+  if (options.some((o) => o.image)) {
+    return (
+      <div className="grid grid-cols-2 gap-3">
+        {options.map((o) => (
+          <button
+            key={o.value}
+            type="button"
+            onClick={() => pick(o.value)}
+            className={`overflow-hidden rounded-2xl border-2 bg-card text-center shadow-soft transition-colors dark:bg-night-card ${
+              selected === o.value ? 'border-sage' : 'border-transparent'
+            }`}
+          >
+            {o.image && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={o.image}
+                alt={o.label}
+                className="aspect-[3/4] w-full object-cover"
+              />
+            )}
+            <span className="block py-3 font-semibold">{o.label}</span>
+          </button>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-3">
-      {(step.options ?? []).map((o) => (
+      {options.map((o) => (
         <button
           key={o.value}
           type="button"
