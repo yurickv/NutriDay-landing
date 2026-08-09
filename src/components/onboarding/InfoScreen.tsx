@@ -47,7 +47,7 @@ function QuizImage({ image }: { image: { src: string; alt: string } }) {
   );
 }
 
-// B13. Фото — public/onboarding/expert.jpg; до появи файлу — ініціали.
+// B13. Фото — public/onboarding/expert.avif; якщо файлу немає — ініціали.
 function ExpertCard() {
   const [photoFailed, setPhotoFailed] = useState(false);
   return (
@@ -60,7 +60,7 @@ function ExpertCard() {
         ) : (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src="/onboarding/expert.jpg"
+            src="/onboarding/expert.avif"
             alt="Юрій Теслюк"
             onError={() => setPhotoFailed(true)}
             className="h-16 w-16 flex-shrink-0 rounded-full object-cover"

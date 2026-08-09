@@ -163,7 +163,7 @@ export const STEPS: Step[] = [
     group: 'nutrition',
     title: 'Ось як виглядатиме твій день',
     body: 'Готове меню на день: страви, калорії та БЖВ — усе вже пораховано.',
-    image: { src: '/onboarding/day-demo.png', alt: 'Скрін меню на день у застосунку' },
+    image: { src: '/onboarding/day-demo.avif', alt: 'Скрін меню на день у застосунку' },
   },
   {
     key: 'eating_habits',
@@ -215,7 +215,7 @@ export const STEPS: Step[] = [
     title: 'КБЖУ порахуємо за тебе',
     body: 'Не треба зважувати й рахувати вручну — калорії та БЖВ рахуються автоматично з інгредієнтів кожної страви.',
     bodyShort: 'Калорії та БЖВ рахуються автоматично з інгредієнтів кожної страви.',
-    image: { src: '/onboarding/kbju-demo.png', alt: 'Скрін підрахованих КБЖУ в застосунку' },
+    image: { src: '/onboarding/kbju-demo.avif', alt: 'Скрін підрахованих КБЖУ в застосунку' },
   },
   {
     key: 'meals_per_day',
