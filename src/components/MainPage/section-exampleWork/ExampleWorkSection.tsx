@@ -33,20 +33,27 @@ const ExampleWorkSection = () => {
     },
     {
       id: 3,
+      title: 'Баланс БЖВ',
+      description:
+        'Система автоматично переводить з’їдені страви в БЖВ і слідкує за денним балансом: сервіс показує прогрес калорій, білків, жирів та вуглеводів відносно Вашої цілі.',
+      image: '/example-7.avif',
+    },
+    {
+      id: 4,
       title: 'Додати/забрати продукти',
       description:
         'Приготувати певну страву? Додайте її до списку улюблених! Чи виключіть певні продукти/страви і це врахується при складанні меню.',
       image: '/example-4.avif',
     },
     {
-      id: 4,
+      id: 5,
       title: 'Список покупок',
       description:
         'Отримайте зручний список покупок на тиждень чи 3-4 дні, відмічайте куплені одиниці.',
       image: '/example-6.avif',
     },
     {
-      id: 5,
+      id: 6,
       title: 'Заміна страви',
       description: (
         <>
@@ -60,7 +67,7 @@ const ExampleWorkSection = () => {
       image: '/example-5.avif',
     },
     {
-      id: 6,
+      id: 7,
       title: 'Ввести свою страву',
       description:
         'Внесіть назву страви і вагу порції - сервіс підкаже її калорійність і макронутрієнти, які можна редагувати.',
@@ -136,7 +143,7 @@ const ExampleWorkSection = () => {
                       <h3 className="text-3xl font-bold text-gray-900 mb-4 text-center md:text-left">
                         {work.title}
                       </h3>
-                      <p className="text-gray-600 text-lg leading-relaxed max-w-[400px]">
+                      <p className="text-gray-600 text-lg leading-relaxed max-w-[400px] text-center md:text-left mx-auto md:mx-0">
                         {work.description}
                       </p>
                     </div>
