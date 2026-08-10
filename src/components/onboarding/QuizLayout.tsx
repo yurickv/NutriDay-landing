@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { ChevronLeft } from 'lucide-react';
 
 interface QuizLayoutProps {
@@ -57,10 +58,7 @@ export function QuizLayout({
         </div>
 
         {/* Хедер і прогрес-бар статичні; анімується лише контент кроку */}
-        <div
-          key={animationKey}
-          className={`flex flex-1 flex-col ${leaving ? 'quiz-step-leave' : 'quiz-step-enter'}`}
-        >
+        <StepTransition key={animationKey} leaving={leaving}>
           <h1 className="mt-8 font-heading text-[28px] font-bold leading-snug">{title}</h1>
           {hint && (
             <p className="mt-3 text-[15px] leading-relaxed text-ink/70 dark:text-night-muted">
@@ -69,8 +67,47 @@ export function QuizLayout({
           )}
 
           <div className="mt-6 flex flex-1 flex-col">{children}</div>
-        </div>
+        </StepTransition>
       </div>
+    </div>
+  );
+}
+
+// Поява/зникнення кроку. Стартовий стан заданий ІНЛАЙН-стилем — перший кадр
+// фізично не може намалюватись видимим (клас/стилшит тут ні до чого не
+// прив'язані). Подвійний rAF гарантує один кадр у прихованому стані, після
+// чого transition веде до видимого.
+function StepTransition({
+  leaving,
+  children,
+}: {
+  leaving?: boolean;
+  children: React.ReactNode;
+}) {
+  const [entered, setEntered] = useState(false);
+
+  useEffect(() => {
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => setEntered(true));
+    });
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+    };
+  }, []);
+
+  const hidden = leaving || !entered;
+  return (
+    <div
+      className="flex flex-1 flex-col transition-[opacity,transform] duration-200 motion-reduce:transition-none"
+      style={{
+        opacity: hidden ? 0 : 1,
+        transform: !entered && !leaving ? 'translateY(16px)' : 'none',
+        transitionTimingFunction: leaving ? 'ease-in' : 'ease-out',
+      }}
+    >
+      {children}
     </div>
   );
 }

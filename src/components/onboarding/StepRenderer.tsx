@@ -26,30 +26,48 @@ import { HowWeCountScreen } from './HowWeCountScreen';
 import { ProfileSummaryScreen } from './ProfileSummaryScreen';
 import { LoaderScreen } from './LoaderScreen';
 
-// Тривалість вихідної анімації кроку — синхронно з .quiz-step-leave у globals.css.
+// Тривалість вихідної анімації кроку — синхронно з transition у StepTransition.
 const LEAVE_MS = 200;
+
+// App Router РЕМАУНТИТЬ page-компонент на кожну зміну [step], тож ці значення
+// живуть на рівні модуля, щоб переживати переходи між кроками:
+// - hydrated: після першого клієнтського маунту можна читати localStorage
+//   синхронно в ініціалізаторі стейту — без проміжного null-рендеру, який
+//   на кадр прибирав увесь лейаут (біле блимання при переході);
+// - trackedStepViews: дедуплікація onboarding_step_view між ремаунтами.
+let hydrated = false;
+const trackedStepViews = new Set<string>();
 
 export function StepRenderer({ stepKey }: { stepKey: string }) {
   const router = useRouter();
-  // null = ще не читали localStorage (перший клієнтський рендер).
-  const [answers, setAnswers] = useState<Answers | null>(null);
-  const trackedKeys = useRef<Set<string>>(new Set());
+  // null лише під час SSR/гідрації першого завантаження (сервер і клієнт
+  // мусять відрендерити однаково); при клієнтських переходах — одразу дані.
+  const [answers, setAnswers] = useState<Answers | null>(() =>
+    hydrated ? (getOnboardingData() as Answers) : null
+  );
   // Вихідна анімація: спершу фейд контенту, потім router.push.
   const [leaving, setLeaving] = useState(false);
   const leavingRef = useRef(false);
 
-  // Скидання ПІД ЧАС рендеру, а не в ефекті: інакше перший кадр нового кроку
-  // малюється з .quiz-step-leave (opacity 1) — контент блимає перед появою.
-  const [renderedKey, setRenderedKey] = useState(stepKey);
-  if (renderedKey !== stepKey) {
-    setRenderedKey(stepKey);
-    leavingRef.current = false;
-    setLeaving(false);
-  }
-
   useEffect(() => {
-    setAnswers(getOnboardingData() as Answers);
-  }, [stepKey]);
+    hydrated = true;
+    setAnswers((prev) => prev ?? (getOnboardingData() as Answers));
+  }, []);
+
+  // Предекодування всіх картинок квізу: AVIF не вискакує посеред анімації
+  // появи кроку, а на back-навігації малюється одразу з кешу.
+  useEffect(() => {
+    const srcs = STEPS.flatMap((s) => [
+      s.image?.src,
+      ...(s.options ?? []).map((o) => o.image),
+    ]).filter((src): src is string => Boolean(src));
+    srcs.push('/onboarding/expert.avif');
+    for (const src of srcs) {
+      const img = new Image();
+      img.src = src;
+      img.decode?.().catch(() => {});
+    }
+  }, []);
 
   const step = getStep(stepKey);
   const ready = answers !== null;
@@ -62,10 +80,10 @@ export function StepRenderer({ stepKey }: { stepKey: string }) {
     }
   }, [ready, accessible, answers, router]);
 
-  // onboarding_step_view — один раз на ключ.
+  // onboarding_step_view — один раз на ключ (Set модульний: переживає ремаунти).
   useEffect(() => {
-    if (!ready || !accessible || !step || trackedKeys.current.has(stepKey)) return;
-    trackedKeys.current.add(stepKey);
+    if (!ready || !accessible || !step || trackedStepViews.has(stepKey)) return;
+    trackedStepViews.add(stepKey);
     const index = visibleSteps(answers).findIndex((s) => s.key === stepKey);
     track('onboarding_step_view', { key: stepKey, index, group: step.group });
   }, [ready, accessible, answers, step, stepKey]);
