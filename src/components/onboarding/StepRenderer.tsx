@@ -38,10 +38,17 @@ export function StepRenderer({ stepKey }: { stepKey: string }) {
   const [leaving, setLeaving] = useState(false);
   const leavingRef = useRef(false);
 
-  useEffect(() => {
-    setAnswers(getOnboardingData() as Answers);
+  // Скидання ПІД ЧАС рендеру, а не в ефекті: інакше перший кадр нового кроку
+  // малюється з .quiz-step-leave (opacity 1) — контент блимає перед появою.
+  const [renderedKey, setRenderedKey] = useState(stepKey);
+  if (renderedKey !== stepKey) {
+    setRenderedKey(stepKey);
     leavingRef.current = false;
     setLeaving(false);
+  }
+
+  useEffect(() => {
+    setAnswers(getOnboardingData() as Answers);
   }, [stepKey]);
 
   const step = getStep(stepKey);
