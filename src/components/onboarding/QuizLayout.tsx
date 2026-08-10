@@ -10,6 +10,10 @@ interface QuizLayoutProps {
   /** Заповнення прогрес-бару 0–100 по всіх видимих екранах. */
   progressPct: number;
   onBack?: () => void;
+  /** Ключ кроку — рестартує анімацію появи при переході. */
+  animationKey?: string;
+  /** true під час виходу з кроку — контент плавно зникає. */
+  leaving?: boolean;
   children: React.ReactNode;
 }
 
@@ -19,6 +23,8 @@ export function QuizLayout({
   progress,
   progressPct,
   onBack,
+  animationKey,
+  leaving,
   children,
 }: QuizLayoutProps) {
   return (
@@ -50,14 +56,20 @@ export function QuizLayout({
           />
         </div>
 
-        <h1 className="mt-8 font-heading text-[28px] font-bold leading-snug">{title}</h1>
-        {hint && (
-          <p className="mt-3 text-[15px] leading-relaxed text-ink/70 dark:text-night-muted">
-            {hint}
-          </p>
-        )}
+        {/* Хедер і прогрес-бар статичні; анімується лише контент кроку */}
+        <div
+          key={animationKey}
+          className={`flex flex-1 flex-col ${leaving ? 'quiz-step-leave' : 'quiz-step-enter'}`}
+        >
+          <h1 className="mt-8 font-heading text-[28px] font-bold leading-snug">{title}</h1>
+          {hint && (
+            <p className="mt-3 text-[15px] leading-relaxed text-ink/70 dark:text-night-muted">
+              {hint}
+            </p>
+          )}
 
-        <div className="mt-6 flex flex-1 flex-col">{children}</div>
+          <div className="mt-6 flex flex-1 flex-col">{children}</div>
+        </div>
       </div>
     </div>
   );

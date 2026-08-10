@@ -82,6 +82,40 @@ body {
     font-family: var(--font-poppins);
   }
 }
+
+/* Перемикання кроків онбординг-квізу: вхід знизу з фейдом, вихід — фейд */
+@layer utilities {
+  .quiz-step-enter {
+    animation: quiz-step-in 0.2s ease-out both;
+  }
+  .quiz-step-leave {
+    animation: quiz-step-out 0.2s ease-in both;
+  }
+}
+@keyframes quiz-step-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes quiz-step-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .quiz-step-enter,
+  .quiz-step-leave {
+    animation: none;
+  }
+}
 .div-container {
   @apply mx-auto px-4 md:px-[40px] lg:px-[66px] xl:px-[132px] xl:max-w-[1919px];
 }

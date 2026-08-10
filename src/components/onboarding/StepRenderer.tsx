@@ -26,14 +26,22 @@ import { HowWeCountScreen } from './HowWeCountScreen';
 import { ProfileSummaryScreen } from './ProfileSummaryScreen';
 import { LoaderScreen } from './LoaderScreen';
 
+// Тривалість вихідної анімації кроку — синхронно з .quiz-step-leave у globals.css.
+const LEAVE_MS = 200;
+
 export function StepRenderer({ stepKey }: { stepKey: string }) {
   const router = useRouter();
   // null = ще не читали localStorage (перший клієнтський рендер).
   const [answers, setAnswers] = useState<Answers | null>(null);
   const trackedKeys = useRef<Set<string>>(new Set());
+  // Вихідна анімація: спершу фейд контенту, потім router.push.
+  const [leaving, setLeaving] = useState(false);
+  const leavingRef = useRef(false);
 
   useEffect(() => {
     setAnswers(getOnboardingData() as Answers);
+    leavingRef.current = false;
+    setLeaving(false);
   }, [stepKey]);
 
   const step = getStep(stepKey);
@@ -58,7 +66,10 @@ export function StepRenderer({ stepKey }: { stepKey: string }) {
   if (!ready || !step || !accessible) return null; // редірект у польоті
 
   const goTo = (key: string | null) => {
-    if (key) router.push(`/onboarding/${key}`);
+    if (!key || leavingRef.current) return;
+    leavingRef.current = true;
+    setLeaving(true);
+    setTimeout(() => router.push(`/onboarding/${key}`), LEAVE_MS);
   };
 
   const saveAnswer = (field: string, value: unknown) => {
@@ -135,6 +146,8 @@ export function StepRenderer({ stepKey }: { stepKey: string }) {
       progress={progress}
       progressPct={progressPct}
       onBack={onBack}
+      animationKey={stepKey}
+      leaving={leaving}
     >
       {isFirst && <TrackEvent event="onboarding_started" withUtmSource />}
       {content}
