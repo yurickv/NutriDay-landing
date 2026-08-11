@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Check } from 'lucide-react';
 import type { Option, Step } from '@/lib/onboarding/types';
-import { QuizCta } from './QuizLayout';
+import { CtaBar, QuizCta } from './QuizLayout';
 
 interface Props {
   step: Step;
@@ -63,11 +63,11 @@ export function QuestionMulti({ step, value, onAnswer }: Props) {
           );
         })}
       </div>
-      <div className="mt-8 pb-2 pt-4">
+      <CtaBar sticky={step.stickyCta}>
         <QuizCta disabled={selected.length === 0} onClick={() => onAnswer(selected)}>
           Далі
         </QuizCta>
-      </div>
+      </CtaBar>
     </div>
   );
 }

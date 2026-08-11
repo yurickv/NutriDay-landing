@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { Step } from '@/lib/onboarding/types';
-import { QuizCta } from './QuizLayout';
+import { CtaBar, QuizCta } from './QuizLayout';
 
 interface Props {
   step: Step;
@@ -45,11 +45,11 @@ export function QuestionNumber({ step, value, onAnswer }: Props) {
           Введи число від {step.min} до {step.max}
         </p>
       )}
-      <div className="mt-8 pb-2 pt-4">
+      <CtaBar sticky={step.stickyCta}>
         <QuizCta disabled={!valid} onClick={() => onAnswer(String(n))}>
           Далі
         </QuizCta>
-      </div>
+      </CtaBar>
     </div>
   );
 }

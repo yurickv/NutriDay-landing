@@ -2,7 +2,7 @@
 // Увесь флоу онбордингу як дані. Порядок масиву = порядок екранів.
 // Тексти — з docs/ONBOARDING_QUIZ_SPEC.md §2; змінюючи копірайт, зважай,
 // що labelFor() читають і сторінка оплати, і аналітика.
-import type { Step } from './types';
+import type { Step, StepGroup } from './types';
 
 export const STEPS: Step[] = [
   // ── Група A · Мета ─────────────────────────────────────────────
@@ -145,6 +145,7 @@ export const STEPS: Step[] = [
     hint: 'Те, що ти виключиш, ніколи не потрапить у твоє меню.',
     hintAlways: true,
     questionType: 'multi',
+    stickyCta: true,
     field: 'dietaryPreferences',
     options: [
       { value: 'none', label: '🍽️ Їм усе', description: 'Без обмежень', isNone: true },
@@ -164,6 +165,7 @@ export const STEPS: Step[] = [
     group: 'nutrition',
     title: 'Ось як виглядатиме твій день',
     body: 'Готове меню на день: страви, калорії та БЖВ — усе вже пораховано.',
+    stickyCta: true,
     image: { src: '/onboarding/day-demo.avif', alt: 'Скрін меню на день у застосунку' },
   },
   {
@@ -216,6 +218,7 @@ export const STEPS: Step[] = [
     title: 'КБЖУ порахуємо за тебе',
     body: 'Не треба зважувати й рахувати вручну — калорії та БЖВ рахуються автоматично з інгредієнтів кожної страви.',
     bodyShort: 'Калорії та БЖВ рахуються автоматично з інгредієнтів кожної страви.',
+    stickyCta: true,
     image: { src: '/onboarding/kbju-demo.avif', alt: 'Скрін підрахованих КБЖУ в застосунку' },
   },
   {
@@ -268,6 +271,7 @@ export const STEPS: Step[] = [
     group: 'body',
     title: 'Який у тебе зріст?',
     questionType: 'number',
+    stickyCta: true,
     field: 'height',
     min: 100,
     max: 220,
@@ -281,6 +285,7 @@ export const STEPS: Step[] = [
     hint: 'Потрібна тільки для розрахунку норми. Ніде не показується публічно.',
     hintAlways: true,
     questionType: 'number',
+    stickyCta: true,
     field: 'weight',
     min: 40,
     max: 130,
@@ -292,6 +297,7 @@ export const STEPS: Step[] = [
     group: 'body',
     title: 'А яка вага для тебе комфортна?',
     questionType: 'number',
+    stickyCta: true,
     field: 'targetWeight',
     min: 40,
     max: 130,
@@ -306,6 +312,7 @@ export const STEPS: Step[] = [
     group: 'body',
     title: 'Скільки тобі років?',
     questionType: 'number',
+    stickyCta: true,
     field: 'age',
     min: 14,
     max: 130,
@@ -370,6 +377,14 @@ export const STEPS: Step[] = [
 export function getStep(key: string): Step | undefined {
   return STEPS.find((s) => s.key === key);
 }
+
+/** Підписи груп кроків для хедера квізу. */
+export const GROUP_LABELS: Record<StepGroup, string> = {
+  goal: 'Мета',
+  nutrition: 'Харчування',
+  body: 'Тіло',
+  finish: 'Фініш',
+};
 
 // «📉 Схуднути» → «Схуднути»: зрізає провідні не-літери (емодзі + пробіли).
 const EMOJI_PREFIX = /^[^\p{L}\p{N}]+\s*/u;

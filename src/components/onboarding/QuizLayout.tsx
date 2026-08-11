@@ -6,8 +6,8 @@ import { ChevronLeft } from 'lucide-react';
 interface QuizLayoutProps {
   title: string;
   hint?: string;
-  /** Лічильник «Питання N з M» — null для інфо-екранів і лоадера. */
-  progress: { index: number; total: number } | null;
+  /** Підпис групи кроків у хедері (Мета / Харчування / Тіло / Фініш). */
+  groupLabel?: string;
   /** Заповнення прогрес-бару 0–100 по всіх видимих екранах. */
   progressPct: number;
   onBack?: () => void;
@@ -21,7 +21,7 @@ interface QuizLayoutProps {
 export function QuizLayout({
   title,
   hint,
-  progress,
+  groupLabel,
   progressPct,
   onBack,
   animationKey,
@@ -45,7 +45,7 @@ export function QuizLayout({
             <div className="h-10 w-10" aria-hidden />
           )}
           <span className="flex-1 text-center text-xs font-semibold uppercase tracking-[0.18em] text-ink/60 dark:text-night-muted">
-            {progress ? `Питання ${progress.index} з ${progress.total}` : ' '}
+            {groupLabel ?? ' '}
           </span>
           <div className="h-10 w-10" aria-hidden />
         </header>
@@ -107,6 +107,25 @@ function StepTransition({
         transitionTimingFunction: leaving ? 'ease-in' : 'ease-out',
       }}
     >
+      {children}
+    </div>
+  );
+}
+
+// Контейнер кнопки «Далі». Інлайн-варіант притискає її до низу колонки
+// (mt-auto); sticky-варіант липне до низу екрана на скрольних кроках —
+// саме sticky, а не fixed, бо transform у StepTransition ламає fixed
+// (кнопка їздила б разом з анімацією появи).
+export function CtaBar({
+  sticky,
+  children,
+}: {
+  sticky?: boolean;
+  children: React.ReactNode;
+}) {
+  if (!sticky) return <div className="mt-auto pb-2 pt-8">{children}</div>;
+  return (
+    <div className="sticky bottom-0 z-10 -mx-5 mt-auto bg-gradient-to-t from-cream via-cream/95 to-transparent px-5 pb-2 pt-8 dark:from-night dark:via-night/95">
       {children}
     </div>
   );

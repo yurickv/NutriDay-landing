@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { Step } from '@/lib/onboarding/types';
-import { QuizCta } from './QuizLayout';
+import { CtaBar, QuizCta } from './QuizLayout';
 
 interface Props {
   step: Step;
@@ -19,9 +19,9 @@ export function InfoScreen({ step, body, onNext }: Props) {
       )}
       {step.image && <QuizImage image={step.image} />}
       {step.key === 'expert' && <ExpertCard />}
-      <div className="mt-auto pb-2 pt-8">
+      <CtaBar sticky={step.stickyCta}>
         <QuizCta onClick={onNext}>Продовжити</QuizCta>
-      </div>
+      </CtaBar>
     </div>
   );
 }

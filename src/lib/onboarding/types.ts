@@ -37,6 +37,7 @@ export interface Step {
   min?: number; // для number
   max?: number;
   unit?: string; // 'см' | 'кг' | 'років'
+  stickyCta?: boolean; // кнопка «Далі» липне до низу екрана (довгі/скрольні екрани)
 
   // --- info / loader ---
   body?: string; // основний текст

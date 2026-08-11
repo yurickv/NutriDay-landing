@@ -2,13 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { STEPS, getStep } from '@/lib/onboarding/steps';
+import { GROUP_LABELS, STEPS, getStep } from '@/lib/onboarding/steps';
 import {
   firstUnansweredKey,
   isAccessible,
   nextStepKey,
   prevStepKey,
-  questionProgress,
   resolveInfoContent,
   showHint,
   visibleSteps,
@@ -117,7 +116,6 @@ export function StepRenderer({ stepKey }: { stepKey: string }) {
   const visible = visibleSteps(answers);
   const stepIndex = visible.findIndex((s) => s.key === stepKey);
   const progressPct = ((stepIndex + 1) / visible.length) * 100;
-  const progress = step.type === 'question' ? questionProgress(stepKey, answers) : null;
   const info = step.type === 'info' ? resolveInfoContent(step, answers) : null;
   const isFirst = stepKey === STEPS[0].key;
   const prev = prevStepKey(stepKey, answers);
@@ -168,7 +166,7 @@ export function StepRenderer({ stepKey }: { stepKey: string }) {
     <QuizLayout
       title={info?.title ?? step.title}
       hint={showHint(step, answers) ? step.hint : undefined}
-      progress={progress}
+      groupLabel={GROUP_LABELS[step.group]}
       progressPct={progressPct}
       onBack={onBack}
       animationKey={stepKey}
