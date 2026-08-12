@@ -13,13 +13,13 @@ export default async function Header() {
       <div className='mx-auto flex max-w-[1200px] items-center justify-between px-6 py-4'>
         <Link
           href='/'
-          className='text-2xl font-bold text-white font-poppins drop-shadow-md'
+          className='text-2xl text-white font-logo drop-shadow-md'
         >
-          EasyMenu
+          Sytno
         </Link>
         <Link
           href={hasSession ? "/menu" : "/auth/login"}
-          className='rounded-full border border-white/70 bg-white/10 px-5 py-2 text-white backdrop-blur-sm transition-colors duration-300 hover:bg-white hover:text-black'
+          className='rounded-full border border-white/70 bg-white/10 px-5 py-2 text-white backdrop-blur-sm transition-colors duration-300 hover:bg-card hover:text-ink'
         >
           {hasSession ? "Мій кабінет" : "Увійти"}
         </Link>

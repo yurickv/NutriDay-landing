@@ -1,13 +1,13 @@
 {
-  "name": "EasyMenu",
-  "short_name": "EasyMenu",
+  "name": "Sytno",
+  "short_name": "Sytno",
   "description": "Персоналізований план харчування для здорового схуднення",
   "start_url": "/menu",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "theme_color": "#f97316",
-  "background_color": "#ffffff",
+  "theme_color": "#f5ead8",
+  "background_color": "#f5ead8",
   "lang": "uk",
   "categories": ["health", "fitness", "food"],
   "icons": [

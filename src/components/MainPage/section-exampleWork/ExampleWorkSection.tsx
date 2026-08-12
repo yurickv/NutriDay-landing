@@ -58,8 +58,8 @@ const ExampleWorkSection = () => {
       description: (
         <>
           Натисніть на іконку{' '}
-          <span className="inline-flex w-7 h-7 rounded-full border border-neutral-200 bg-neutral-50 items-center justify-center align-middle mx-1">
-            <RefreshCw size={13} className="text-neutral-400" />
+          <span className="inline-flex w-7 h-7 rounded-full border border-sage-light bg-card items-center justify-center align-middle mx-1">
+            <RefreshCw size={13} className="text-ink/50" />
           </span>{' '}
           в рядку страви і сервіс запропонує альтернативні.
         </>
@@ -105,17 +105,19 @@ const ExampleWorkSection = () => {
   };
 
   return (
-    <section className="py-8 xl:py-12 bg-white">
+    <section className="py-8 xl:py-12 bg-cream">
       <div className="container mx-auto px-4">
         {/* Заголовок секції */}
         <div className="text-center mb-6 md:mb-16">
           <Title text="Як це працює?" />
-          <p className="text-xl max-w-3xl mx-auto">Скріншоти роботи сервісу</p>
+          <p className="text-xl max-w-3xl mx-auto text-ink/60">
+            Скріншоти роботи сервісу
+          </p>
         </div>
 
         {/* Слайдер */}
         <div className="relative max-w-6xl mx-auto">
-          <div className="relative overflow-hidden rounded-2xl shadow-lg bg-gray-50 border border-gray-200">
+          <div className="relative overflow-hidden rounded-2xl shadow-soft bg-card border border-sage-light/60">
             {/* Контейнер слайдів */}
             <div
               className="flex transition-transform duration-700 ease-in-out"
@@ -140,10 +142,10 @@ const ExampleWorkSection = () => {
 
                     {/* Контент */}
                     <div className="flex flex-col justify-center px-4 md:px-0">
-                      <h3 className="text-3xl font-bold text-gray-900 mb-4 text-center md:text-left">
+                      <h3 className="text-3xl font-bold font-heading text-ink mb-4 text-center md:text-left">
                         {work.title}
                       </h3>
-                      <p className="text-gray-600 text-lg leading-relaxed max-w-[400px] text-center md:text-left mx-auto md:mx-0">
+                      <p className="text-ink/60 text-lg leading-relaxed max-w-[400px] text-center md:text-left mx-auto md:mx-0">
                         {work.description}
                       </p>
                     </div>
@@ -156,8 +158,8 @@ const ExampleWorkSection = () => {
             <div className="flex justify-between px-4 mt-4">
               <button
                 onClick={prevSlide}
-                className="absolute left-2 md:left-4 top-[240px] md:top-1/2 -translate-y-1/2 bg-white/90 md:bg-white disabled:bg-gray-200
-                border border-gray-300 text-gray-700 p-1.5 md:p-3 rounded-full hover:bg-gray-50 shadow-md transition-all duration-300 group"
+                className="absolute left-2 md:left-4 top-[240px] md:top-1/2 -translate-y-1/2 bg-card/90 md:bg-card disabled:bg-cream
+                border border-sage-light text-ink/70 p-1.5 md:p-3 rounded-full hover:bg-cream shadow-soft transition-all duration-300 group"
                 aria-label="Попередній слайд"
                 disabled={currentSlide === 0} // Опціонально: вимкнути якщо на першому слайді
               >
@@ -166,8 +168,8 @@ const ExampleWorkSection = () => {
 
               <button
                 onClick={nextSlide}
-                className="absolute right-2 md:right-4 top-[240px] md:top-1/2 -translate-y-1/2 bg-white/90 md:bg-white disabled:bg-gray-200
-                border border-gray-300 text-gray-700 p-1.5 md:p-3 rounded-full hover:bg-gray-50 shadow-md transition-all duration-300 group"
+                className="absolute right-2 md:right-4 top-[240px] md:top-1/2 -translate-y-1/2 bg-card/90 md:bg-card disabled:bg-cream
+                border border-sage-light text-ink/70 p-1.5 md:p-3 rounded-full hover:bg-cream shadow-soft transition-all duration-300 group"
                 aria-label="Наступний слайд"
                 disabled={currentSlide === workExamples.length - 1} // Опціонально: вимкнути якщо на останньому слайді
               >
@@ -184,8 +186,8 @@ const ExampleWorkSection = () => {
                 onClick={() => goToSlide(index)}
                 className={`w-4 h-4 p-2 rounded-full transition-all duration-300 ${
                   index === currentSlide
-                    ? 'bg-main-button scale-125'
-                    : 'bg-gray-300 hover:bg-gray-400'
+                    ? 'bg-terracotta scale-125'
+                    : 'bg-sage-light hover:bg-sage/60'
                 }`}
                 aria-label={`Перейти до слайду ${index + 1} з ${
                   workExamples.length
@@ -197,7 +199,7 @@ const ExampleWorkSection = () => {
             {/* Кнопка автопрокрутки */}
             <button
               onClick={toggleAutoPlay}
-              className="bg-white border border-gray-300 text-gray-700 p-2 rounded-full hover:bg-gray-50 shadow-md transition-all duration-300"
+              className="bg-card border border-sage-light text-ink/70 p-2 rounded-full hover:bg-cream shadow-soft transition-all duration-300"
               title={
                 isAutoPlaying
                   ? 'Зупинити автопрокрутку'
@@ -225,16 +227,16 @@ const ExampleWorkSection = () => {
             },
           ].map((stat, index) => (
             <div key={index} className="text-center">
-              <div className="text-3xl md:text-4xl font-bold mb-2">
+              <div className="text-3xl md:text-4xl font-bold font-heading text-sage-dark mb-2">
                 {stat.number}
               </div>
-              <div className="text-lg">{stat.label}</div>
+              <div className="text-lg text-ink/70">{stat.label}</div>
             </div>
           ))}
         </div>
       </div>
-      <div className="h-[74px] md:h-[124px] lg:h-[149px] w-full relative overflow-hidden bg-[#323030] -mb-8 xl:-mb-12">
-        <div className="absolute bottom-0 left-0 w-0 h-0 border-l-[50vw] border-r-[50vw] border-t-[75px] md:border-t-[125px] lg:border-t-[150px] border-l-transparent border-r-transparent border-t-white"></div>
+      <div className="h-[74px] md:h-[124px] lg:h-[149px] w-full relative overflow-hidden bg-sage -mb-8 xl:-mb-12">
+        <div className="absolute bottom-0 left-0 w-0 h-0 border-l-[50vw] border-r-[50vw] border-t-[75px] md:border-t-[125px] lg:border-t-[150px] border-l-transparent border-r-transparent border-t-cream"></div>
       </div>
     </section>
   );

@@ -23,12 +23,12 @@ const cardInfo = [
 
 export default function AdvantagesCard() {
   return (
-    <section className="text-white py-12">
+    <section className="py-12">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mx-auto">
         {cardInfo.map((card, index) => (
           <div
             key={index}
-            className="relative h-[400px] rounded-xl overflow-hidden shadow-lg group"
+            className="relative h-[400px] rounded-2xl overflow-hidden shadow-soft group"
           >
             <Image
               src={card.image}
@@ -39,8 +39,8 @@ export default function AdvantagesCard() {
               className="transform group-hover:scale-105 transition-transform duration-500"
               loading="lazy"
             />
-            <div className="absolute bottom-0 w-full bg-black/50 backdrop-blur-sm p-4 z-10">
-              <h3 className="text-2xl font-semibold font-poppins">
+            <div className="absolute bottom-0 w-full bg-ink/55 backdrop-blur-sm p-4 z-10 text-card">
+              <h3 className="text-2xl font-bold font-heading">
                 {card.title}
               </h3>
               <p className="text-lg mt-2">{card.description}</p>

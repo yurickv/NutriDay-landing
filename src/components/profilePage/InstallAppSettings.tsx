@@ -21,7 +21,7 @@ export default function InstallAppSettings() {
               Застосунок встановлено
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Ви користуєтесь EasyMenu як застосунком 🎉
+              Ви користуєтесь Sytno як застосунком 🎉
             </p>
           </div>
         </div>
@@ -109,7 +109,7 @@ export default function InstallAppSettings() {
   return (
     <div className="rounded-2xl bg-gray-50 dark:bg-gray-800 p-4 text-sm text-gray-500 dark:text-gray-400">
       Відкрийте сайт у мобільному браузері (Chrome або Safari), щоб додати
-      EasyMenu на головний екран.
+      Sytno на головний екран.
     </div>
   );
 }

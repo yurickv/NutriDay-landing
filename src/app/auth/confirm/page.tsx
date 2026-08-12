@@ -63,35 +63,35 @@ function ConfirmPageContent() {
       title="Підтвердження входу"
       subtitle="Один крок до вашого кабінету"
     >
-      <div className="max-w-md mx-auto bg-white dark:bg-dark-body rounded-lg p-5 shadow flex flex-col gap-4">
+      <div className="max-w-md mx-auto bg-card dark:bg-night-card rounded-2xl p-5 shadow-soft flex flex-col gap-4">
         {!token ? (
           <>
-            <p className="text-sm text-main-text dark:text-main-text-black">
+            <p className="text-sm text-ink/70 dark:text-night-muted">
               {ERRORS.missing_token}
             </p>
             <a
               href="/auth/login"
-              className="w-full rounded-xl p-3 text-white text-center bg-gradient-to-r from-red-500 to-orange-500"
+              className="w-full rounded-full p-3 text-card font-semibold text-center bg-terracotta hover:bg-terracotta-dark transition-colors duration-200"
             >
               Запросити новий лист
             </a>
           </>
         ) : (
           <>
-            <p className="text-sm text-main-text dark:text-main-text-black">
+            <p className="text-sm text-ink/70 dark:text-night-muted">
               Натисніть кнопку нижче, щоб завершити вхід до свого кабінету
-              EasyMenu.
+              Sytno.
             </p>
 
             {error && (
-              <div className="text-xs text-red-600 dark:text-red-400">{error}</div>
+              <div className="text-xs text-danger dark:text-danger-dark">{error}</div>
             )}
 
             <button
               type="button"
               onClick={() => void onConfirm()}
               disabled={submitting}
-              className={`w-full rounded-xl p-3 text-white text-center transition-all duration-200 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 ${
+              className={`w-full rounded-full p-3 text-card font-semibold text-center transition-colors duration-200 bg-terracotta hover:bg-terracotta-dark ${
                 submitting ? 'opacity-70 cursor-not-allowed' : ''
               }`}
             >
@@ -101,7 +101,7 @@ function ConfirmPageContent() {
             {error && (
               <a
                 href="/auth/login"
-                className="text-[11px] text-gray-500 text-center underline"
+                className="text-[11px] text-ink/50 dark:text-night-muted text-center underline"
               >
                 Запросити новий лист для входу
               </a>

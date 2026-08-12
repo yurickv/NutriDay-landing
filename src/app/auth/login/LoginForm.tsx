@@ -60,19 +60,19 @@ function LoginFormContent() {
     >
       <form
         onSubmit={onSubmit}
-        className="max-w-md mx-auto bg-white dark:bg-dark-body rounded-lg p-5 shadow flex flex-col gap-4"
+        className="max-w-md mx-auto bg-card dark:bg-night-card rounded-2xl p-5 shadow-soft flex flex-col gap-4"
       >
-        <p className="text-sm text-main-text dark:text-main-text-black">
+        <p className="text-sm text-ink/70 dark:text-night-muted">
           Вкажіть email, який ви використовували при оплаті. Ми надішлемо
           магічне посилання для входу. Після переходу за посиланням ви потрапите
           до свого меню.
         </p>
 
-        <label className="flex flex-col gap-1 text-sm text-main-text dark:text-main-text-black">
+        <label className="flex flex-col gap-1 text-sm text-ink/70 dark:text-night-muted">
           Email
           <input
             type="email"
-            className="w-full p-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-transparent outline-none"
+            className="w-full p-3 rounded-lg border border-sage-light dark:border-night-muted/40 bg-transparent outline-none"
             placeholder="you@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -80,10 +80,10 @@ function LoginFormContent() {
         </label>
 
         {error && (
-          <div className="text-xs text-red-600 dark:text-red-400">{error}</div>
+          <div className="text-xs text-danger dark:text-danger-dark">{error}</div>
         )}
         {message && (
-          <div className="text-xs text-green-700 dark:text-green-400">
+          <div className="text-xs text-sage-dark dark:text-sage-light">
             {message}
           </div>
         )}
@@ -91,23 +91,23 @@ function LoginFormContent() {
         <button
           type="submit"
           disabled={submitting}
-          className={`w-full rounded-xl p-3 text-white text-center transition-all duration-200 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 ${
+          className={`w-full rounded-full p-3 text-card font-semibold text-center transition-colors duration-200 bg-terracotta hover:bg-terracotta-dark ${
             submitting ? 'opacity-70 cursor-not-allowed' : ''
           }`}
         >
           {submitting ? 'Надсилаємо посилання...' : 'Надіслати магічне посилання'}
         </button>
 
-        <p className="text-[11px] text-gray-500 mt-1">
+        <p className="text-[11px] text-ink/50 dark:text-night-muted mt-1">
           Після входу ми автоматично перенаправимо вас до:{' '}
           <span className="font-mono">{redirectPath}</span>
         </p>
 
-        <p className="text-sm text-main-text dark:text-main-text-black text-center border-t border-gray-200 dark:border-gray-600 pt-4">
+        <p className="text-sm text-ink/70 dark:text-night-muted text-center border-t border-ink/10 dark:border-night-muted/30 pt-4">
           Вперше тут?{' '}
           <Link
             href="/onboarding"
-            className="text-orange-600 dark:text-orange-400 font-semibold underline underline-offset-4 hover:text-orange-700"
+            className="text-terracotta dark:text-terracotta-light font-semibold underline underline-offset-4 hover:text-terracotta-dark"
           >
             Почніть з короткого опитування →
           </Link>

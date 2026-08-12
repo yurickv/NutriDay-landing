@@ -10,7 +10,7 @@ export const STEPS: Step[] = [
     key: 'gender',
     type: 'question',
     group: 'goal',
-    title: 'EasyMenu план',
+    title: 'Sytno план',
     hint: 'Гнучке меню під твої смаки і цілі.',
     hintAlways: true,
     questionType: 'single',

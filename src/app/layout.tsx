@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Nunito, Poppins, Comfortaa, Manrope } from 'next/font/google';
+import { Nunito, Poppins, Comfortaa, Manrope, Caprasimo } from 'next/font/google';
 import './globals.css';
 import { AnalyticsProvider } from '@/components/analytics/AnalyticsProvider';
 
@@ -25,6 +25,13 @@ const manrope = Manrope({
   variable: '--font-manrope',
 });
 
+// Лише для латинського лого «Sytno» (бренд-бук дозволяє Caprasimo без кирилиці).
+const caprasimo = Caprasimo({
+  subsets: ['latin'],
+  weight: '400',
+  variable: '--font-caprasimo',
+});
+
 export const viewport: Viewport = {
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#f5ead8' },
@@ -37,13 +44,13 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'EasyMenu — персоналізоване меню',
+  title: 'Sytno — персоналізоване меню',
   description: 'Швидке меню для здорового харчування — за 1 хвилину',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'EasyMenu',
+    title: 'Sytno',
   },
   icons: {
     icon: [
@@ -53,7 +60,7 @@ export const metadata: Metadata = {
     apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
   },
   openGraph: {
-    title: 'EasyMenu — персоналізоване меню',
+    title: 'Sytno — персоналізоване меню',
     description: 'AI-генероване тижневе меню для здорового схуднення',
     type: 'website',
     locale: 'uk_UA',
@@ -67,7 +74,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="uk">
-      <body className={`${nunito.className} ${poppins.variable} ${comfortaa.variable} ${manrope.variable} antialiased`}>
+      <body className={`${nunito.className} ${poppins.variable} ${comfortaa.variable} ${manrope.variable} ${caprasimo.variable} antialiased`}>
         <AnalyticsProvider>{children}</AnalyticsProvider>
       </body>
     </html>

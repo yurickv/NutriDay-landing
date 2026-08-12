@@ -1,5 +1,5 @@
 // components/onboardingPage/OnboardingLayout.tsx
-// Обгортка сторінок оплати й auth. Бренд-бук NutriDay: крем/night фон,
+// Обгортка сторінок оплати й auth. Бренд-бук Sytno: крем/night фон,
 // картка на bg-card, заголовки Comfortaa (font-heading).
 import React from 'react';
 

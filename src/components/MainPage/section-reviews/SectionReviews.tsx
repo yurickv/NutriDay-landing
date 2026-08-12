@@ -10,7 +10,7 @@ const ReviewsSection = () => {
   const reviews = [
     {
       id: 1,
-      text: "EasyMenu — це економія часу і різноманітність! Я отримую нові ідеї для страв щодня і можу легко змінити меню під настрій.",
+      text: "Sytno — це економія часу і різноманітність! Я отримую нові ідеї для страв щодня і можу легко змінити меню під настрій.",
       author: "Олена К.",
       rating: 5,
       avatar: "/lena-review.avif",
@@ -36,19 +36,19 @@ const ReviewsSection = () => {
       <Star
         key={index}
         className={`w-5 h-5 ${
-          index < rating ? "text-yellow-400 fill-current" : "text-gray-300"
+          index < rating ? "text-terracotta fill-current" : "text-ink/20"
         }`}
       />
     ));
   };
 
   return (
-    <section className='py-20' style={{ backgroundColor: "#323030" }}>
+    <section className='py-20 bg-sage'>
       <div className='container mx-auto px-4'>
         {/* Заголовок секції */}
-        <div className='text-center mb-16 text-white'>
+        <div className='text-center mb-16 text-card'>
           <Title text=' Що кажуть користувачі' />
-          <div className='w-24 h-1 bg-main-button mx-auto my-8 rounded-lg'></div>
+          <div className='w-24 h-1 bg-terracotta-light mx-auto my-8 rounded-lg'></div>
         </div>
 
         {/* Сітка відгуків */}
@@ -56,9 +56,9 @@ const ReviewsSection = () => {
           {reviews.map((review, index) => (
             <div
               key={review.id}
-              className={`relative bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20 hover:bg-white/15 hover:shadow-2xl transition-all duration-300 flex flex-col justify-between ${
+              className={`relative bg-card text-ink rounded-2xl p-8 shadow-soft hover:shadow-xl transition-all duration-300 flex flex-col justify-between ${
                 index === 1
-                  ? "md:transform md:scale-105 md:shadow-2xl"
+                  ? "md:transform md:scale-105 md:shadow-xl"
                   : "hover:transform hover:scale-105"
               }`}
             >
@@ -66,8 +66,8 @@ const ReviewsSection = () => {
               <div>
                 {/* Іконка лапок */}
                 <div className='absolute -top-4 left-8'>
-                  <div className='bg-main-button-hover rounded-full p-3'>
-                    <Quote className='w-6 h-6 text-white' />
+                  <div className='bg-terracotta rounded-full p-3'>
+                    <Quote className='w-6 h-6 text-card' />
                   </div>
                 </div>
 
@@ -77,7 +77,7 @@ const ReviewsSection = () => {
                 </div>
 
                 {/* Текст відгуку */}
-                <p className='text-gray-100 text-lg leading-relaxed mb-8 text-center italic'>
+                <p className='text-ink/80 text-lg leading-relaxed mb-8 text-center italic'>
                   "{review.text}"
                 </p>
               </div>
@@ -89,54 +89,29 @@ const ReviewsSection = () => {
                     src={review.avatar}
                     alt={review.author}
                     fill
-                    className='rounded-full object-cover border-2 border-blue-300'
+                    className='rounded-full object-cover border-2 border-sage-light'
                     sizes='48px'
                   />
                 </div>
                 <div>
-                  <p className='font-semibold text-white'>{review.author}</p>
-                  <p className='text-sm text-gray-300'>Користувач EasyMenu</p>
+                  <p className='font-semibold text-ink'>{review.author}</p>
+                  <p className='text-sm text-ink/60'>Користувач Sytno</p>
                 </div>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Додаткова статистика */}
-        {/* <div className='mt-16 text-center'>
-          <div className='inline-flex items-center gap-8 bg-white/10 backdrop-blur-sm rounded-2xl px-8 py-6 border border-white/20'>
-            <div className='text-center'>
-              <div className='text-3xl font-bold text-white mb-1'>4.9</div>
-              <div className='flex justify-center mb-2'>{renderStars(5)}</div>
-              <div className='text-sm text-gray-300'>Середня оцінка</div>
-            </div>
-
-            <div className='h-12 w-px bg-white/30'></div>
-
-            <div className='text-center'>
-              <div className='text-3xl font-bold text-white mb-1'>1000+</div>
-              <div className='text-sm text-gray-300'>Щасливих користувачів</div>
-            </div>
-
-            <div className='h-12 w-px bg-white/30'></div>
-
-            <div className='text-center'>
-              <div className='text-3xl font-bold text-white mb-1'>95%</div>
-              <div className='text-sm text-gray-300'>Рекомендують друзям</div>
-            </div>
-          </div>
-        </div> */}
-
         {/* Заклик до дії */}
         <div className='text-center mt-12'>
-          <p className='text-lg text-gray-300 mb-6'>
+          <p className='text-lg text-card/90 mb-6'>
             Приєднуйтесь до сотень задоволених користувачів
           </p>
           <Link
             href='/onboarding'
             className='inline-block w-fit mx-auto lg:mx-0'
           >
-            <button className='bg-main-button hover:bg-main-button-hover text-black text-lg md:text-xl font-semibold py-3 px-3 rounded-lg transition-colors duration-300'>
+            <button className='bg-terracotta hover:bg-terracotta-dark text-card text-lg md:text-xl font-semibold py-3 px-6 rounded-full shadow-soft transition-colors duration-300'>
               Приєднатися зараз
             </button>
           </Link>

@@ -20,7 +20,7 @@
   --color-background-form: #676465;
 }
 
-/* Бренд-бук NutriDay: слайд 5 (палітра) + слайд 8 (темна тема).
+/* Бренд-бук Sytno: слайд 5 (палітра) + слайд 8 (темна тема).
    Спільні для всього застосунку; квіз онбордингу використовує ці ж токени. */
 @theme {
   --color-sage-dark: #56633f;
@@ -47,6 +47,8 @@
 
   --font-heading: var(--font-comfortaa), sans-serif;
   --font-body: var(--font-manrope), sans-serif;
+  /* Латинський логотип «Sytno»; кирилиці в Caprasimo немає — фолбек Comfortaa */
+  --font-logo: var(--font-caprasimo), var(--font-comfortaa), sans-serif;
 }
 
 /* Перемикання теми світла/темна */

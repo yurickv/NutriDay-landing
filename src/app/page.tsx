@@ -8,9 +8,9 @@ import Header from "@/components/Header";
 
 export default function Home() {
   return (
-    <div className='relative'>
+    <div className='relative font-body'>
       <Header />
-      <main className='text-[#21201C]'>
+      <main className='text-ink'>
         <HeroSection />
         <AdvantagesSection />
         <AboutUsSection />

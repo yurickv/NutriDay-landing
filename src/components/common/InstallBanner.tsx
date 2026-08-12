@@ -64,12 +64,12 @@ export default function InstallBanner() {
             className="w-12 h-12 rounded-2xl flex-shrink-0 flex items-center justify-center text-card font-bold text-lg"
             style={{ background: 'var(--color-terracotta)' }}
           >
-            E
+            S
           </div>
 
           <div className="flex-1 pr-4">
             <p className="font-semibold text-sm text-ink dark:text-night-ink mb-0.5">
-              Встановіть EasyMenu
+              Встановіть Sytno
             </p>
             <p className="text-xs text-ink/60 dark:text-night-muted leading-snug">
               Додайте на головний екран для швидкого доступу без браузера

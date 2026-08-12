@@ -3,9 +3,9 @@ import { BackButton } from '@/components/common/BackButton';
 import { ScrollTopButton } from '@/components/common/ScrollTopButton';
 
 export const metadata: Metadata = {
-  title: 'Публічна оферта | EasyMenu',
+  title: 'Публічна оферта | Sytno',
   description:
-    'Договір публічної оферти на надання інформаційно-консультаційних послуг (планів харчування) EasyMenu.',
+    'Договір публічної оферти на надання інформаційно-консультаційних послуг (планів харчування) Sytno.',
 };
 
 export default function OfertaPage() {
@@ -22,7 +22,7 @@ export default function OfertaPage() {
             <div className="max-w-3xl mx-auto p-6 md:p-8 bg-[#F5F5F5] dark:bg-[#676465] rounded-xl shadow-[0px_4px_20px_0px_rgba(133,119,123,0.30)] dark:shadow-[0px_4px_15px_0px_rgba(116,116,116,0.30)]">
               <h1 className="text-2xl md:text-3xl font-bold mb-4 text-main-title dark:text-main-title-black">
                 ДОГОВІР ПУБЛІЧНОЇ ОФЕРТИ на надання інформаційно-консультаційних
-                послуг (планів харчування) «EasyMenu»
+                послуг (планів харчування) «Sytno»
               </h1>
               <p className="mb-6 text-sm text-gray-700 dark:text-gray-200">
                 м. Тернопіль, 2026 рік
@@ -38,7 +38,7 @@ export default function OfertaPage() {
                 (надалі — «Замовник») укласти договір на надання
                 інформаційно-консультаційних послуг у сфері харчування (далі за
                 текстом — «Послуги»), які надаються під комерційною назвою
-                «EasyMenu» (укр. «ІзіМеню»).
+                «Sytno» (укр. «Ситно»).
               </p>
               <p className="mb-3">
                 1.2. Відповідно до ст. 633, 634, 641 та 642 Цивільного кодексу
@@ -241,7 +241,7 @@ export default function OfertaPage() {
               <p className="text-sm text-gray-700 dark:text-gray-200">
                 Замовник підтверджує, що він повністю ознайомлений з усіма
                 пунктами цього Договору, розуміє їх та погоджується з умовами
-                надання інформаційно-консультаційних Послуг «EasyMenu».
+                надання інформаційно-консультаційних Послуг «Sytno».
               </p>
 
               {/* Bottom scroll-to-top button */}
