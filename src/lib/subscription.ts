@@ -44,6 +44,8 @@ export function hasActiveSubscription(user: SubscriptionUser | null | undefined)
 
 interface LegacyUser extends SubscriptionUser {
   planId?: string | null;
+  orderId?: string | null;
+  onboarding?: Record<string, unknown> | null;
   updatedAt?: Date | string;
   createdAt?: Date | string;
   lastPayment?: { create_date?: number; end_date?: number } | null;
@@ -86,7 +88,17 @@ export async function checkSessionSubscription(): Promise<{
   const db = await getDb();
   const users = db.collection('users');
   let user = await users.findOne<LegacyUser>({ email });
-  const userExists = !!user;
+
+  // "Exists" means the account has real history (a payment attempt via
+  // subscription/init, which always sets paymentStatus, or onboarding answers) —
+  // NOT mere record existence: every magic-link request upserts a bare shadow
+  // user ({email, status}), which would otherwise send brand-new users to the
+  // payment page instead of onboarding.
+  const userExists =
+    !!user &&
+    (user.paymentStatus != null ||
+      user.orderId != null ||
+      (!!user.onboarding && Object.keys(user.onboarding).length > 0));
 
   if (
     user &&

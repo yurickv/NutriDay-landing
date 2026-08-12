@@ -4,10 +4,12 @@ import ExampleWorkSection from "@/components/MainPage/section-exampleWork/Exampl
 import HeroSection from "@/components/MainPage/section-hero/HeroSection";
 import ReviewsSection from "@/components/MainPage/section-reviews/SectionReviews";
 import Footer from "@/components/Footer";
+import Header from "@/components/Header";
 
 export default function Home() {
   return (
-    <div className=''>
+    <div className='relative'>
+      <Header />
       <main className='text-[#21201C]'>
         <HeroSection />
         <AdvantagesSection />
