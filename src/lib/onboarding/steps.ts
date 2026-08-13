@@ -28,11 +28,11 @@ export const STEPS: Step[] = [
     questionType: 'single',
     field: 'mainGoal',
     options: [
-      { value: 'lose_weight', label: '📉 Схуднути' },
-      { value: 'maintain_weight', label: '⚖️ Підтримати вагу' },
-      { value: 'build_muscle', label: "💪 Наростити м'язи" },
-      { value: 'gain_weight', label: '📈 Набрати вагу' },
-      { value: 'something_else', label: '🍽️ Просто харчуватись краще' },
+      { value: 'lose_weight', label: 'Схуднути', icon: 'TrendingDown' },
+      { value: 'maintain_weight', label: 'Підтримати вагу', icon: 'Scale' },
+      { value: 'build_muscle', label: "Наростити м'язи", icon: 'Dumbbell' },
+      { value: 'gain_weight', label: 'Набрати вагу', icon: 'TrendingUp' },
+      { value: 'something_else', label: 'Просто харчуватись краще', icon: 'Utensils' },
     ],
   },
   {
@@ -74,9 +74,13 @@ export const STEPS: Step[] = [
     questionType: 'single',
     field: 'nutritionKnowledge',
     options: [
-      { value: 'beginner', label: '🌱 Тільки починаю — поясніть мені все' },
-      { value: 'intermediate', label: '🙂 Дещо знаю, хочу системності' },
-      { value: 'advanced', label: '😎 Розбираюсь, треба лише зручний інструмент' },
+      { value: 'beginner', label: 'Тільки починаю — поясніть мені все', icon: 'Sprout' },
+      { value: 'intermediate', label: 'Дещо знаю, хочу системності', icon: 'BookOpen' },
+      {
+        value: 'advanced',
+        label: 'Розбираюсь, треба лише зручний інструмент',
+        icon: 'GraduationCap',
+      },
     ],
   },
   {
@@ -87,11 +91,27 @@ export const STEPS: Step[] = [
     questionType: 'multi',
     field: 'shortGoal',
     options: [
-      { value: 'balanced_eating', label: '🥗 Збалансовано харчуватися і жити здоровіше' },
-      { value: 'boost_energy', label: '⚡ Підвищити енергію і настрій' },
-      { value: 'stay_motivated', label: '🎯 Залишатися мотивованим і послідовним' },
-      { value: 'better_body_image', label: '💚 Краще ставитися до свого тіла' },
-      { value: 'meal_planning', label: '🗓️ Не думати що приготувати завтра' },
+      {
+        value: 'balanced_eating',
+        label: 'Збалансовано харчуватися і жити здоровіше',
+        icon: 'Salad',
+      },
+      { value: 'boost_energy', label: 'Підвищити енергію і настрій', icon: 'Zap' },
+      {
+        value: 'stay_motivated',
+        label: 'Залишатися мотивованим і послідовним',
+        icon: 'Target',
+      },
+      {
+        value: 'better_body_image',
+        label: 'Краще ставитися до свого тіла',
+        icon: 'HeartHandshake',
+      },
+      {
+        value: 'meal_planning',
+        label: 'Не думати що приготувати завтра',
+        icon: 'CalendarCheck',
+      },
     ],
   },
 
@@ -150,15 +170,51 @@ export const STEPS: Step[] = [
     stickyCta: true,
     field: 'dietaryPreferences',
     options: [
-      { value: 'none', label: '🍽️ Їм усе', description: 'Без обмежень', isNone: true },
-      { value: 'вегетаріанське', label: '🥗 Вегетаріанське', description: "Без м'яса і риби" },
-      { value: 'веганське', label: '🌱 Веганське', description: 'Без продуктів тваринного походження' },
-      { value: 'кето', label: '🥑 Кето', description: 'Мало вуглеводів, більше жирів' },
-      { value: 'без глютену', label: '🌾 Без глютену', description: 'Без пшениці, жита, ячменю' },
-      { value: 'без молочних', label: '🥛 Без молочних', description: 'Без молока, сиру, йогурту' },
-      { value: 'без свинини', label: '🐷 Без свинини' },
-      { value: 'без морепродуктів', label: '🦐 Без морепродуктів' },
-      { value: 'без цукру', label: '🍬 Без цукру', description: 'Без доданого цукру' },
+      {
+        value: 'none',
+        label: 'Їм усе',
+        description: 'Без обмежень',
+        isNone: true,
+        icon: 'Utensils',
+      },
+      {
+        value: 'вегетаріанське',
+        label: 'Вегетаріанське',
+        description: "Без м'яса і риби",
+        icon: 'Salad',
+      },
+      {
+        value: 'веганське',
+        label: 'Веганське',
+        description: 'Без продуктів тваринного походження',
+        icon: 'Sprout',
+      },
+      {
+        value: 'кето',
+        label: 'Кето',
+        description: 'Мало вуглеводів, більше жирів',
+        icon: 'EggFried',
+      },
+      {
+        value: 'без глютену',
+        label: 'Без глютену',
+        description: 'Без пшениці, жита, ячменю',
+        icon: 'WheatOff',
+      },
+      {
+        value: 'без молочних',
+        label: 'Без молочних',
+        description: 'Без молока, сиру, йогурту',
+        icon: 'MilkOff',
+      },
+      { value: 'без свинини', label: 'Без свинини', icon: 'Ham' },
+      { value: 'без морепродуктів', label: 'Без морепродуктів', icon: 'FishOff' },
+      {
+        value: 'без цукру',
+        label: 'Без цукру',
+        description: 'Без доданого цукру',
+        icon: 'CandyOff',
+      },
     ],
   },
   {
@@ -193,11 +249,11 @@ export const STEPS: Step[] = [
     questionType: 'multi',
     field: 'cravings',
     options: [
-      { value: 'sweets', label: '🍫 Солодке' },
-      { value: 'salty_snacks', label: '🥨 Солоні снеки' },
-      { value: 'fast_food', label: '🍔 Фастфуд' },
-      { value: 'soda', label: '🥤 Газована вода' },
-      { value: 'none', label: 'Нічого з переліченого', isNone: true },
+      { value: 'sweets', label: 'Солодке', icon: 'Cookie' },
+      { value: 'salty_snacks', label: 'Солоні снеки', icon: 'Popcorn' },
+      { value: 'fast_food', label: 'Фастфуд', icon: 'Pizza' },
+      { value: 'soda', label: 'Газована вода', icon: 'CupSoda' },
+      { value: 'none', label: 'Нічого з переліченого', isNone: true, icon: 'Ban' },
     ],
   },
   {
@@ -328,11 +384,36 @@ export const STEPS: Step[] = [
     questionType: 'single',
     field: 'activity',
     options: [
-      { value: '1.2', label: '🪑 Переважно сиджу', description: 'Офісна робота, мало руху' },
-      { value: '1.375', label: '🧍 Переважно стою', description: 'Вчитель, продавець-консультант' },
-      { value: '1.55', label: '🚶 Багато ходжу', description: "Кур'єр, офіціант, активний день" },
-      { value: '1.725', label: '🏗️ Фізично важка робота', description: 'Будівництво, склад' },
-      { value: '1.9', label: '🏋️ Дуже інтенсивні навантаження', description: 'Щоденні тренування або важка фізична праця' },
+      {
+        value: '1.2',
+        label: 'Переважно сиджу',
+        description: 'Офісна робота, мало руху',
+        icon: 'Armchair',
+      },
+      {
+        value: '1.375',
+        label: 'Переважно стою',
+        description: 'Вчитель, продавець-консультант',
+        icon: 'PersonStanding',
+      },
+      {
+        value: '1.55',
+        label: 'Багато ходжу',
+        description: "Кур'єр, офіціант, активний день",
+        icon: 'Footprints',
+      },
+      {
+        value: '1.725',
+        label: 'Фізично важка робота',
+        description: 'Будівництво, склад',
+        icon: 'HardHat',
+      },
+      {
+        value: '1.9',
+        label: 'Дуже інтенсивні навантаження',
+        description: 'Щоденні тренування або важка фізична праця',
+        icon: 'Dumbbell',
+      },
     ],
   },
   {
@@ -351,9 +432,9 @@ export const STEPS: Step[] = [
     questionType: 'single',
     field: 'confidence',
     options: [
-      { value: 'sure', label: '💪 Вірю, що впораюсь' },
-      { value: 'willing', label: '🙂 Не впевнений, але спробую' },
-      { value: 'doubt', label: '😕 Чесно — сумніваюсь' },
+      { value: 'sure', label: 'Вірю, що впораюсь', icon: 'Flame' },
+      { value: 'willing', label: 'Не впевнений, але спробую', icon: 'Smile' },
+      { value: 'doubt', label: 'Чесно — сумніваюсь', icon: 'CircleHelp' },
     ],
   },
   {
@@ -388,7 +469,9 @@ export const GROUP_LABELS: Record<StepGroup, string> = {
   finish: 'Фініш',
 };
 
-// «📉 Схуднути» → «Схуднути»: зрізає провідні не-літери (емодзі + пробіли).
+// Підписи варіантів більше не містять емодзі (їх замінили іконки lucide,
+// поле Option.icon). Функція лишається запобіжником: «📉 Схуднути» →
+// «Схуднути» для підписів зі старих збережених відповідей.
 const EMOJI_PREFIX = /^[^\p{L}\p{N}]+\s*/u;
 
 export function plainLabel(label: string): string {

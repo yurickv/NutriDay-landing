@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Check } from 'lucide-react';
 import type { Option, Step } from '@/lib/onboarding/types';
 import { CtaBar, QuizCta } from './QuizLayout';
+import { OptionIcon } from './OptionIcon';
 
 interface Props {
   step: Step;
@@ -38,11 +39,12 @@ export function QuestionMulti({ step, value, onAnswer }: Props) {
               key={o.value}
               type="button"
               onClick={() => toggle(o)}
-              className={`flex w-full items-center justify-between rounded-2xl border-2 bg-card px-4 py-3.5 text-left shadow-soft transition-colors dark:bg-night-card ${
+              className={`flex w-full items-center gap-3 rounded-2xl border-2 bg-card px-4 py-3.5 text-left shadow-soft transition-colors dark:bg-night-card ${
                 active ? 'border-sage' : 'border-transparent'
               }`}
             >
-              <span>
+              {o.icon && <OptionIcon name={o.icon} active={active} />}
+              <span className="min-w-0 flex-1">
                 <span className="block font-semibold">{o.label}</span>
                 {o.description && (
                   <span className="mt-0.5 block text-sm text-ink/60 dark:text-night-muted">
@@ -51,7 +53,7 @@ export function QuestionMulti({ step, value, onAnswer }: Props) {
                 )}
               </span>
               <span
-                className={`ml-3 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg border-2 transition-colors ${
+                className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg border-2 transition-colors ${
                   active
                     ? 'border-sage bg-sage text-white'
                     : 'border-ink/20 dark:border-night-muted/40'

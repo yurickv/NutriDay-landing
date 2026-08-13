@@ -4,7 +4,11 @@
       "Bash(xargs -I {} sh -c 'echo \"\"=== {} ===\"\" && head -20 \"\"{}\"\"')",
       "Bash(npm install:*)",
       "Bash(npx tsc:*)",
-      "Bash(git mv *)"
+      "Bash(git mv *)",
+      "Bash(node -e \"const l=require\\('lucide-react'\\);const names=['TrendingDown','TrendingUp','Scale','Dumbbell','Utensils','Sprout','BookOpen','GraduationCap','Salad','Zap','Target','HeartHandshake','CalendarCheck','Beef','WheatOff','MilkOff','Ham','HamOff','FishOff','Fish','CandyOff','Candy','Cookie','Popcorn','Pizza','CupSoda','Ban','Armchair','PersonStanding','Footprints','HardHat','Flame','Smile','CircleHelp','HelpCircle','Smartphone','LeafyGreen','Vegan','Croissant','Drumstick','Sandwich','Egg','EggFried','CircleOff','Nut'];for\\(const n of names\\) console.log\\(\\(n in l?'OK  ':'MISS'\\),n\\)\")",
+      "Bash(node -e \"const l=require\\('lucide-react'\\);for\\(const n of ['BeefOff','EggOff','SaladOff','UtensilsCrossed','Slash','CircleSlash','Soup','Beer','Wheat','Milk','Bean','BeanOff','NutOff','Apple','Carrot','Sparkles','Clock','Sunrise','Sun','Sunset','Moon','ClipboardList','NotebookPen','PenLine','ChefHat','Refrigerator','CookingPot','CalendarDays','Cake','Brain','Frown','Meh','ThumbsUp','ShieldCheck','HeartPulse','Heart','MoonStar','CircleMinus']\\)console.log\\(\\(n in l?'OK  ':'MISS'\\),n\\)\")",
+      "Bash(npx tsc *)",
+      "Bash(npx vitest *)"
     ]
   }
 }

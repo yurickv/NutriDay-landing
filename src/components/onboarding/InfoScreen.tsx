@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Smartphone } from 'lucide-react';
 import type { Step } from '@/lib/onboarding/types';
 import { CtaBar, QuizCta } from './QuizLayout';
 
@@ -31,8 +32,12 @@ function QuizImage({ image }: { image: { src: string; alt: string } }) {
   const [failed, setFailed] = useState(false);
   if (failed) {
     return (
-      <div className="mt-6 flex h-48 items-center justify-center rounded-3xl bg-sage-light/40 text-5xl dark:bg-night-card">
-        📱
+      <div className="mt-6 flex h-48 items-center justify-center rounded-3xl bg-sage-light/40 dark:bg-night-card">
+        <Smartphone
+          className="h-12 w-12 text-sage-dark dark:text-sage-light"
+          strokeWidth={1.5}
+          aria-hidden
+        />
       </div>
     );
   }

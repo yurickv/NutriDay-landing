@@ -5,12 +5,58 @@ export type StepType = 'question' | 'info' | 'loader';
 export type QuestionType = 'single' | 'multi' | 'number';
 export type StepGroup = 'goal' | 'nutrition' | 'body' | 'finish';
 
+/**
+ * Іконки варіантів — імена компонентів lucide-react. Реєстр імені → компонент
+ * живе в src/components/onboarding/OptionIcon.tsx; додаючи назву сюди,
+ * TypeScript змусить додати її і в реєстр.
+ */
+export type OptionIconName =
+  // main_goal
+  | 'TrendingDown'
+  | 'Scale'
+  | 'Dumbbell'
+  | 'TrendingUp'
+  | 'Utensils'
+  // nutrition_knowledge
+  | 'Sprout'
+  | 'BookOpen'
+  | 'GraduationCap'
+  // short_goal
+  | 'Salad'
+  | 'Zap'
+  | 'Target'
+  | 'HeartHandshake'
+  | 'CalendarCheck'
+  // diet_type
+  | 'EggFried'
+  | 'WheatOff'
+  | 'MilkOff'
+  | 'Ham'
+  | 'FishOff'
+  | 'CandyOff'
+  // cravings
+  | 'Cookie'
+  | 'Popcorn'
+  | 'Pizza'
+  | 'CupSoda'
+  | 'Ban'
+  // activity
+  | 'Armchair'
+  | 'PersonStanding'
+  | 'Footprints'
+  | 'HardHat'
+  // confidence
+  | 'Flame'
+  | 'Smile'
+  | 'CircleHelp';
+
 export interface Option {
   value: string;
   label: string;
   description?: string; // пояснення під варіантом (патерн /diet_type)
   isNone?: boolean; // «нічого з переліченого» — знімає інші вибори
   image?: string; // фото-картка: опції рендеряться грідом 2 колонки (крок gender)
+  icon?: OptionIconName; // іконка-бейдж ліворуч від підпису (замість емодзі)
 }
 
 /** Усі предикати в масиві поєднуються через AND. */
