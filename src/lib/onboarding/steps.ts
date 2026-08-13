@@ -40,6 +40,8 @@ export const STEPS: Step[] = [
     type: 'info',
     group: 'goal',
     title: 'Твій план уже вимальовується',
+    stickyCta: true,
+    image: { src: '/onboarding/kollaz.avif', alt: 'Колаж страв із меню Sytno' },
     variantOn: 'mainGoal',
     variants: {
       lose_weight: {
