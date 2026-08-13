@@ -58,6 +58,7 @@ export function StepRenderer({ stepKey }: { stepKey: string }) {
   useEffect(() => {
     const srcs = STEPS.flatMap((s) => [
       s.image?.src,
+      s.headerImage?.src,
       ...(s.options ?? []).map((o) => o.image),
     ]).filter((src): src is string => Boolean(src));
     srcs.push('/onboarding/expert.avif');
@@ -168,6 +169,7 @@ export function StepRenderer({ stepKey }: { stepKey: string }) {
       hint={showHint(step, answers) ? step.hint : undefined}
       groupLabel={GROUP_LABELS[step.group]}
       progressPct={progressPct}
+      image={step.headerImage}
       onBack={onBack}
       animationKey={stepKey}
       leaving={leaving}

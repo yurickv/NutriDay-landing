@@ -34,6 +34,11 @@ export type OptionIconName =
   | 'Ham'
   | 'FishOff'
   | 'CandyOff'
+  // eating_habits
+  | 'Frown'
+  | 'HandPlatter'
+  | 'MoonStar'
+  | 'UtensilsCrossed'
   // cravings
   | 'Cookie'
   | 'Popcorn'
@@ -75,6 +80,14 @@ export interface Step {
   /** Пояснення «навіщо питаємо». За замовчуванням видно лише новачкам. */
   hint?: string;
   hintAlways?: boolean; // показувати незалежно від nutritionKnowledge
+
+  /**
+   * Фото-банер угорі екрана, під заголовком і над контентом (кроки прийомів
+   * їжі). Рендериться QuizLayout фіксованою висотою + object-cover, тож усі
+   * кроки виглядають однаково незалежно від пропорцій вихідного файлу.
+   * Не плутати з `image` нижче — той малюється всередині інфо-екрана.
+   */
+  headerImage?: { src: string; alt: string };
 
   // --- question ---
   questionType?: QuestionType;

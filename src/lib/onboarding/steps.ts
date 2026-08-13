@@ -121,6 +121,7 @@ export const STEPS: Step[] = [
     type: 'question',
     group: 'nutrition',
     title: 'Коли ти зазвичай снідаєш?',
+    headerImage: { src: '/onboarding/breakfast.avif', alt: 'Сніданок із меню Sytno' },
     hint: 'Підлаштуємо розмір порцій під твій ритм дня.',
     questionType: 'single',
     field: 'breakfastTime',
@@ -136,6 +137,7 @@ export const STEPS: Step[] = [
     type: 'question',
     group: 'nutrition',
     title: 'А обідаєш?',
+    headerImage: { src: '/onboarding/lunch.avif', alt: 'Обід із меню Sytno' },
     questionType: 'single',
     field: 'lunchTime',
     options: [
@@ -150,6 +152,7 @@ export const STEPS: Step[] = [
     type: 'question',
     group: 'nutrition',
     title: 'О котрій вечеряєш?',
+    headerImage: { src: '/onboarding/dinner.avif', alt: 'Вечеря з меню Sytno' },
     questionType: 'single',
     field: 'dinnerTime',
     options: [
@@ -234,11 +237,15 @@ export const STEPS: Step[] = [
     questionType: 'multi',
     field: 'eatingHabits',
     options: [
-      { value: 'emotional_eating', label: 'Заїдаю емоції або нудьгу' },
-      { value: 'overeating', label: 'Переїдаю' },
-      { value: 'late_snacking', label: 'Перекушую пізно ввечері' },
-      { value: 'skipping_meals', label: 'Часто пропускаю прийоми їжі' },
-      { value: 'none', label: 'Нічого з переліченого', isNone: true },
+      { value: 'emotional_eating', label: 'Заїдаю емоції або нудьгу', icon: 'Frown' },
+      { value: 'overeating', label: 'Переїдаю', icon: 'HandPlatter' },
+      { value: 'late_snacking', label: 'Перекушую пізно ввечері', icon: 'MoonStar' },
+      {
+        value: 'skipping_meals',
+        label: 'Часто пропускаю прийоми їжі',
+        icon: 'UtensilsCrossed',
+      },
+      { value: 'none', label: 'Нічого з переліченого', isNone: true, icon: 'Ban' },
     ],
   },
   {

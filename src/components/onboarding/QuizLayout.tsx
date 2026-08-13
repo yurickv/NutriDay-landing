@@ -10,6 +10,8 @@ interface QuizLayoutProps {
   groupLabel?: string;
   /** Заповнення прогрес-бару 0–100 по всіх видимих екранах. */
   progressPct: number;
+  /** Фото-банер над заголовком (Step.headerImage). */
+  image?: { src: string; alt: string };
   onBack?: () => void;
   /** Ключ кроку — рестартує анімацію появи при переході. */
   animationKey?: string;
@@ -23,6 +25,7 @@ export function QuizLayout({
   hint,
   groupLabel,
   progressPct,
+  image,
   onBack,
   animationKey,
   leaving,
@@ -64,6 +67,19 @@ export function QuizLayout({
             <p className="mt-3 text-[15px] leading-relaxed text-ink/70 dark:text-night-muted">
               {hint}
             </p>
+          )}
+          {image && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={image.src}
+              alt={image.alt}
+              // Фіксована висота + object-cover: банер однаковий на всіх кроках,
+              // хоч вихідні фото й різних пропорцій. Висота росте сходинками за
+              // висотою вікна — щоб заголовок, підпис і всі варіанти влазили в
+              // екран без скролу навіть на 640px (найгірший випадок — B1, де є
+              // ще й hint на два рядки).
+              className="mt-5 h-16 w-full rounded-3xl object-cover shadow-soft [@media(min-height:680px)]:h-24 [@media(min-height:760px)]:h-32 [@media(min-height:860px)]:h-40"
+            />
           )}
 
           <div className="mt-6 flex flex-1 flex-col">{children}</div>
