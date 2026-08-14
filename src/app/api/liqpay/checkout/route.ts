@@ -2,7 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { checkRateLimit, getClientIp, tooManyRequestsResponse } from '@/lib/rateLimit';
-import { PLANS, isPlanId } from '@/lib/plans';
+import { PLANS, getPlanPrice, isPlanId } from '@/lib/plans';
+import { DISCOUNT_GRACE_MS, discountUntilFromCookie, isDiscountActive } from '@/lib/discount';
 
 const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 
@@ -79,8 +80,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Server-authoritative price: never trust a client-supplied amount.
+    // Знижка діє, поки живе 10-хвилинне вікно з httpOnly-куки (+люфт на межі).
     const plan = PLANS[planId];
-    const amount = plan.amount;
+    const discounted = isDiscountActive(discountUntilFromCookie(request), DISCOUNT_GRACE_MS);
+    const amount = getPlanPrice(planId, discounted);
     const currency = plan.currency;
     const safeDescription =
       typeof description === 'string' && description.trim() ? description.trim() : plan.title;

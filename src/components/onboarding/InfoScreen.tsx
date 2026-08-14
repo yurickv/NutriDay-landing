@@ -7,18 +7,55 @@ import { CtaBar, QuizCta } from './QuizLayout';
 
 interface Props {
   step: Step;
+  /** Заголовок (лише для wide-кроків — QuizLayout тоді свій h1 не рендерить). */
+  title?: string;
   /** Текст, уже резолвлений через resolveInfoContent (variants + bodyShort). */
   body?: string;
   onNext: () => void;
 }
 
-export function InfoScreen({ step, body, onNext }: Props) {
+export function InfoScreen({ step, title, body, onNext }: Props) {
+  // Wide: дві половини — текст зліва (вертикально по центру), фото справа.
+  // На мобільному колонки складаються у звичний стовпчик.
+  if (step.wide) {
+    return (
+      <div className="flex flex-1 flex-col">
+        <div className="flex flex-1 flex-col md:flex-row md:items-center md:gap-10">
+          <div className="mt-8 flex flex-col justify-center md:mt-0 md:w-1/2">
+            {title && (
+              <h1 className="font-heading text-[28px] font-bold leading-snug md:text-[32px]">
+                {title}
+              </h1>
+            )}
+            {body && (
+              <p className="mt-4 text-[17px] leading-relaxed text-ink/80 dark:text-night-ink/80">
+                {body}
+              </p>
+            )}
+          </div>
+          {step.image && (
+            <div className="mt-6 md:mt-0 md:w-1/2">
+              <QuizImage image={step.image} />
+            </div>
+          )}
+        </div>
+        <CtaBar sticky={step.stickyCta}>
+          <QuizCta onClick={onNext}>Продовжити</QuizCta>
+        </CtaBar>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-1 flex-col">
       {body && (
         <p className="text-[17px] leading-relaxed text-ink/80 dark:text-night-ink/80">{body}</p>
       )}
-      {step.image && <QuizImage image={step.image} />}
+      {step.image && (
+        <div className="mt-6">
+          <QuizImage image={step.image} />
+        </div>
+      )}
       {step.key === 'expert' && <ExpertsCard />}
       <CtaBar sticky={step.stickyCta}>
         <QuizCta onClick={onNext}>Продовжити</QuizCta>
@@ -32,7 +69,7 @@ function QuizImage({ image }: { image: { src: string; alt: string } }) {
   const [failed, setFailed] = useState(false);
   if (failed) {
     return (
-      <div className="mt-6 flex h-48 items-center justify-center rounded-3xl bg-sage-light/40 dark:bg-night-card">
+      <div className="mx-auto flex h-48 w-full max-w-[640px] items-center justify-center rounded-3xl bg-sage-light/40 dark:bg-night-card">
         <Smartphone
           className="h-12 w-12 text-sage-dark dark:text-sage-light"
           strokeWidth={1.5}
@@ -47,7 +84,10 @@ function QuizImage({ image }: { image: { src: string; alt: string } }) {
       src={image.src}
       alt={image.alt}
       onError={() => setFailed(true)}
-      className="mt-6 w-full rounded-3xl shadow-soft"
+      // max-w: фото не розтягується на всю wide-колонку (1128px);
+      // max-h + object-cover: повна ширина колонки, висота обмежена екраном —
+      // високі фото (колаж на goal_promise) обрізаються зверху/знизу, не скролять.
+      className="mx-auto max-h-[55dvh] w-full max-w-[640px] rounded-3xl object-cover shadow-soft"
     />
   );
 }

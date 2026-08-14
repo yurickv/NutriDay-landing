@@ -41,6 +41,7 @@ export const STEPS: Step[] = [
     group: 'goal',
     title: 'Твій план уже вимальовується',
     stickyCta: true,
+    wide: true,
     image: { src: '/onboarding/kollaz.avif', alt: 'Колаж страв із меню Sytno' },
     variantOn: 'mainGoal',
     variants: {
@@ -227,6 +228,7 @@ export const STEPS: Step[] = [
     title: 'Ось як виглядатиме твій день',
     body: 'Готове меню на день: страви, калорії та БЖВ — усе вже пораховано.',
     stickyCta: true,
+    wide: true,
     image: { src: '/onboarding/day-demo.avif', alt: 'Скрін меню на день у застосунку' },
   },
   {
@@ -280,6 +282,7 @@ export const STEPS: Step[] = [
     key: 'calories_done_for_you',
     type: 'info',
     group: 'nutrition',
+    wide: true,
     title: 'КБЖУ порахуємо за тебе',
     body: 'Не треба зважувати й рахувати вручну — калорії та БЖВ рахуються автоматично з інгредієнтів кожної страви.',
     bodyShort: 'Калорії та БЖВ рахуються автоматично з інгредієнтів кожної страви.',
@@ -304,6 +307,7 @@ export const STEPS: Step[] = [
     key: 'no_giving_up',
     type: 'info',
     group: 'nutrition',
+    wide: true,
     title: 'Хочеться піци? Впишемо її в меню разом',
     body: "Меню — це смачний спосіб життя, а не покарання за з'їдене. Улюблені страви лишаються — ми лише вписуємо їх у твою норму.",
     bodyShort: 'Улюблені страви лишаються — ми лише вписуємо їх у твою норму.',

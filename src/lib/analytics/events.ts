@@ -20,6 +20,7 @@ export type AnalyticsEvent =
   | 'onboarding_started'
   | 'onboarding_step_view'
   | 'onboarding_completed'
+  | 'discount_revealed'
   | 'payment_email_entered'
   | 'payment_consents_checked'
   | 'plan_selected'

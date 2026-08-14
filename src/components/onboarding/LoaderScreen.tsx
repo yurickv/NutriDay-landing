@@ -40,12 +40,12 @@ export function LoaderScreen() {
     return () => clearInterval(id);
   }, []);
 
-  // progress === TOTAL — усі стадії пройдені: трек + перехід до оплати.
+  // progress === TOTAL — усі стадії пройдені: трек + сторінка-сюрприз зі знижкою.
   useEffect(() => {
     if (progress < TOTAL || completed.current) return;
     completed.current = true;
     track('onboarding_completed');
-    router.push('/payment/plan');
+    router.push('/payment/surprise');
   }, [progress, router]);
 
   return (

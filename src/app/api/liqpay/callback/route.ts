@@ -133,8 +133,9 @@ export async function POST(request: NextRequest) {
       // is below the plan's server-side price, refuse to activate. With the
       // checkout route now forcing the correct amount this should never trigger
       // for a legitimate flow; it catches anything that bypasses checkout.
+      // Мінімально легітимна ціна — знижкова: оплата у вікні знижки не є фродом.
       if (paymentStatus === 'active' && isPlanId(effectivePlanId)) {
-        const expectedAmount = PLANS[effectivePlanId].amount;
+        const expectedAmount = PLANS[effectivePlanId].discountAmount;
         const paidAmount = Number((payload as any).amount);
         if (Number.isFinite(paidAmount) && paidAmount + 0.01 < expectedAmount) {
           console.error(
@@ -190,7 +191,11 @@ export async function POST(request: NextRequest) {
               event: 'payment_succeeded',
               orderId: orderId ?? '',
               plan: effectivePlanId,
-              amount: isPlanId(effectivePlanId) ? PLANS[effectivePlanId].amount : undefined,
+              // Фактично сплачена сума з підписаного LiqPay-пейлоада (може бути
+              // знижковою); фолбек — повна ціна плану.
+              amount: Number.isFinite(Number(payload.amount))
+                ? Number(payload.amount)
+                : isPlanId(effectivePlanId) ? PLANS[effectivePlanId].amount : undefined,
               currency: isPlanId(effectivePlanId) ? PLANS[effectivePlanId].currency : undefined,
               utmSource: (user as any).utmSource ?? null,
             });

@@ -5,7 +5,7 @@
 import { getDb } from './db';
 import { readSessionUserId } from './auth/session';
 
-export type PlanId = 'week' | 'month';
+export type PlanId = 'week' | 'month' | 'quarter';
 
 // Where to send a user without a valid subscription:
 //  - returning user (record exists in DB) → payment page to renew
@@ -19,6 +19,7 @@ export function inactiveRedirectTarget(userExists: boolean): string {
 
 /** Subscription length in days per plan. Unknown plans fall back to the shorter (week). */
 export function planDurationDays(planId?: string | null): number {
+  if (planId === 'quarter') return 84;
   return planId === 'month' ? 30 : 7;
 }
 

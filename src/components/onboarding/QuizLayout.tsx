@@ -17,6 +17,10 @@ interface QuizLayoutProps {
   animationKey?: string;
   /** true під час виходу з кроку — контент плавно зникає. */
   leaving?: boolean;
+  /** Широка колонка (1128px) на десктопі — інфо-екрани з фото. */
+  wide?: boolean;
+  /** Не рендерити h1/hint — крок малює заголовок сам (двоколонкові інфо-екрани). */
+  hideHeading?: boolean;
   children: React.ReactNode;
 }
 
@@ -29,11 +33,17 @@ export function QuizLayout({
   onBack,
   animationKey,
   leaving,
+  wide = false,
+  hideHeading = false,
   children,
 }: QuizLayoutProps) {
   return (
     <div className="min-h-dvh bg-cream font-body text-ink dark:bg-night dark:text-night-ink">
-      <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col px-5 pb-8 pt-4">
+      <div
+        className={`mx-auto flex min-h-dvh w-full flex-col px-5 pb-8 pt-4 ${
+          wide ? 'max-w-[1128px]' : 'max-w-[480px]'
+        }`}
+      >
         <header className="flex items-center">
           {onBack ? (
             <button
@@ -62,11 +72,15 @@ export function QuizLayout({
 
         {/* Хедер і прогрес-бар статичні; анімується лише контент кроку */}
         <StepTransition key={animationKey} leaving={leaving}>
-          <h1 className="mt-8 font-heading text-[28px] font-bold leading-snug">{title}</h1>
-          {hint && (
-            <p className="mt-3 text-[15px] leading-relaxed text-ink/70 dark:text-night-muted">
-              {hint}
-            </p>
+          {!hideHeading && (
+            <>
+              <h1 className="mt-8 font-heading text-[28px] font-bold leading-snug">{title}</h1>
+              {hint && (
+                <p className="mt-3 text-[15px] leading-relaxed text-ink/70 dark:text-night-muted">
+                  {hint}
+                </p>
+              )}
+            </>
           )}
           {image && (
             // Банер тягнеться на весь ВІЛЬНИЙ простір екрана (grow-[999] забирає
@@ -163,7 +177,7 @@ export function QuizCta({
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className="w-full rounded-2xl bg-terracotta px-6 py-4 text-center font-heading font-bold text-white shadow-soft transition-colors hover:bg-terracotta-dark disabled:opacity-40 disabled:hover:bg-terracotta"
+      className="mx-auto block w-full max-w-[440px] rounded-2xl bg-terracotta px-6 py-4 text-center font-heading font-bold text-white shadow-soft transition-colors hover:bg-terracotta-dark disabled:opacity-40 disabled:hover:bg-terracotta"
     >
       {children}
     </button>

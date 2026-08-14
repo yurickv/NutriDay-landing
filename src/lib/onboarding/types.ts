@@ -106,6 +106,8 @@ export interface Step {
   image?: { src: string; alt: string }; // скрін застосунку (B5, B9)
   consent?: { text: string; href: string }; // точкова згода на екрані питання
 
+  wide?: boolean; // широка колонка (1128px) на десктопі — інфо-екрани з фото
+
   condition?: Predicate[]; // крок показується, якщо всі предикати істинні
   analyticsEvent?: string; // за замовчуванням `onboarding_${key}`
 }

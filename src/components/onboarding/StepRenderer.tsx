@@ -133,7 +133,14 @@ export function StepRenderer({ stepKey }: { stepKey: string }) {
       <ProfileSummaryScreen step={step} answers={answers} onDone={handleProfileDone} />
     );
   } else if (step.type === 'info') {
-    content = <InfoScreen step={step} body={info?.body} onNext={goNext} />;
+    content = (
+      <InfoScreen
+        step={step}
+        title={step.wide ? info?.title ?? step.title : undefined}
+        body={info?.body}
+        onNext={goNext}
+      />
+    );
   } else if (step.questionType === 'single') {
     content = (
       <QuestionSingle
@@ -173,9 +180,34 @@ export function StepRenderer({ stepKey }: { stepKey: string }) {
       onBack={onBack}
       animationKey={stepKey}
       leaving={leaving}
+      wide={step.wide}
+      hideHeading={Boolean(step.wide) && step.type === 'info'}
     >
       {isFirst && <TrackEvent event="onboarding_started" withUtmSource />}
       {content}
+      {step.key === 'gender' && (
+        <p className="mt-6 text-xs leading-relaxed text-ink/50 dark:text-night-muted">
+          Вибравши свою стать і продовживши, ви погоджуєтеся з нашими{' '}
+          <a
+            href="/oferta"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-ink dark:hover:text-night-ink"
+          >
+            Умовами надання послуг
+          </a>{' '}
+          та{' '}
+          <a
+            href="/oferta"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-ink dark:hover:text-night-ink"
+          >
+            публічною офертою
+          </a>
+          . Будь ласка, ознайомтеся з ними, перш ніж продовжувати.
+        </p>
+      )}
     </QuizLayout>
   );
 }

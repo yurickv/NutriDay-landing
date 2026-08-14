@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { Step } from '@/lib/onboarding/types';
 import { calcSummary } from '@/lib/onboarding/summary';
+import { track } from '@/lib/analytics';
 import { QuizCta } from './QuizLayout';
 
 interface Props {
@@ -21,6 +22,16 @@ export function ProfileSummaryScreen({ step, answers, onDone }: Props) {
   );
   const [consent, setConsent] = useState(answers.personalDataConsent === true);
   const canSubmit = EMAIL_RE.test(email) && consent;
+  // Точка воронки: раніше стріляла зі сторінки оплати, тепер згода живе тут.
+  const consentFired = useRef(false);
+
+  const handleConsentChange = (checked: boolean) => {
+    setConsent(checked);
+    if (checked && !consentFired.current) {
+      consentFired.current = true;
+      track('payment_consents_checked');
+    }
+  };
 
   return (
     <div className="flex flex-1 flex-col">
@@ -61,7 +72,7 @@ export function ProfileSummaryScreen({ step, answers, onDone }: Props) {
           <input
             type="checkbox"
             checked={consent}
-            onChange={(e) => setConsent(e.target.checked)}
+            onChange={(e) => handleConsentChange(e.target.checked)}
             className="mt-0.5 h-4 w-4 accent-sage"
           />
           <span>
