@@ -20,7 +20,7 @@ import { QuizLayout } from './QuizLayout';
 import { QuestionSingle } from './QuestionSingle';
 import { QuestionMulti } from './QuestionMulti';
 import { QuestionNumber } from './QuestionNumber';
-import { InfoScreen } from './InfoScreen';
+import { EXPERTS, InfoScreen } from './InfoScreen';
 import { HowWeCountScreen } from './HowWeCountScreen';
 import { ProfileSummaryScreen } from './ProfileSummaryScreen';
 import { LoaderScreen } from './LoaderScreen';
@@ -61,7 +61,7 @@ export function StepRenderer({ stepKey }: { stepKey: string }) {
       s.headerImage?.src,
       ...(s.options ?? []).map((o) => o.image),
     ]).filter((src): src is string => Boolean(src));
-    srcs.push('/onboarding/expert.avif');
+    srcs.push(...EXPERTS.map((e) => e.photo));
     for (const src of srcs) {
       const img = new Image();
       img.src = src;
