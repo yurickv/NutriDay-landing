@@ -69,17 +69,19 @@ export function QuizLayout({
             </p>
           )}
           {image && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={image.src}
-              alt={image.alt}
-              // Фіксована висота + object-cover: банер однаковий на всіх кроках,
-              // хоч вихідні фото й різних пропорцій. Висота росте сходинками за
-              // висотою вікна — щоб заголовок, підпис і всі варіанти влазили в
-              // екран без скролу навіть на 640px (найгірший випадок — B1, де є
-              // ще й hint на два рядки).
-              className="mt-5 h-16 w-full rounded-3xl object-cover shadow-soft [@media(min-height:680px)]:h-24 [@media(min-height:760px)]:h-32 [@media(min-height:860px)]:h-40"
-            />
+            // Банер тягнеться на весь ВІЛЬНИЙ простір екрана (grow-[999] забирає
+            // його майже повністю проти grow-1 контейнера з варіантами), тому
+            // скрол не з'являється: коли місця нема — стискається до min-h-16.
+            // basis-0 — висоту визначає лише flex, а не інтринсика фото;
+            // max-h-80 — стеля для високих екранів.
+            <div className="mt-5 min-h-16 max-h-80 grow-[999] basis-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={image.src}
+                alt={image.alt}
+                className="h-full w-full rounded-3xl object-cover shadow-soft"
+              />
+            </div>
           )}
 
           <div className="mt-6 flex flex-1 flex-col">{children}</div>

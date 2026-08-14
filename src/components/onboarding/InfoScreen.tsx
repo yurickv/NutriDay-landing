@@ -68,6 +68,13 @@ export const EXPERTS = [
     initials: 'ОД',
     details: [],
   },
+  {
+    name: 'Олена Полівода',
+    role: 'Фітнес тренер, нутриціолог',
+    photo: '/onboarding/expert2.avif',
+    initials: 'ОП',
+    details: [],
+  },
 ];
 
 function ExpertsCard() {
