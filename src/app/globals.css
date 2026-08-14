@@ -49,6 +49,18 @@
   --font-body: var(--font-manrope), sans-serif;
   /* Латинський логотип «Sytno»; кирилиці в Caprasimo немає — фолбек Comfortaa */
   --font-logo: var(--font-caprasimo), var(--font-comfortaa), sans-serif;
+
+  /* М'яка пульсація CTA-кнопок (сторінка оплати) */
+  --animate-cta-pulse: cta-pulse 1.8s ease-in-out infinite;
+  @keyframes cta-pulse {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.04);
+    }
+  }
 }
 
 /* Перемикання теми світла/темна */

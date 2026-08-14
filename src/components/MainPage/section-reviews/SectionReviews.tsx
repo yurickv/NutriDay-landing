@@ -6,7 +6,12 @@ import Link from "next/link";
 import Title from "../../Title";
 import Image from "next/image";
 
-const ReviewsSection = () => {
+interface ReviewsSectionProps {
+  /** Вбудований режим (сторінка оплати): без CTA на /onboarding. */
+  embedded?: boolean;
+}
+
+const ReviewsSection = ({ embedded = false }: ReviewsSectionProps) => {
   const reviews = [
     {
       id: 1,
@@ -43,7 +48,7 @@ const ReviewsSection = () => {
   };
 
   return (
-    <section className='py-20 bg-sage'>
+    <section className={embedded ? 'py-12 bg-sage' : 'py-20 bg-sage'}>
       <div className='container mx-auto px-4'>
         {/* Заголовок секції */}
         <div className='text-center mb-16 text-card'>
@@ -103,6 +108,7 @@ const ReviewsSection = () => {
         </div>
 
         {/* Заклик до дії */}
+        {!embedded && (
         <div className='text-center mt-12'>
           <p className='text-lg text-card/90 mb-6'>
             Приєднуйтесь до сотень задоволених користувачів
@@ -116,6 +122,7 @@ const ReviewsSection = () => {
             </button>
           </Link>
         </div>
+        )}
       </div>
     </section>
   );
