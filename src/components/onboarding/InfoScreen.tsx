@@ -130,10 +130,10 @@ function ExpertsCard() {
 function ExpertRow({ expert }: { expert: (typeof EXPERTS)[number] }) {
   const [photoFailed, setPhotoFailed] = useState(false);
   return (
-    <div className="rounded-3xl bg-card p-5 shadow-soft dark:bg-night-card">
+    <div className="rounded-3xl bg-card p-3 shadow-soft sm:p-5 dark:bg-night-card">
       <div className="flex items-center gap-4">
         {photoFailed ? (
-          <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-full bg-sage font-heading text-xl font-bold text-white">
+          <div className="flex h-24 w-24 flex-shrink-0 items-center justify-center rounded-full bg-sage font-heading text-2xl font-bold text-white">
             {expert.initials}
           </div>
         ) : (
@@ -142,7 +142,7 @@ function ExpertRow({ expert }: { expert: (typeof EXPERTS)[number] }) {
             src={expert.photo}
             alt={expert.name}
             onError={() => setPhotoFailed(true)}
-            className="h-16 w-16 flex-shrink-0 rounded-full object-cover"
+            className="h-24 w-24 flex-shrink-0 rounded-full object-cover"
           />
         )}
         <div>

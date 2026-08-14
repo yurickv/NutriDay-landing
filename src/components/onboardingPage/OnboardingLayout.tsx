@@ -10,6 +10,8 @@ interface OnboardingLayoutProps {
   subtitle?: string;
   /** Широка картка (1128px) — для сторінок із горизонтальними ґрідами (плани оплати). */
   wide?: boolean;
+  /** Без спільної картки-фону — коли кожна секція всередині має власну картку. */
+  bare?: boolean;
 }
 
 export const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
@@ -17,6 +19,7 @@ export const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
   title,
   subtitle,
   wide = false,
+  bare = false,
 }) => {
   return (
     <div className="min-h-screen bg-cream font-body text-ink dark:bg-night dark:text-night-ink">
@@ -37,9 +40,11 @@ export const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
           <div className="div-container mx-auto py-[20px] md:py-[44px]">
             <div className="flex justify-center">
               <div
-                className={`flex w-full flex-col rounded-3xl bg-card p-8 shadow-soft dark:bg-night-card md:p-12 ${
-                  wide ? 'max-w-[1128px]' : 'max-w-[600px]'
-                }`}
+                className={`flex w-full flex-col ${
+                  bare
+                    ? ''
+                    : 'rounded-3xl bg-card p-8 shadow-soft dark:bg-night-card md:p-12'
+                } ${wide ? 'max-w-[1128px]' : 'max-w-[600px]'}`}
               >
                 {children}
               </div>

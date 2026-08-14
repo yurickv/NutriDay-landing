@@ -11,7 +11,19 @@ import {
 import Title from '../../Title';
 import Image from 'next/image';
 
-const ExampleWorkSection = () => {
+interface ExampleWorkSectionProps {
+  /** Заголовок секції (дефолт — лендінговий «Як це працює?»). */
+  title?: string;
+  subtitle?: string;
+  /** Вбудований режим (сторінка оплати): без статистики, трикутника-переходу і фону. */
+  embedded?: boolean;
+}
+
+const ExampleWorkSection = ({
+  title = 'Як це працює?',
+  subtitle = 'Скріншоти роботи сервісу',
+  embedded = false,
+}: ExampleWorkSectionProps) => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
@@ -105,14 +117,12 @@ const ExampleWorkSection = () => {
   };
 
   return (
-    <section className="py-8 xl:py-12 bg-cream">
-      <div className="container mx-auto px-4">
+    <section className={embedded ? '' : 'py-8 xl:py-12 bg-cream'}>
+      <div className={embedded ? '' : 'container mx-auto px-4'}>
         {/* Заголовок секції */}
         <div className="text-center mb-6 md:mb-16">
-          <Title text="Як це працює?" />
-          <p className="text-xl max-w-3xl mx-auto text-ink/60">
-            Скріншоти роботи сервісу
-          </p>
+          <Title text={title} />
+          <p className="text-xl max-w-3xl mx-auto text-ink/60">{subtitle}</p>
         </div>
 
         {/* Слайдер */}
@@ -216,6 +226,7 @@ const ExampleWorkSection = () => {
         </div>
 
         {/* Статистика */}
+        {!embedded && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-20 max-w-4xl mx-auto">
           {[
             { number: '2500+', label: 'Згенерованих меню' },
@@ -234,10 +245,13 @@ const ExampleWorkSection = () => {
             </div>
           ))}
         </div>
+        )}
       </div>
+      {!embedded && (
       <div className="h-[74px] md:h-[124px] lg:h-[149px] w-full relative overflow-hidden bg-sage -mb-8 xl:-mb-12">
         <div className="absolute bottom-0 left-0 w-0 h-0 border-l-[50vw] border-r-[50vw] border-t-[75px] md:border-t-[125px] lg:border-t-[150px] border-l-transparent border-r-transparent border-t-cream"></div>
       </div>
+      )}
     </section>
   );
 };

@@ -5,6 +5,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { OnboardingLayout } from '@/components/onboardingPage/OnboardingLayout';
+import ExampleWorkSection from '@/components/MainPage/section-exampleWork/ExampleWorkSection';
 import {
   getOnboardingData,
   setOnboardingData,
@@ -19,10 +20,11 @@ import { labelFor } from '@/lib/onboarding/steps';
 // Prices come from @/lib/plans (server source of truth). The amount sent to
 // checkout is derived server-side from planId, so the values here are display-only.
 
-function formatCountdown(ms: number): string {
-  const mm = String(Math.floor(ms / 60000)).padStart(2, '0');
-  const ss = String(Math.floor(ms / 1000) % 60).padStart(2, '0');
-  return `${mm}:${ss}`;
+function countdownParts(ms: number): { mm: string; ss: string } {
+  return {
+    mm: String(Math.floor(ms / 60000)).padStart(2, '0'),
+    ss: String(Math.floor(ms / 1000) % 60).padStart(2, '0'),
+  };
 }
 
 function goalHeadline(data: OnboardingData) {
@@ -137,6 +139,8 @@ export default function DashboardPage() {
     if (!email || !email.includes('@')) {
       track('checkout_blocked', { reason: 'invalid_email' });
       setError('Вкажіть коректний email для отримання доступу.');
+      // Доскролюємо до секції з полем email, де треба виправити дані.
+      paySectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
 
@@ -248,24 +252,50 @@ export default function DashboardPage() {
             Sytno
           </span>
           <div className="ml-auto flex items-center gap-3">
-            {discount !== null && discount.until !== null && (
-              <span
-                className={`font-heading text-xl font-bold tabular-nums ${
-                  discountActive
-                    ? 'text-terracotta'
-                    : 'text-ink/40 dark:text-night-muted'
-                }`}
-                title={discountActive ? 'Знижка діє ще' : 'Час знижки вичерпано'}
-              >
-                {formatCountdown(discountActive ? remainingMs : 0)}
-              </span>
-            )}
+            {discount !== null && discount.until !== null && (() => {
+              const { mm, ss } = countdownParts(discountActive ? remainingMs : 0);
+              const digitColor = discountActive
+                ? 'text-terracotta'
+                : 'text-ink/40 dark:text-night-muted';
+              return (
+                <div
+                  className="flex items-center gap-2"
+                  title={discountActive ? 'Знижка діє ще' : 'Час знижки вичерпано'}
+                >
+                  <span className="whitespace-nowrap text-xs font-semibold text-ink/60 sm:text-base dark:text-night-muted">
+                    Резерв ціни на:
+                  </span>
+                  <div className="flex items-start gap-0.5">
+                    <div className="flex flex-col items-center">
+                      <span className={`font-heading text-xl font-bold leading-none tabular-nums ${digitColor}`}>
+                        {mm}
+                      </span>
+                      <span className="text-[10px] text-ink/50 dark:text-night-muted">
+                        хв.
+                      </span>
+                    </div>
+                    <span className={`font-heading text-xl font-bold leading-none ${digitColor}`}>
+                      :
+                    </span>
+                    <div className="flex flex-col items-center">
+                      <span className={`font-heading text-xl font-bold leading-none tabular-nums ${digitColor}`}>
+                        {ss}
+                      </span>
+                      <span className="text-[10px] text-ink/50 dark:text-night-muted">
+                        сек.
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
             <button
               type="button"
-              onClick={() =>
-                paySectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-              }
-              className="rounded-xl bg-terracotta px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-terracotta-dark"
+              disabled={submitting}
+              onClick={onPay}
+              className={`rounded-xl bg-terracotta px-4 py-2 text-sm font-bold text-card transition-colors hover:bg-terracotta-dark ${
+                submitting ? 'cursor-not-allowed opacity-70' : ''
+              }`}
             >
               Візьми свій план
             </button>
@@ -273,31 +303,31 @@ export default function DashboardPage() {
         </div>
       </div>
 
-    <OnboardingLayout wide>
+    <OnboardingLayout wide bare>
       <div className="flex flex-col gap-6">
         {/* Goals Summary */}
-        <section className="bg-white dark:bg-dark-body rounded-lg p-5 shadow">
-          <h2 className="text-xl font-semibold mb-2">Ваші цілі</h2>
+        <section className="rounded-3xl bg-card p-5 shadow-soft dark:bg-night-card">
+          <h2 className="mb-2 font-heading text-xl font-bold">Ваші цілі</h2>
           {goalsList.length > 0 ? (
-            <ul className="list-disc pl-5 text-main-text dark:text-main-text-black">
+            <ul className="list-disc pl-5 text-ink/80 dark:text-night-ink/80">
               {goalsList.map((g, i) => (
                 <li key={i}>{g}</li>
               ))}
             </ul>
           ) : (
-            <p className="text-main-text dark:text-main-text-black">
+            <p className="text-ink/80 dark:text-night-ink/80">
               Цілі ще не вказані.
             </p>
           )}
-          <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
+          <p className="mt-3 text-sm text-ink/60 dark:text-night-muted">
             З нашим планом ви досягнете {goalHeadline(data)} — покроково та без
             зайвого стресу.
           </p>
         </section>
 
         {/* Plans */}
-        <section className="bg-white dark:bg-dark-body rounded-lg p-5 shadow">
-          <h2 className="text-xl font-semibold mb-3">Плани підписки</h2>
+        <section className="rounded-3xl bg-card p-5 shadow-soft dark:bg-night-card">
+          <h2 className="mb-3 font-heading text-xl font-bold">Вибери свій план</h2>
 
           {discount !== null && !discountActive && discount.until === null ? (
             <Link
@@ -324,9 +354,11 @@ export default function DashboardPage() {
                     track('plan_selected', { plan: id });
                   }}
                   className={`relative flex flex-col overflow-hidden rounded-2xl border-2 text-left transition ${
+                    isPopular ? '' : 'sm:mt-7'
+                  } ${
                     active
-                      ? 'border-ink bg-white shadow-soft dark:border-night-ink dark:bg-night-card'
-                      : 'border-transparent bg-cream dark:bg-night'
+                      ? 'border-ink bg-card shadow-soft dark:border-night-ink dark:bg-night-card'
+                      : 'border-ink/10 bg-cream dark:border-night-ink/10 dark:bg-night'
                   }`}
                 >
                   {isPopular && (
@@ -371,38 +403,15 @@ export default function DashboardPage() {
               );
             })}
           </div>
-        </section>
 
-        {/* Email */}
-        <section className="bg-white dark:bg-dark-body rounded-lg p-5 shadow">
-          <h2 className="text-xl font-semibold mb-2">Email доступу</h2>
-          <input
-            type="email"
-            placeholder="you@example.com"
-            className="ph-no-capture w-full p-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-transparent outline-none"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            onBlur={() => email && setOnboardingData('email', email)}
-          />
-          <p className="text-xs mt-2 text-gray-500">
-            Email буде збережено в ваших даних (localStorage) та передано в
-            оплату.
-          </p>
-        </section>
-
-        {/* Payment */}
-        <section
-          ref={paySectionRef}
-          className="bg-white dark:bg-dark-body rounded-lg p-5 shadow"
-        >
           {error && (
-            <div className="mb-3 text-sm text-red-600 dark:text-red-400">
+            <div className="mt-4 text-sm text-danger dark:text-danger-dark">
               {error}
             </div>
           )}
           {paymentStatus === 'pending' && (
-            <div className="mb-3 inline-flex items-center gap-2 text-xs font-medium px-2 py-1 rounded bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-              <span className="inline-block w-2 h-2 rounded-full bg-yellow-500"></span>
+            <div className="mt-4 inline-flex items-center gap-2 rounded-xl bg-terracotta-light/20 px-2 py-1 text-xs font-medium text-terracotta-dark dark:bg-terracotta/15 dark:text-terracotta-light">
+              <span className="inline-block h-2 w-2 rounded-full bg-terracotta"></span>
               Статус оплати: pending
             </div>
           )}
@@ -410,16 +419,46 @@ export default function DashboardPage() {
             type="button"
             disabled={submitting}
             onClick={onPay}
-            className={`mx-auto block w-full max-w-[440px] rounded-xl bg-terracotta p-4 text-center text-white transition-colors hover:bg-terracotta-dark ${
+            className={`mx-auto mt-5 block w-full max-w-[440px] rounded-2xl bg-terracotta p-4 text-center font-semibold text-card shadow-soft transition-all hover:bg-terracotta-dark active:scale-95 ${
               submitting ? 'opacity-70 cursor-not-allowed' : ''
             }`}
           >
             {submitting ? 'Створення платежу…' : 'Забрати план'}
           </button>
-          <p className="text-xs mt-2 text-gray-500">
+          <p className="mt-2 text-center text-xs text-ink/60 dark:text-night-muted">
             Оплата карткою. На Android/Chrome доступний Google Pay через LiqPay.
           </p>
         </section>
+
+        {/* Email */}
+        <section
+          ref={paySectionRef}
+          className="rounded-3xl bg-card p-5 shadow-soft dark:bg-night-card"
+        >
+          <div className="flex items-center gap-3">
+            <h2 className="whitespace-nowrap font-heading text-xl font-bold">
+              Email доступу
+            </h2>
+            <input
+              type="email"
+              placeholder="you@example.com"
+              className="ph-no-capture w-full min-w-0 flex-1 rounded-xl border border-ink/15 bg-transparent p-3 outline-none transition-colors focus:border-sage focus:ring-2 focus:ring-sage-light/50 dark:border-night-ink/15"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onBlur={() => email && setOnboardingData('email', email)}
+            />
+          </div>
+          <p className="mt-2 text-xs text-ink/60 dark:text-night-muted">
+            Email буде збережено в ваших даних (localStorage) та передано в
+            оплату.
+          </p>
+        </section>
+
+        {/* Що входить у план — слайдер скріншотів сервісу з лендінгу */}
+        <ExampleWorkSection
+          embedded
+          title="Що входить у ваш тарифний план"
+        />
       </div>
     </OnboardingLayout>
     </>
