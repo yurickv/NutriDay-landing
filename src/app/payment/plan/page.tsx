@@ -12,7 +12,20 @@ import {
   setOnboardingData,
 } from '@/utils/onboardingHelpers';
 import type { OnboardingData } from '@/types/onboarding';
-import { Check, ChevronDown } from 'lucide-react';
+import {
+  Check,
+  ChevronDown,
+  ChefHat,
+  ShoppingCart,
+  UtensilsCrossed,
+  TrendingDown,
+  TrendingUp,
+  Dumbbell,
+  Scale,
+  ChartLine,
+  Sparkles,
+} from 'lucide-react';
+import Image from 'next/image';
 import { PLANS, isPlanId, type PlanId } from '@/lib/plans';
 import { track, identify } from '@/lib/analytics';
 import { readAttribution } from '@/lib/analytics/attribution';
@@ -56,6 +69,102 @@ const FAQ_ITEMS = [
       'Після здійснення покупки ви отримаєте магічне посилання на вказану електронну пошту. Після переходу по посиланню вас перенесе в особистий кабінет. Все вже налаштовано. Ми будемо супроводжувати та підтримувати вас протягом усього процесу.',
   },
 ];
+
+// Пункт про вагу персоналізується під головну ціль із квізу.
+const GOAL_BENEFIT: Record<
+  string,
+  { icon: typeof TrendingDown; text: string }
+> = {
+  lose_weight: {
+    icon: TrendingDown,
+    text: 'Стабільне схуднення без ефекту «йо-йо»',
+  },
+  build_muscle: {
+    icon: Dumbbell,
+    text: 'Впевнений набір м’язової маси без зривів',
+  },
+  gain_weight: {
+    icon: TrendingUp,
+    text: 'Здоровий набір ваги без переїдання',
+  },
+  something_else: {
+    icon: Scale,
+    text: 'Стабільна вага та збалансований раціон щодня',
+  },
+};
+
+function benefitsFor(mainGoal?: string) {
+  return [
+    {
+      icon: ChefHat,
+      text: 'Персоналізоване меню з розрахунком БЖВ',
+    },
+    {
+      icon: ShoppingCart,
+      text: 'Список покупок, що автоматично формується',
+    },
+    {
+      icon: UtensilsCrossed,
+      text: 'Смачні рецепти без суворих дієт',
+    },
+    GOAL_BENEFIT[mainGoal || ''] || GOAL_BENEFIT.something_else,
+    {
+      icon: ChartLine,
+      text: 'Зручна візуалізація прогресу та мотивація',
+    },
+    {
+      icon: Sparkles,
+      text: 'Лайвхаки експертів та підтримка на кожному кроці',
+    },
+  ];
+}
+
+function BenefitsSection({
+  mainGoal,
+  sex,
+}: {
+  mainGoal?: string;
+  sex?: string;
+}) {
+  const isMale = sex === 'male';
+  return (
+    <section className="flex flex-col gap-6 md:flex-row md:items-center md:gap-8">
+      <ul className="flex flex-1 flex-col divide-y divide-ink/10 md:gap-4 md:divide-y-0 dark:divide-night-ink/10">
+        {benefitsFor(mainGoal).map(({ icon: Icon, text }) => {
+          const words = text.split(' ');
+          const lead = words.slice(0, 2).join(' ');
+          const rest = words.slice(2).join(' ');
+          return (
+            <li key={text} className="flex items-center gap-3 py-3 md:py-0">
+              <span className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-sage/15 text-sage-dark dark:bg-sage/25 dark:text-sage-light">
+                <Icon className="h-6 w-6" />
+              </span>
+              <span className="leading-snug">
+                <span className="block text-[20px] font-bold">{lead}</span>
+                <span className="text-base text-ink/80 md:text-lg dark:text-night-ink/80">
+                  {rest}
+                </span>
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+      <Image
+        src={
+          isMale
+            ? '/onboarding/men-progress.avif'
+            : '/onboarding/women-progress.avif'
+        }
+        alt="Прогрес схуднення з Sytno"
+        width={900}
+        height={900}
+        sizes="(max-width: 768px) 100vw, 45vw"
+        className="h-auto w-full rounded-2xl md:w-[45%]"
+        loading="lazy"
+      />
+    </section>
+  );
+}
 
 function FaqSection() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
@@ -516,8 +625,8 @@ export default function DashboardPage() {
           {/* Goals Summary */}
           <section className="rounded-3xl bg-card p-5 shadow-soft dark:bg-night-card">
             <h2 className="mb-2 text-center font-heading text-[30px] font-bold md:text-[35px] xl:text-[44px]">
-            Досягни цілей з Sytno планом
-          </h2>
+              Досягни цілей з Sytno планом
+            </h2>
             {goalsList.length > 0 ? (
               <ul className="list-disc pl-5 text-ink/80 dark:text-night-ink/80">
                 {goalsList.map((g, i) => (
@@ -564,6 +673,9 @@ export default function DashboardPage() {
 
           {/* Що входить у план — слайдер скріншотів сервісу з лендінгу */}
           <ExampleWorkSection embedded title="Що входить у ваш тарифний план" />
+
+          {/* Переваги плану — фото + список з іконками */}
+          <BenefitsSection mainGoal={data.mainGoal} sex={data.sex} />
 
           <FaqSection />
         </div>
