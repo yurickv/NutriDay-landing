@@ -60,6 +60,7 @@ export function StepRenderer({ stepKey }: { stepKey: string }) {
       s.image?.src,
       s.headerImage?.src,
       ...(s.options ?? []).map((o) => o.image),
+      ...Object.values(s.variants ?? {}).map((v) => v.image?.src),
     ]).filter((src): src is string => Boolean(src));
     srcs.push(...EXPERTS.map((e) => e.photo));
     for (const src of srcs) {
@@ -138,6 +139,7 @@ export function StepRenderer({ stepKey }: { stepKey: string }) {
         step={step}
         title={step.wide ? info?.title ?? step.title : undefined}
         body={info?.body}
+        image={info?.image}
         onNext={goNext}
       />
     );

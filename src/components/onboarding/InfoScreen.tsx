@@ -11,10 +11,13 @@ interface Props {
   title?: string;
   /** Текст, уже резолвлений через resolveInfoContent (variants + bodyShort). */
   body?: string;
+  /** Фото, уже резолвлене через resolveInfoContent (variants, напр. під стать). */
+  image?: { src: string; alt: string };
   onNext: () => void;
 }
 
-export function InfoScreen({ step, title, body, onNext }: Props) {
+export function InfoScreen({ step, title, body, image, onNext }: Props) {
+  const resolvedImage = image ?? step.image;
   // Wide: дві половини — текст зліва (вертикально по центру), фото справа.
   // На мобільному колонки складаються у звичний стовпчик.
   if (step.wide) {
@@ -33,9 +36,9 @@ export function InfoScreen({ step, title, body, onNext }: Props) {
               </p>
             )}
           </div>
-          {step.image && (
+          {resolvedImage && (
             <div className="mt-6 md:mt-0 md:w-1/2">
-              <QuizImage image={step.image} />
+              <QuizImage image={resolvedImage} />
             </div>
           )}
         </div>
@@ -51,9 +54,9 @@ export function InfoScreen({ step, title, body, onNext }: Props) {
       {body && (
         <p className="text-[17px] leading-relaxed text-ink/80 dark:text-night-ink/80">{body}</p>
       )}
-      {step.image && (
+      {resolvedImage && (
         <div className="mt-6">
-          <QuizImage image={step.image} />
+          <QuizImage image={resolvedImage} />
         </div>
       )}
       {step.key === 'expert' && <ExpertsCard />}

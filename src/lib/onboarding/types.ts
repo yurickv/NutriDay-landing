@@ -101,7 +101,10 @@ export interface Step {
   // --- info / loader ---
   body?: string; // основний текст
   bodyShort?: string; // варіант для «просунутих»
-  variants?: Record<string, { title?: string; body?: string }>; // текст під відповідь
+  variants?: Record<
+    string,
+    { title?: string; body?: string; image?: { src: string; alt: string } }
+  >; // контент під відповідь (текст і/або фото)
   variantOn?: string; // поле, від якого залежить variants
   image?: { src: string; alt: string }; // скрін застосунку (B5, B9)
   consent?: { text: string; href: string }; // точкова згода на екрані питання

@@ -313,6 +313,12 @@ export const STEPS: Step[] = [
     bodyShort: 'Улюблені страви лишаються — ми лише вписуємо їх у твою норму.',
     stickyCta: true,
     image: { src: '/onboarding/women-with-plate.avif', alt: 'Дівчина з тарілкою улюбленої страви' },
+    variantOn: 'sex',
+    variants: {
+      male: {
+        image: { src: '/onboarding/men-with-plate.avif', alt: 'Чоловік з тарілкою улюбленої страви' },
+      },
+    },
   },
   {
     key: 'batch_cooking',

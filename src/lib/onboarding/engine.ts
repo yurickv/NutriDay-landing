@@ -80,20 +80,22 @@ export function showHint(step: Step, answers: Answers): boolean {
   return Boolean(step.hintAlways) || verbosity(answers) === 'beginner';
 }
 
-/** Титул/текст інфо-екрана з урахуванням variants і bodyShort для advanced. */
+/** Титул/текст/фото інфо-екрана з урахуванням variants і bodyShort для advanced. */
 export function resolveInfoContent(
   step: Step,
   answers: Answers
-): { title: string; body?: string } {
+): { title: string; body?: string; image?: { src: string; alt: string } } {
   let title = step.title;
   let body = verbosity(answers) === 'advanced' ? step.bodyShort ?? step.body : step.body;
+  let image = step.image;
   if (step.variantOn && step.variants) {
     const v = answers[step.variantOn];
     const variant = typeof v === 'string' ? step.variants[v] : undefined;
     if (variant) {
       title = variant.title ?? title;
       body = variant.body ?? body;
+      image = variant.image ?? image;
     }
   }
-  return { title, body };
+  return { title, body, image };
 }
