@@ -182,7 +182,7 @@ function FaqSection() {
                 type="button"
                 onClick={() => setOpenIndex(open ? null : i)}
                 aria-expanded={open}
-                className="flex w-full items-center justify-between gap-3 py-4 text-left font-heading text-3xl font-bold transition-colors hover:text-sage-dark dark:hover:text-sage-light"
+                className="flex w-full items-center justify-between gap-3 py-4 text-left font-heading text-[20px] font-bold transition-colors hover:text-sage-dark md:text-[24px] dark:hover:text-sage-light"
               >
                 {item.question}
                 <ChevronDown
