@@ -24,6 +24,7 @@ import { EXPERTS, InfoScreen } from './InfoScreen';
 import { HowWeCountScreen } from './HowWeCountScreen';
 import { ProfileSummaryScreen } from './ProfileSummaryScreen';
 import { LoaderScreen } from './LoaderScreen';
+import type { Step } from '@/lib/onboarding/types';
 
 // Тривалість вихідної анімації кроку — синхронно з transition у StepTransition.
 const LEAVE_MS = 200;
@@ -36,6 +37,29 @@ const LEAVE_MS = 200;
 // - trackedStepViews: дедуплікація onboarding_step_view між ремаунтами.
 let hydrated = false;
 const trackedStepViews = new Set<string>();
+// Повний предекод (хвиля 2) запускається один раз за сесію.
+let fullPredecodeDone = false;
+// Браузер дедуплікує повторні запити по кешу, тож повторні виклики дешеві.
+const decodedSrcs = new Set<string>();
+
+function stepImageSrcs(s: Step): string[] {
+  return [
+    s.image?.src,
+    s.headerImage?.src,
+    ...(s.options ?? []).map((o) => o.image),
+    ...Object.values(s.variants ?? {}).map((v) => v.image?.src),
+  ].filter((src): src is string => Boolean(src));
+}
+
+function decodeImages(srcs: string[]): void {
+  for (const src of srcs) {
+    if (decodedSrcs.has(src)) continue;
+    decodedSrcs.add(src);
+    const img = new Image();
+    img.src = src;
+    img.decode?.().catch(() => {});
+  }
+}
 
 export function StepRenderer({ stepKey }: { stepKey: string }) {
   const router = useRouter();
@@ -53,22 +77,29 @@ export function StepRenderer({ stepKey }: { stepKey: string }) {
     setAnswers((prev) => prev ?? (getOnboardingData() as Answers));
   }, []);
 
-  // Предекодування всіх картинок квізу: AVIF не вискакує посеред анімації
-  // появи кроку, а на back-навігації малюється одразу з кешу.
+  // Предекодування картинок у ДВІ хвилі, щоб не конкурувати з LCP першого
+  // екрана: одразу — лише поточний крок + 2 наступні; решту (включно з фото
+  // експертів) — в idle. AVIF не вискакує посеред анімації появи кроку,
+  // а на back-навігації малюється одразу з кешу.
   useEffect(() => {
-    const srcs = STEPS.flatMap((s) => [
-      s.image?.src,
-      s.headerImage?.src,
-      ...(s.options ?? []).map((o) => o.image),
-      ...Object.values(s.variants ?? {}).map((v) => v.image?.src),
-    ]).filter((src): src is string => Boolean(src));
-    srcs.push(...EXPERTS.map((e) => e.photo));
-    for (const src of srcs) {
-      const img = new Image();
-      img.src = src;
-      img.decode?.().catch(() => {});
+    const idx = STEPS.findIndex((s) => s.key === stepKey);
+    if (idx !== -1) {
+      decodeImages(STEPS.slice(idx, idx + 3).flatMap(stepImageSrcs));
     }
-  }, []);
+    if (fullPredecodeDone) return;
+    fullPredecodeDone = true;
+    const decodeRest = () => {
+      decodeImages([
+        ...STEPS.flatMap(stepImageSrcs),
+        ...EXPERTS.map((e) => e.photo),
+      ]);
+    };
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(decodeRest, { timeout: 2500 });
+    } else {
+      setTimeout(decodeRest, 2500);
+    }
+  }, [stepKey]);
 
   const step = getStep(stepKey);
   const ready = answers !== null;
@@ -88,6 +119,18 @@ export function StepRenderer({ stepKey }: { stepKey: string }) {
     const index = visibleSteps(answers).findIndex((s) => s.key === stepKey);
     track('onboarding_step_view', { key: stepKey, index, group: step.group });
   }, [ready, accessible, answers, step, stepKey]);
+
+  // Prefetch RSC-payload сусідніх кроків: router.push без <Link> сам нічого
+  // не префетчить, тож без цього кожен перехід чекає мережевий запит.
+  // next залежить від відповіді на ПОТОЧНОМУ кроці, тому для розгалужених
+  // кроків це прогноз по поточних answers — влучає в основний шлях.
+  useEffect(() => {
+    if (!ready || !accessible) return;
+    const next = nextStepKey(stepKey, answers);
+    const prev = prevStepKey(stepKey, answers);
+    if (next) router.prefetch(`/onboarding/${next}`);
+    if (prev) router.prefetch(`/onboarding/${prev}`);
+  }, [ready, accessible, stepKey, answers, router]);
 
   if (!ready || !step || !accessible) return null; // редірект у польоті
 
