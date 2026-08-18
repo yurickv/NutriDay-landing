@@ -166,6 +166,115 @@ function BenefitsSection({
   );
 }
 
+// Реальні історії: фото «до/після» + ім'я, результат і короткий коментар.
+// Добірка залежить від статі з квізу (як фото в BenefitsSection).
+const RESULTS_WOMEN = [
+  {
+    name: 'Оксана',
+    result: '−7 кг',
+    photo: '/onboarding/women-before-after-2.avif',
+    comment:
+      'Меню складається саме під мене, і я нарешті не ламаю голову, що приготувати. За три місяці скинула 7 кг без голодувань — просто їла за планом і бачила прогрес щотижня.',
+  },
+  {
+    name: 'Марина',
+    result: '−15 кг',
+    photo: '/onboarding/women-before-after-1.avif',
+    comment:
+      'Починала з 89 кг, зараз 74. Найбільше допоміг готовий список покупок і те, що бачу калорії та БЖВ кожної страви. Це перший раз, коли вага пішла вниз і не повернулась.',
+  },
+  {
+    name: 'Юлія',
+    result: '−9 кг',
+    photo: '/onboarding/women-before-after.avif',
+    comment:
+      'Користуюсь планом близько чотирьох місяців. Не вірила, що можна худнути без жорстких дієт, а виявилось — достатньо смачного збалансованого меню. Одяг, який давно висів у шафі, знову мій.',
+  },
+];
+
+const RESULTS_MEN = [
+  {
+    name: 'Андрій',
+    result: '−14 кг',
+    photo: '/onboarding/men-before-after.avif',
+    comment:
+      'Стартував із 98 кг, зараз 84. Найцінніше — стабільність: меню на тиждень наперед, зрозумілі порції, і вага йде вниз рівно, без зривів і відкатів.',
+  },
+  {
+    name: 'Сергій',
+    result: '−10 кг',
+    photo: '/onboarding/men-before-after-1.avif',
+    comment:
+      'Не хотілось рахувати калорії вручну — тут усе пораховано за мене. Їв за планом, купував за списком, і за три місяці мінус 10 кг без відчуття, що я на дієті.',
+  },
+  {
+    name: 'Дмитро',
+    result: '+6 кг м’язів',
+    photo: '/onboarding/men-before-after-2.avif',
+    comment:
+      'Моя ціль була не схуднути, а набрати. План підлаштувався: більше білка, правильний профіцит калорій. За чотири місяці +6 кг переважно м’язової маси — у залі прогрес видно на кожному тренуванні.',
+  },
+];
+
+function ResultsSection({ sex }: { sex?: string }) {
+  const results = sex === 'male' ? RESULTS_MEN : RESULTS_WOMEN;
+  const [expanded, setExpanded] = useState<number | null>(null);
+  return (
+    <section>
+      <h2 className="mb-8 text-center font-heading text-[30px] font-bold md:text-[35px] xl:text-[44px]">
+        Результати, якими можна пишатись
+      </h2>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        {results.map((item, i) => {
+          const open = expanded === i;
+          return (
+            <article
+              key={item.name}
+              className="flex flex-col overflow-hidden rounded-3xl bg-card shadow-soft dark:bg-night-card"
+            >
+              <div className="relative aspect-[3/2] w-full">
+                <Image
+                  src={item.photo}
+                  alt={`${item.name}: результат ${item.result} з Sytno`}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                  className="object-cover"
+                  loading="lazy"
+                />
+              </div>
+              <div className="flex flex-1 flex-col p-5">
+                <h3 className="font-heading text-xl font-bold">
+                  {item.name},{' '}
+                  <span className="text-terracotta">{item.result}</span>
+                </h3>
+                <p
+                  className={`mt-2 text-base leading-relaxed text-ink/70 dark:text-night-ink/70 ${
+                    open ? '' : 'line-clamp-3'
+                  }`}
+                >
+                  {item.comment}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setExpanded(open ? null : i)}
+                  className="mt-auto self-center pt-3 text-sm font-semibold text-sage-dark transition-colors hover:text-sage dark:text-sage-light"
+                >
+                  {open ? 'Згорнути' : 'Читати більше'}
+                </button>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+      <p className="mx-auto mt-6 max-w-[720px] text-center text-xs leading-relaxed text-ink/50 dark:text-night-muted">
+        *Дотримання плану харчування — ключ до результату. Зазвичай за 4 тижні
+        можна очікувати втрату не більше 0,45–0,9 кг на тиждень. Індивідуальні
+        результати можуть відрізнятися.
+      </p>
+    </section>
+  );
+}
+
 function FaqSection() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   return (
@@ -676,6 +785,9 @@ export default function DashboardPage() {
 
           {/* Переваги плану — фото + список з іконками */}
           <BenefitsSection mainGoal={data.mainGoal} sex={data.sex} />
+
+          {/* Результати користувачів — фото «до/після» з підписами */}
+          <ResultsSection sex={data.sex} />
 
           <FaqSection />
         </div>
