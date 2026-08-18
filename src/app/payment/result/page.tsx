@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Check, X, Loader2 } from 'lucide-react';
 import { OnboardingLayout } from '@/components/onboardingPage/OnboardingLayout';
 import { getOnboardingData } from '@/utils/onboardingHelpers';
 import { track, identify } from '@/lib/analytics';
@@ -220,43 +221,32 @@ function PaymentResultContent() {
   }, [effectiveStatus]);
 
   return (
-    <OnboardingLayout
-      title="Результат оплати"
-      subtitle="Статус транзакції в LiqPay"
-    >
-      <div className="flex flex-col gap-6">
-        <section className="bg-white dark:bg-dark-body rounded-lg p-5 shadow">
-          <div className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-            {orderId && (
-              <div>
-                Номер замовлення: <span className="font-mono">{orderId}</span>
-              </div>
-            )}
-            <div>
-              Статус платежу:{' '}
-              <span className="font-semibold">
-                {effectiveStatus || 'невідомо'}
-                {polling &&
-                ![
-                  'success',
-                  'subscribed',
-                  'failure',
-                  'error',
-                  'active',
-                  'reversed',
-                  'cancelled',
-                  'canceled',
-                  'failed',
-                ].includes(effectiveStatus)
-                  ? ' (оновлюємо...) '
-                  : ''}
-              </span>
-            </div>
-          </div>
-          <div className="text-base">{message}</div>
+    <OnboardingLayout>
+      <div className="flex flex-col gap-8">
+        {/* Становий блок: іконка + заголовок + повідомлення */}
+        <div className="flex flex-col items-center gap-4 text-center">
+          {isPaid ? (
+            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-sage/15 text-sage-dark dark:bg-sage/25 dark:text-sage-light">
+              <Check className="h-8 w-8" />
+            </span>
+          ) : isFailed ? (
+            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-danger/10 text-danger dark:bg-danger/20 dark:text-danger-dark">
+              <X className="h-8 w-8" />
+            </span>
+          ) : (
+            <Loader2 className="h-12 w-12 animate-spin text-sage" aria-hidden />
+          )}
+          <h1 className="font-heading text-2xl font-bold md:text-3xl">
+            {isPaid
+              ? 'Оплата успішна!'
+              : isFailed
+                ? 'Оплата не пройшла'
+                : 'Очікуємо підтвердження оплати…'}
+          </h1>
+          <p className="text-ink/80 dark:text-night-ink/80">{message}</p>
 
           {isPaid && (
-            <div className="mt-4 text-sm text-main-text dark:text-main-text-black">
+            <p className="text-sm leading-relaxed text-ink/70 dark:text-night-ink/70">
               Ми надіслали лист із магічним посиланням для входу у ваш кабінет
               {resolvedEmail && (
                 <>
@@ -265,54 +255,92 @@ function PaymentResultContent() {
                 </>
               )}
               . Відкрийте лист і перейдіть за посиланням, щоб увійти.
-            </div>
+            </p>
           )}
 
           {magicSent && (
-            <div className="mt-2 text-xs text-green-700 dark:text-green-400">
+            <p className="text-xs text-sage-dark dark:text-sage-light">
               Лист для входу надіслано. Якщо його немає, перевірте папку
               «Спам».
-            </div>
+            </p>
           )}
 
           {magicError && (
-            <div className="mt-2 text-xs text-red-600 dark:text-red-400">
+            <p className="text-xs text-danger dark:text-danger-dark">
               {magicError}
+            </p>
+          )}
+        </div>
+
+        {/* Кнопки в стилі квізу: primary terracotta + secondary outline */}
+        <div className="mx-auto flex w-full max-w-[440px] flex-col gap-3">
+          {isPaid ? (
+            <>
+              <Link
+                href="/menu"
+                className="rounded-2xl bg-terracotta px-6 py-4 text-center font-heading font-bold text-white shadow-soft transition-colors hover:bg-terracotta-dark"
+              >
+                Перейти в меню
+              </Link>
+              <button
+                type="button"
+                disabled={magicSending}
+                onClick={() => requestMagicLink(false)}
+                className={`rounded-2xl border-2 border-ink/15 px-6 py-3 text-center font-semibold transition-colors hover:bg-sage-light/30 dark:border-night-ink/15 dark:hover:bg-night-card ${
+                  magicSending ? 'cursor-not-allowed opacity-70' : ''
+                }`}
+              >
+                {magicSending
+                  ? 'Надсилаємо лист...'
+                  : 'Надіслати лист для входу ще раз'}
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => router.push('/payment/plan')}
+                className="rounded-2xl bg-terracotta px-6 py-4 text-center font-heading font-bold text-white shadow-soft transition-colors hover:bg-terracotta-dark"
+              >
+                Спробувати оплатити ще раз
+              </button>
+              <Link
+                href="/menu"
+                className="rounded-2xl border-2 border-ink/15 px-6 py-3 text-center font-semibold transition-colors hover:bg-sage-light/30 dark:border-night-ink/15 dark:hover:bg-night-card"
+              >
+                Перейти в меню
+              </Link>
+            </>
+          )}
+        </div>
+
+        {/* Технічні деталі транзакції */}
+        <div className="border-t border-ink/10 pt-4 text-center text-xs text-ink/50 dark:border-night-ink/10 dark:text-night-muted">
+          {orderId && (
+            <div>
+              Номер замовлення: <span className="font-mono">{orderId}</span>
             </div>
           )}
-        </section>
-
-        <div className="flex gap-3 flex-wrap">
-          {!isPaid && (
-            <button
-              className="rounded-lg px-4 py-2 bg-orange-500 text-white hover:bg-orange-600 transition"
-              onClick={() => router.push('/payment/plan')}
-            >
-              Спробувати оплатити ще раз
-            </button>
-          )}
-
-          <Link
-            href="/menu"
-            className="rounded-lg px-4 py-2 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
-          >
-            Перейти в меню
-          </Link>
-
-          {isPaid && (
-            <button
-              type="button"
-              disabled={magicSending}
-              onClick={() => requestMagicLink(false)}
-              className={`rounded-lg px-4 py-2 border border-orange-500 text-orange-600 hover:bg-orange-50 transition ${
-                magicSending ? 'opacity-70 cursor-not-allowed' : ''
-              }`}
-            >
-              {magicSending
-                ? 'Надсилаємо лист...'
-                : 'Надіслати лист для входу ще раз'}
-            </button>
-          )}
+          <div>
+            Статус платежу:{' '}
+            <span className="font-semibold">
+              {effectiveStatus || 'невідомо'}
+              {polling &&
+              ![
+                'success',
+                'subscribed',
+                'failure',
+                'error',
+                'active',
+                'reversed',
+                'cancelled',
+                'canceled',
+                'failed',
+              ].includes(effectiveStatus)
+                ? ' (оновлюємо...) '
+                : ''}
+            </span>
+          </div>
         </div>
       </div>
     </OnboardingLayout>
