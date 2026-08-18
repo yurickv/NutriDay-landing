@@ -133,7 +133,7 @@ const ExampleWorkSection = ({
               className="flex transition-transform duration-700 ease-in-out"
               style={{ transform: `translateX(-${currentSlide * 100}%)` }}
             >
-              {workExamples.map((work) => (
+              {workExamples.map((work, index) => (
                 <div key={work.id} className="w-full flex-shrink-0">
                   <div className="grid md:grid-cols-2 gap-8 p-0 md:p-6">
                     {/* Зображення */}
@@ -145,7 +145,11 @@ const ExampleWorkSection = ({
                           fill
                           sizes="(max-width: 768px) 100vw, (max-width: 1152px) 50vw, 576px"
                           className="object-contain md:rounded-xl"
-                          priority
+                          // Високий пріоритет — лише видимому першому слайду.
+                          // Решта: eager без пріоритету (lazy не спрацює —
+                          // зсунуті translateX слайди не перетинають viewport).
+                          priority={index === 0}
+                          loading={index === 0 ? undefined : 'eager'}
                         />
                       </div>
                     </div>
