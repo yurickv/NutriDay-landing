@@ -35,8 +35,9 @@
   timestamp** і флашаться після ініціалізації (порядок і час не спотворюються).
 - `beacon: true` до завантаження модуля — подія йде в чергу (прийнятний trade-off:
   на сторінці оплати PostHog встигає завантажитись задовго до кліку оплати).
-- `AnalyticsProvider` викликає `initAnalytics()` через `requestIdleCallback`
-  (fallback `setTimeout(2000)`).
+- `AnalyticsProvider` НЕ змінюється: PageviewTracker стріляє $pageview на маунті,
+  що однаково запускає завантаження чанка; виграш дає сам динамічний import()
+  (поза First Load JS), а idle-затримка лише відклала б флаш черги подій.
 - Публічний API фасаду (`track`, `identify`, `capturePageview`, `resetIdentity`)
   не змінюється. Vitest-тести фасаду адаптуються під асинхронну ініціалізацію.
 
