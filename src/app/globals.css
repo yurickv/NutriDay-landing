@@ -70,8 +70,6 @@
 :root {
   --background: #ffffff;
   --foreground: #323030;
-  --font-nunito: var(--font-nunito);
-  --font-poppins: var(--font-poppins);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -86,16 +84,7 @@ body {
   color: var(--foreground);
 }
 
-/* Кастомні класи для шрифтів */
-@layer utilities {
-  .font-nunito {
-    font-family: var(--font-nunito);
-  }
-
-  .font-poppins {
-    font-family: var(--font-poppins);
-  }
-}.div-container {
+.div-container {
   @apply mx-auto px-4 md:px-[40px] lg:px-[66px] xl:px-[132px] xl:max-w-[1919px];
 }
 @media screen and (-webkit-min-device-pixel-ratio: 0) {
