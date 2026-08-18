@@ -139,6 +139,15 @@ describe('track GA4 queueing before gtag.js loads', () => {
     const calls = dataLayerCalls();
     expect(calls.map((c) => c[0])).toEqual(['js', 'config']);
   });
+
+  it('sends GA4 page_view alongside the posthog $pageview', async () => {
+    const { capturePageview } = await loadFacade();
+    capturePageview('/menu');
+
+    const event = dataLayerCalls().find((c) => c[0] === 'event');
+    expect(event?.[1]).toBe('page_view');
+    expect(event?.[2]).toMatchObject({ page_path: '/menu' });
+  });
 });
 
 describe('track beacon option for pre-navigation events', () => {
