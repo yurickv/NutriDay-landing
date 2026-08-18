@@ -341,6 +341,7 @@ export function capturePageview(path: string, props: EventProps = {}): void {
     ...props,
     env: getAnalyticsEnv(),
   });
+  ensureGtag()?.('event', 'page_view', { page_path: path });
 }
 ```
 
