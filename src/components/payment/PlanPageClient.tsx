@@ -629,7 +629,9 @@ export function PlanPageClient({
                     </span>
                     <div className="flex items-start gap-0.5">
                       <div className="flex flex-col items-center">
+                        {/* suppressHydrationWarning: серверні цифри таймера відстають від клієнтських на час гідрації — перший тик вирівнює. */}
                         <span
+                          suppressHydrationWarning
                           className={`font-heading text-xl font-bold leading-none tabular-nums ${digitColor}`}
                         >
                           {mm}
@@ -645,6 +647,7 @@ export function PlanPageClient({
                       </span>
                       <div className="flex flex-col items-center">
                         <span
+                          suppressHydrationWarning
                           className={`font-heading text-xl font-bold leading-none tabular-nums ${digitColor}`}
                         >
                           {ss}
