@@ -41,13 +41,34 @@ const securityHeaders = [
     : []),
 ];
 
+// Статичні AVIF версіонуються іменем файлу (домовленість: заміна картинки =
+// нове ім'я), тому їм безпечно давати immutable-кеш на рік.
+const immutableCacheHeader = [
+  { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+];
+
 const nextConfig: NextConfig = {
+  images: {
+    // Вихідні AVIF без цього перекодовуються в (частіше більший) WebP.
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 2678400, // 31 доба
+  },
   async headers() {
     return [
       {
         // Apply to every route.
         source: "/:path*",
         headers: securityHeaders,
+      },
+      {
+        // Лише файли картинок квізу, НЕ сторінки /onboarding/[step].
+        source: "/onboarding/:file(.*\\.avif)",
+        headers: immutableCacheHeader,
+      },
+      {
+        // Скріншоти слайдера в корені public: /example-1.avif … /example-7.avif.
+        source: "/:file(example-.*\\.avif)",
+        headers: immutableCacheHeader,
       },
     ];
   },
