@@ -227,11 +227,11 @@ function PaymentResultContent() {
         <div className="flex flex-col items-center gap-4 text-center">
           {isPaid ? (
             <span className="flex h-16 w-16 items-center justify-center rounded-full bg-sage/15 text-sage-dark dark:bg-sage/25 dark:text-sage-light">
-              <Check className="h-8 w-8" />
+              <Check className="h-8 w-8" aria-hidden />
             </span>
           ) : isFailed ? (
             <span className="flex h-16 w-16 items-center justify-center rounded-full bg-danger/10 text-danger dark:bg-danger/20 dark:text-danger-dark">
-              <X className="h-8 w-8" />
+              <X className="h-8 w-8" aria-hidden />
             </span>
           ) : (
             <Loader2 className="h-12 w-12 animate-spin text-sage" aria-hidden />
