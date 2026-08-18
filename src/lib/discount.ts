@@ -12,10 +12,14 @@ export const DISCOUNT_COOKIE_MAX_AGE_S = 24 * 60 * 60;
 /** Люфт на межі вікна: оплату, почату за мить до 0:00, не караємо повною ціною. */
 export const DISCOUNT_GRACE_MS = 60 * 1000;
 
-export function discountUntilFromCookie(req: NextRequest): number | null {
-  const raw = req.cookies.get(DISCOUNT_COOKIE)?.value;
+/** Парсинг сирого значення куки: server components читають cookies() напряму. */
+export function discountUntilFromValue(raw: string | undefined): number | null {
   const until = Number(raw);
   return Number.isFinite(until) && until > 0 ? until : null;
+}
+
+export function discountUntilFromCookie(req: NextRequest): number | null {
+  return discountUntilFromValue(req.cookies.get(DISCOUNT_COOKIE)?.value);
 }
 
 export function isDiscountActive(until: number | null, graceMs = 0): boolean {
