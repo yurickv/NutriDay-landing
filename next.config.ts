@@ -53,12 +53,16 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withPWA({
-  dest: "public",
-  disable: process.env.NODE_ENV === "development",
-  register: true,
-  workboxOptions: {
-    skipWaiting: true,
-    disableDevLogs: true,
-  },
-})(nextConfig);
+// withPWA is a webpack plugin: applying it under `next dev --turbopack`
+// only triggers the "Webpack is configured while Turbopack is not" warning,
+// and the plugin is disabled in dev anyway — so wrap the config in prod only.
+export default isProd
+  ? withPWA({
+      dest: "public",
+      register: true,
+      workboxOptions: {
+        skipWaiting: true,
+        disableDevLogs: true,
+      },
+    })(nextConfig)
+  : nextConfig;
