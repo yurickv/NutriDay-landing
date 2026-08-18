@@ -30,6 +30,12 @@ async function loadFacade() {
   return import('./index');
 }
 
+// Динамічний import('posthog-js') + .then() резолвляться асинхронно;
+// один макротаск гарантує, що init і флаш черги вже відбулися.
+async function flushDynamicImport() {
+  await new Promise((r) => setTimeout(r, 0));
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   vi.stubEnv('NEXT_PUBLIC_POSTHOG_KEY', 'phc_test');
@@ -48,6 +54,7 @@ describe('track PostHog init race', () => {
   it('initializes posthog before the first capture', async () => {
     const { track } = await loadFacade();
     track('water_logged', { amount: 250 });
+    await flushDynamicImport();
 
     expect(posthogMock.init).toHaveBeenCalledTimes(1);
     expect(posthogMock.capture).toHaveBeenCalledTimes(1);
@@ -61,6 +68,7 @@ describe('track PostHog init race', () => {
     track('water_logged');
     identify('a@b.com');
     capturePageview('/menu');
+    await flushDynamicImport();
 
     expect(posthogMock.init).toHaveBeenCalledTimes(1);
   });
@@ -68,6 +76,7 @@ describe('track PostHog init race', () => {
   it('passes key and host from env to init', async () => {
     const { track } = await loadFacade();
     track('water_logged');
+    await flushDynamicImport();
 
     expect(posthogMock.init).toHaveBeenCalledWith(
       'phc_test',
@@ -78,6 +87,7 @@ describe('track PostHog init race', () => {
   it('initializes posthog before identify even without a prior track', async () => {
     const { identify } = await loadFacade();
     identify('a@b.com');
+    await flushDynamicImport();
 
     expect(posthogMock.init).toHaveBeenCalledTimes(1);
     expect(posthogMock.identify).toHaveBeenCalledWith('a@b.com');
@@ -90,6 +100,7 @@ describe('track PostHog init race', () => {
     vi.stubEnv('NEXT_PUBLIC_POSTHOG_KEY', '');
     const { track } = await loadFacade();
     track('water_logged');
+    await flushDynamicImport();
 
     expect(posthogMock.init).not.toHaveBeenCalled();
     expect(posthogMock.capture).not.toHaveBeenCalled();
@@ -121,6 +132,7 @@ describe('track GA4 queueing before gtag.js loads', () => {
   it('initAnalytics prepares posthog and the gtag queue without emitting events', async () => {
     const { initAnalytics } = await loadFacade();
     initAnalytics();
+    await flushDynamicImport();
 
     expect(posthogMock.init).toHaveBeenCalledTimes(1);
     expect(posthogMock.capture).not.toHaveBeenCalled();
@@ -133,6 +145,7 @@ describe('track beacon option for pre-navigation events', () => {
   it('sends via sendBeacon instantly when beacon is set', async () => {
     const { track } = await loadFacade();
     track('redirected_to_liqpay', { plan: 'week' }, { beacon: true });
+    await flushDynamicImport();
 
     expect(posthogMock.capture).toHaveBeenCalledWith(
       'redirected_to_liqpay',
@@ -151,11 +164,52 @@ describe('track beacon option for pre-navigation events', () => {
       { orderId: 'ND-week-1719700000000' },
       { insertId: 'pay_success:ND-week-1719700000000', timestamp: ts, beacon: true },
     );
+    await flushDynamicImport();
 
     expect(posthogMock.capture).toHaveBeenCalledWith(
       'payment_succeeded',
       expect.objectContaining({ $insert_id: 'pay_success:ND-week-1719700000000' }),
       expect.objectContaining({ timestamp: ts, transport: 'sendBeacon' }),
     );
+  });
+});
+
+describe('queueing before posthog-js module loads', () => {
+  it('queues events fired before the module resolves and flushes them in order with own timestamps', async () => {
+    const { track } = await loadFacade();
+    track('onboarding_started');
+    track('water_logged', { amount: 250 });
+
+    // Модуль ще не резолвнувся — жодного capture синхронно.
+    expect(posthogMock.capture).not.toHaveBeenCalled();
+
+    await flushDynamicImport();
+
+    expect(posthogMock.init).toHaveBeenCalledTimes(1);
+    expect(posthogMock.capture).toHaveBeenCalledTimes(2);
+    expect(posthogMock.capture.mock.calls[0][0]).toBe('onboarding_started');
+    expect(posthogMock.capture.mock.calls[1][0]).toBe('water_logged');
+    // Черга зберігає реальний час події.
+    expect(posthogMock.capture.mock.calls[0][2]?.timestamp).toBeInstanceOf(Date);
+  });
+
+  it('captures directly without auto timestamp once the module is loaded', async () => {
+    const { track } = await loadFacade();
+    track('water_logged');
+    await flushDynamicImport();
+
+    track('weight_logged');
+    const last = posthogMock.capture.mock.calls.at(-1);
+    expect(last?.[0]).toBe('weight_logged');
+    expect(last?.[2]).toBeUndefined();
+  });
+
+  it('queues identify fired before the module resolves', async () => {
+    const { identify } = await loadFacade();
+    identify('a@b.com');
+    expect(posthogMock.identify).not.toHaveBeenCalled();
+
+    await flushDynamicImport();
+    expect(posthogMock.identify).toHaveBeenCalledWith('a@b.com');
   });
 });
