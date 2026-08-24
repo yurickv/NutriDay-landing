@@ -26,16 +26,16 @@ export function IngredientsTab({ meal }: IngredientsTabProps) {
           <button
             onClick={() => adjust(-1)}
             disabled={servings <= 1}
-            className="w-8 h-8 rounded-full bg-card dark:bg-night-card shadow-soft flex items-center justify-center disabled:opacity-40"
+            className="w-8 h-8 rounded-full bg-card dark:bg-night-card text-ink dark:text-night-ink shadow-soft flex items-center justify-center disabled:opacity-40"
             aria-label="Зменшити порції"
           >
             <Minus size={14} />
           </button>
-          <span className="text-base font-bold w-6 text-center">{servings}</span>
+          <span className="text-base font-bold w-6 text-center text-ink dark:text-night-ink">{servings}</span>
           <button
             onClick={() => adjust(1)}
             disabled={servings >= 10}
-            className="w-8 h-8 rounded-full bg-card dark:bg-night-card shadow-soft flex items-center justify-center disabled:opacity-40"
+            className="w-8 h-8 rounded-full bg-card dark:bg-night-card text-ink dark:text-night-ink shadow-soft flex items-center justify-center disabled:opacity-40"
             aria-label="Збільшити порції"
           >
             <Plus size={14} />

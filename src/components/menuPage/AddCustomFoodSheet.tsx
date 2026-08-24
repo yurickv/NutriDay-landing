@@ -401,7 +401,7 @@ export function AddCustomFoodSheet({ isOpen, onClose, onAdd }: AddCustomFoodShee
                 <button
                   onClick={() => setGrams(draft.grams - STEP)}
                   disabled={draft.grams <= 0}
-                  className="w-10 h-10 rounded-full bg-card dark:bg-night-card shadow-soft flex items-center justify-center disabled:opacity-40"
+                  className="w-10 h-10 rounded-full bg-card dark:bg-night-card text-ink dark:text-night-ink shadow-soft flex items-center justify-center disabled:opacity-40"
                   aria-label="Зменшити вагу"
                 >
                   <Minus size={16} />
@@ -424,7 +424,7 @@ export function AddCustomFoodSheet({ isOpen, onClose, onAdd }: AddCustomFoodShee
                 </div>
                 <button
                   onClick={() => setGrams(draft.grams + STEP)}
-                  className="w-10 h-10 rounded-full bg-card dark:bg-night-card shadow-soft flex items-center justify-center"
+                  className="w-10 h-10 rounded-full bg-card dark:bg-night-card text-ink dark:text-night-ink shadow-soft flex items-center justify-center"
                   aria-label="Збільшити вагу"
                 >
                   <Plus size={16} />
