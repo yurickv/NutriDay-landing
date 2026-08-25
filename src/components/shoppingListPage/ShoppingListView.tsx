@@ -77,7 +77,7 @@ export function ShoppingListView({ initialList }: ShoppingListViewProps) {
     return () => window.removeEventListener('online', () => void syncOfflineQueue());
   }, []);
 
-  const handleToggle = useCallback(async (itemId: string, checked: boolean) => {
+  const handleToggle = useCallback(async function toggle(itemId: string, checked: boolean, retried = false): Promise<void> {
     const original = itemsRef.current.find((i) => i.id === itemId);
     if (!original) return;
 
@@ -107,6 +107,29 @@ export function ShoppingListView({ initialList }: ShoppingListViewProps) {
     });
 
     if (!res.ok) {
+      // 404 means our item ids went stale: the list was rebuilt server-side
+      // (background catch-up generation, meal swap). Re-sync the list and
+      // re-apply the toggle to the same product instead of silently
+      // un-checking it.
+      if (res.status === 404 && !retried) {
+        try {
+          const listRes = await fetch('/api/shopping-list');
+          if (listRes.ok) {
+            const data = await listRes.json() as { list: { items: ShoppingListItem[] } | null };
+            if (data.list) {
+              itemsRef.current = data.list.items;
+              setItems(data.list.items);
+              const match = data.list.items.find(
+                (i) => i.isCustom === original.isCustom && i.name === original.name && i.unit === original.unit,
+              );
+              if (match) await toggle(match.id, checked, true);
+              return;
+            }
+          }
+        } catch {
+          // network hiccup during re-sync — fall through to the revert below
+        }
+      }
       // Revert optimistic update on failure
       setItems((prev) =>
         prev.map((item) =>

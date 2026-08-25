@@ -106,18 +106,22 @@ export function mergeShoppingItems(
   previous: ShoppingListItem[],
   rebuilt: ShoppingListItem[],
 ): ShoppingListItem[] {
-  const prevPurchased = new Map<string, ShoppingListItem>();
+  const prevByKey = new Map<string, ShoppingListItem>();
   for (const item of previous) {
     if (item.isCustom) continue;
-    if (item.isPurchased) prevPurchased.set(shoppingItemKey(item.name, item.unit), item);
+    prevByKey.set(shoppingItemKey(item.name, item.unit), item);
   }
 
   for (const item of rebuilt) {
-    const prev = prevPurchased.get(shoppingItemKey(item.name, item.unit));
-    if (prev) {
-      item.isPurchased = true;
-      item.purchasedAt = prev.purchasedAt;
-    }
+    const prev = prevByKey.get(shoppingItemKey(item.name, item.unit));
+    if (!prev) continue;
+    // Keep the previous id: a client that loaded the list before this rebuild
+    // (background catch-up generation, meal swap) PATCHes by id, and a fresh
+    // id would 404 its toggle and silently un-check the item.
+    item.id = prev.id;
+    item.isPurchased = prev.isPurchased;
+    item.purchasedPeriods = prev.purchasedPeriods ?? [];
+    item.purchasedAt = prev.purchasedAt;
   }
 
   const customItems = previous.filter((item) => item.isCustom);
