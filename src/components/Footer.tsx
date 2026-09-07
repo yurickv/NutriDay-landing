@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Mail, Phone } from 'lucide-react';
+import SocialLinks from './SocialLinks';
 
 const FOOTER_LINKS = [
   {
@@ -51,6 +52,11 @@ export default function Footer() {
             </Link>
           ))}
         </nav>
+
+        <div className="flex flex-col gap-3 text-sm">
+          <span className="text-card/60">Ми в соцмережах</span>
+          <SocialLinks />
+        </div>
       </div>
 
       <div className="div-container mx-auto mt-8 pt-6 border-t border-card/10 text-xs text-card/60">
