@@ -7,7 +7,7 @@ import { Check, X, Loader2 } from 'lucide-react';
 import { OnboardingLayout } from '@/components/onboardingPage/OnboardingLayout';
 import { getOnboardingData } from '@/utils/onboardingHelpers';
 import { track, identify } from '@/lib/analytics';
-import { parseOrderId, paymentSuccessInsertId, paymentFailedInsertId } from '@/lib/analytics/payment';
+import { parseOrderId } from '@/lib/analytics/payment';
 import { PLANS, isPlanId } from '@/lib/plans';
 
 export default function PaymentResultPage() {
@@ -171,17 +171,20 @@ function PaymentResultContent() {
     void requestMagicLink(true);
   }, [isPaid, resolvedEmail, autoMagicSent]);
 
-  // Fire the payment outcome event once (closes the funnel client-side).
+  // Fire the payment outcome event once — GA4 only. PostHog gets the outcome
+  // server-side (LiqPay callback / status reconciliation), and PostHog does not
+  // deduplicate on $insert_id, so a client copy would double-count there.
+  // No timestamp override: backdating to the orderId time put the purchase
+  // before checkout_started in ordered funnels.
   useEffect(() => {
     if (paymentEventFired.current) return;
     if (!orderId) return;
     if (!isPaid && !isFailed) return;
 
     paymentEventFired.current = true;
-    const { plan, ts } = parseOrderId(orderId);
+    const { plan } = parseOrderId(orderId);
     const amount = plan && isPlanId(plan) ? PLANS[plan].amount : undefined;
     const currency = plan && isPlanId(plan) ? PLANS[plan].currency : 'UAH';
-    const timestamp = ts ? new Date(ts) : undefined;
 
     if (resolvedEmail) identify(resolvedEmail);
 
@@ -189,13 +192,13 @@ function PaymentResultContent() {
       track(
         'payment_succeeded',
         { plan: plan ?? undefined, amount, currency, orderId },
-        { insertId: paymentSuccessInsertId(orderId), timestamp },
+        { sinks: ['ga'] },
       );
     } else {
       track(
         'payment_failed',
         { status: effectiveStatus, orderId },
-        { insertId: paymentFailedInsertId(orderId), timestamp },
+        { sinks: ['ga'] },
       );
     }
   }, [isPaid, isFailed, orderId, resolvedEmail, effectiveStatus]);

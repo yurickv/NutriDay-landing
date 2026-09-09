@@ -183,6 +183,37 @@ describe('track beacon option for pre-navigation events', () => {
   });
 });
 
+describe('track sinks option', () => {
+  it('sends only to GA4 when sinks is ["ga"]', async () => {
+    const { track } = await loadFacade();
+    track('payment_succeeded', { orderId: 'ND-week-1' }, { sinks: ['ga'] });
+    await flushDynamicImport();
+
+    expect(posthogMock.capture).not.toHaveBeenCalled();
+    const event = dataLayerCalls().find((c) => c[0] === 'event');
+    expect(event?.[1]).toBe('purchase');
+    expect(event?.[2]).toMatchObject({ transaction_id: 'ND-week-1' });
+  });
+
+  it('sends only to PostHog when sinks is ["posthog"]', async () => {
+    const { track } = await loadFacade();
+    track('water_logged', { amount: 250 }, { sinks: ['posthog'] });
+    await flushDynamicImport();
+
+    expect(posthogMock.capture).toHaveBeenCalledTimes(1);
+    expect(dataLayerCalls().find((c) => c[0] === 'event')).toBeUndefined();
+  });
+
+  it('defaults to both sinks when sinks is omitted', async () => {
+    const { track } = await loadFacade();
+    track('water_logged');
+    await flushDynamicImport();
+
+    expect(posthogMock.capture).toHaveBeenCalledTimes(1);
+    expect(dataLayerCalls().find((c) => c[0] === 'event')).toBeDefined();
+  });
+});
+
 describe('queueing before posthog-js module loads', () => {
   it('queues events fired before the module resolves and flushes them in order with own timestamps', async () => {
     const { track } = await loadFacade();

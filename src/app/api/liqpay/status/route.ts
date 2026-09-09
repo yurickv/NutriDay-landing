@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getDb } from '@/lib/db';
 import { computeSubscriptionExpiry } from '@/lib/subscription';
+import { capturePaymentEvent } from '@/lib/analytics/posthog.server';
+import { PLANS, isPlanId } from '@/lib/plans';
 
 const base64 = (str: string) => Buffer.from(str).toString('base64');
 
@@ -77,9 +79,15 @@ export async function GET(request: NextRequest) {
         updatedAt: now,
       };
 
+      const existing = await users.findOne<{
+        email?: string;
+        planId?: string;
+        paymentStatus?: string;
+        utmSource?: string | null;
+      }>({ orderId });
+
       if (updateTo === 'active') {
         baseSet.status = 'paid';
-        const existing = await users.findOne<{ planId?: string }>({ orderId });
         baseSet.subscriptionExpiresAt = computeSubscriptionExpiry(existing?.planId ?? null, now);
       } else if (updateTo === 'failed') {
         baseSet.status = 'failed';
@@ -91,6 +99,28 @@ export async function GET(request: NextRequest) {
           $set: baseSet,
         }
       );
+
+      // The result page polls this route right after the redirect and often
+      // wins the race against the LiqPay server callback; the callback then
+      // sees an already-active user and skips its capture. Record the outcome
+      // here on the transition instead, so PostHog gets it exactly once
+      // (deterministic uuid per order makes a callback duplicate collapse).
+      const previous = (existing?.paymentStatus || '').toLowerCase();
+      if (existing?.email && previous !== updateTo) {
+        const planId = existing.planId ?? null;
+        await capturePaymentEvent({
+          email: String(existing.email).trim().toLowerCase(),
+          event: updateTo === 'active' ? 'payment_succeeded' : 'payment_failed',
+          orderId,
+          plan: planId,
+          amount: Number.isFinite(Number(liq?.amount))
+            ? Number(liq.amount)
+            : isPlanId(planId) ? PLANS[planId].amount : undefined,
+          currency: isPlanId(planId) ? PLANS[planId].currency : undefined,
+          utmSource: existing.utmSource ?? null,
+          status: updateTo === 'failed' ? normalized : undefined,
+        });
+      }
     }
 
     return NextResponse.json({

@@ -17,6 +17,13 @@ export interface TrackOptions {
    * LiqPay via form.submit().
    */
   beacon?: boolean;
+  /**
+   * Which sinks receive the event (default: both). Used when a server-side
+   * capture already covers PostHog (e.g. payment outcome from the LiqPay
+   * callback) and a client-side duplicate would double-count there, while GA4
+   * has no server path and still needs the event.
+   */
+  sinks?: Array<'posthog' | 'ga'>;
 }
 
 declare global {
@@ -150,26 +157,32 @@ export function track(
   }
   if (!isAnalyticsEnabled()) return;
 
-  const properties: Record<string, unknown> = { ...enriched };
-  if (options.insertId) properties.$insert_id = options.insertId;
+  const sinks = options.sinks ?? ['posthog', 'ga'];
 
-  const captureOptions: PosthogCaptureOptions = {};
-  if (options.timestamp) captureOptions.timestamp = options.timestamp;
-  if (options.beacon) {
-    captureOptions.transport = 'sendBeacon';
-    captureOptions.send_instantly = true;
+  if (sinks.includes('posthog')) {
+    const properties: Record<string, unknown> = { ...enriched };
+    if (options.insertId) properties.$insert_id = options.insertId;
+
+    const captureOptions: PosthogCaptureOptions = {};
+    if (options.timestamp) captureOptions.timestamp = options.timestamp;
+    if (options.beacon) {
+      captureOptions.transport = 'sendBeacon';
+      captureOptions.send_instantly = true;
+    }
+    phCapture(
+      event,
+      properties,
+      Object.keys(captureOptions).length ? captureOptions : undefined,
+    );
   }
-  phCapture(
-    event,
-    properties,
-    Object.keys(captureOptions).length ? captureOptions : undefined,
-  );
 
-  const ga = toGa4Event(event, enriched);
-  const gaParams = options.beacon
-    ? { ...ga.params, transport_type: 'beacon' }
-    : ga.params;
-  ensureGtag()?.('event', ga.name, gaParams);
+  if (sinks.includes('ga')) {
+    const ga = toGa4Event(event, enriched);
+    const gaParams = options.beacon
+      ? { ...ga.params, transport_type: 'beacon' }
+      : ga.params;
+    ensureGtag()?.('event', ga.name, gaParams);
+  }
 }
 
 export function identify(email: string): void {
