@@ -11,16 +11,16 @@ export default function InstallAppSettings() {
   // Already running as an installed app — confirm it to the user.
   if (isInstalled) {
     return (
-      <div className="rounded-2xl border border-green-100 dark:border-green-900/40 bg-green-50 dark:bg-green-950/20 p-4">
+      <div className="rounded-2xl bg-sage-light/40 dark:bg-sage/20 border border-sage-light dark:border-sage/40 p-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
-            <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" />
+          <div className="w-10 h-10 rounded-full bg-card dark:bg-night-card flex items-center justify-center flex-shrink-0">
+            <CheckCircle2 className="w-5 h-5 text-sage-dark dark:text-sage-light" />
           </div>
           <div>
-            <p className="font-semibold text-sm text-gray-800 dark:text-gray-100">
+            <p className="font-semibold text-sm text-ink dark:text-night-ink">
               Застосунок встановлено
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-ink/60 dark:text-night-muted">
               Ви користуєтесь Sytno як застосунком 🎉
             </p>
           </div>
@@ -41,16 +41,16 @@ export default function InstallAppSettings() {
     };
 
     return (
-      <div className="rounded-2xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 space-y-3">
+      <div className="rounded-2xl bg-card dark:bg-night-card shadow-soft p-4 space-y-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
-            <Download className="w-5 h-5 text-orange-500" />
+          <div className="w-10 h-10 rounded-full bg-terracotta-light/20 dark:bg-terracotta/15 flex items-center justify-center flex-shrink-0">
+            <Download className="w-5 h-5 text-terracotta" />
           </div>
           <div>
-            <p className="font-semibold text-sm text-gray-800 dark:text-gray-100">
+            <p className="font-semibold text-sm text-ink dark:text-night-ink">
               Встановити на головний екран
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-ink/60 dark:text-night-muted">
               Швидкий доступ і робота без браузера
             </p>
           </div>
@@ -58,7 +58,7 @@ export default function InstallAppSettings() {
         <button
           onClick={handleInstall}
           disabled={busy}
-          className="w-full rounded-xl bg-orange-500 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-orange-600 disabled:opacity-60"
+          className="w-full rounded-2xl bg-terracotta hover:bg-terracotta-dark text-card font-semibold shadow-soft active:scale-95 transition-all py-2.5 text-sm disabled:opacity-60"
         >
           {busy ? 'Встановлення…' : 'Встановити застосунок'}
         </button>
@@ -69,36 +69,36 @@ export default function InstallAppSettings() {
   // iOS — no programmatic install, show the manual Share-menu steps.
   if (isIOS) {
     return (
-      <div className="rounded-2xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 space-y-3">
+      <div className="rounded-2xl bg-card dark:bg-night-card shadow-soft p-4 space-y-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
-            <Smartphone className="w-5 h-5 text-orange-500" />
+          <div className="w-10 h-10 rounded-full bg-sage-light/30 dark:bg-sage/20 flex items-center justify-center flex-shrink-0">
+            <Smartphone className="w-5 h-5 text-sage-dark dark:text-sage-light" />
           </div>
           <div>
-            <p className="font-semibold text-sm text-gray-800 dark:text-gray-100">
+            <p className="font-semibold text-sm text-ink dark:text-night-ink">
               Додати на головний екран
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-ink/60 dark:text-night-muted">
               У Safari це робиться вручну за 2 кроки
             </p>
           </div>
         </div>
         <div className="space-y-2">
-          <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
-            <div className="w-6 h-6 rounded-md bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
-              <span className="text-blue-500 font-bold text-xs">1</span>
+          <div className="flex items-center gap-2 text-xs text-ink/60 dark:text-night-muted">
+            <div className="w-6 h-6 rounded-full bg-sage-light/30 dark:bg-sage/20 flex items-center justify-center flex-shrink-0">
+              <span className="text-sage-dark dark:text-sage-light font-bold text-xs">1</span>
             </div>
             <span>Натисніть</span>
-            <Share className="w-3.5 h-3.5 text-blue-500 inline" />
-            <span className="font-medium text-blue-500">«Поділитися»</span>
+            <Share className="w-3.5 h-3.5 text-sage-dark dark:text-sage-light inline" />
+            <span className="font-medium text-sage-dark dark:text-sage-light">«Поділитися»</span>
           </div>
-          <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
-            <div className="w-6 h-6 rounded-md bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
-              <span className="text-blue-500 font-bold text-xs">2</span>
+          <div className="flex items-center gap-2 text-xs text-ink/60 dark:text-night-muted">
+            <div className="w-6 h-6 rounded-full bg-sage-light/30 dark:bg-sage/20 flex items-center justify-center flex-shrink-0">
+              <span className="text-sage-dark dark:text-sage-light font-bold text-xs">2</span>
             </div>
             <span>Оберіть</span>
-            <PlusSquare className="w-3.5 h-3.5 text-blue-500 inline" />
-            <span className="font-medium text-blue-500">«На головний екран»</span>
+            <PlusSquare className="w-3.5 h-3.5 text-sage-dark dark:text-sage-light inline" />
+            <span className="font-medium text-sage-dark dark:text-sage-light">«На головний екран»</span>
           </div>
         </div>
       </div>
@@ -107,7 +107,7 @@ export default function InstallAppSettings() {
 
   // Desktop / unsupported browser — installation isn't offered.
   return (
-    <div className="rounded-2xl bg-gray-50 dark:bg-gray-800 p-4 text-sm text-gray-500 dark:text-gray-400">
+    <div className="rounded-2xl bg-card dark:bg-night-card shadow-soft p-4 text-sm text-ink/60 dark:text-night-muted">
       Відкрийте сайт у мобільному браузері (Chrome або Safari), щоб додати
       Sytno на головний екран.
     </div>

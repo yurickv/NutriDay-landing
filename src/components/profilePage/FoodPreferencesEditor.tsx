@@ -68,44 +68,44 @@ export function FoodPreferencesEditor({ profile, onSaved }: FoodPreferencesEdito
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
-        className="w-full flex items-center justify-between rounded-2xl border border-green-200 dark:border-green-800/60 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/20 shadow-[0_2px_8px_rgba(0,0,0,0.08)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.07),_0_6px_24px_rgba(120,120,120,0.25)] px-4 py-3.5 text-left"
+        className="w-full flex items-center justify-between rounded-2xl bg-card dark:bg-night-card shadow-soft px-4 py-3.5 text-left"
       >
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-full bg-cream dark:bg-night flex items-center justify-center shrink-0">
             <span className="text-xl">🥦</span>
           </div>
           <div>
-            <p className="text-sm font-bold text-neutral-900 dark:text-neutral-100">Мої вподобання</p>
+            <p className="text-sm font-heading font-semibold text-ink dark:text-night-ink">Мої вподобання</p>
             {!expanded && (dietaryPreferences.length > 0 || favoriteFoods.length > 0 || allergies.length > 0) && (
-              <p className="text-xs text-neutral-500 mt-0.5 truncate max-w-[180px]">
+              <p className="text-xs text-ink/60 dark:text-night-muted mt-0.5 truncate max-w-[180px]">
                 {[...dietaryPreferences, ...favoriteFoods].slice(0, 3).join(', ')}
                 {dietaryPreferences.length + favoriteFoods.length > 3 ? '…' : ''}
               </p>
             )}
             {!expanded && dietaryPreferences.length === 0 && favoriteFoods.length === 0 && allergies.length === 0 && (
-              <p className="text-xs text-neutral-400 mt-0.5">Налаштуйте для кращого меню</p>
+              <p className="text-xs text-ink/40 dark:text-night-muted mt-0.5">Налаштуйте для кращого меню</p>
             )}
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {!expanded && (
-            <span className="text-xs font-medium text-green-600 dark:text-green-400">
+            <span className="text-xs font-medium text-terracotta dark:text-terracotta-light">
               Змінити
             </span>
           )}
           <ChevronDown
             size={16}
-            className={`text-neutral-400 transition-transform ${expanded ? 'rotate-180' : ''}`}
+            className={`text-ink/40 dark:text-night-muted transition-transform ${expanded ? 'rotate-180' : ''}`}
           />
         </div>
       </button>
 
       {expanded && (
-        <div className="mt-2 px-4 pt-4 pb-5 rounded-2xl border border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-[0_2px_8px_rgba(0,0,0,0.08)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.07),_0_6px_24px_rgba(120,120,120,0.25)] space-y-5">
+        <div className="mt-2 px-4 pt-4 pb-5 rounded-2xl bg-card dark:bg-night-card shadow-soft space-y-5">
 
           {/* Dietary preferences */}
           <div>
-            <p className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-2">
+            <p className="text-xs font-semibold text-ink/50 dark:text-night-muted uppercase tracking-wide mb-2">
               Тип харчування
             </p>
             <div className="flex flex-wrap gap-2">
@@ -118,8 +118,8 @@ export function FoodPreferencesEditor({ profile, onSaved }: FoodPreferencesEdito
                     onClick={() => toggleDietary(value)}
                     className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                       active
-                        ? 'bg-orange-50 dark:bg-orange-950/50 border-orange-300 dark:border-orange-700 text-orange-700 dark:text-orange-300'
-                        : 'bg-neutral-50 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400'
+                        ? 'bg-sage border-sage text-card'
+                        : 'bg-cream dark:bg-night border-ink/10 dark:border-night-ink/10 text-ink/60 dark:text-night-muted'
                     }`}
                   >
                     {label}
@@ -131,7 +131,7 @@ export function FoodPreferencesEditor({ profile, onSaved }: FoodPreferencesEdito
 
           {/* Favorite foods */}
           <div>
-            <p className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-2">
+            <p className="text-xs font-semibold text-ink/50 dark:text-night-muted uppercase tracking-wide mb-2">
               Улюблені продукти
             </p>
             <TagInput
@@ -139,12 +139,12 @@ export function FoodPreferencesEditor({ profile, onSaved }: FoodPreferencesEdito
               onChange={setFavoriteFoods}
               placeholder="Гречка, курятина, броколі... (Enter)"
             />
-            <p className="text-xs text-neutral-400 mt-1">AI буде додавати їх частіше</p>
+            <p className="text-xs text-ink/50 dark:text-night-muted mt-1">AI буде додавати їх частіше</p>
           </div>
 
           {/* Disliked foods */}
           <div>
-            <p className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-2">
+            <p className="text-xs font-semibold text-ink/50 dark:text-night-muted uppercase tracking-wide mb-2">
               НЕ включати
             </p>
             <TagInput
@@ -152,12 +152,12 @@ export function FoodPreferencesEditor({ profile, onSaved }: FoodPreferencesEdito
               onChange={setDislikedFoods}
               placeholder="Баклажани, печінка... (Enter)"
             />
-            <p className="text-xs text-neutral-400 mt-1">AI виключить ці продукти з меню</p>
+            <p className="text-xs text-ink/50 dark:text-night-muted mt-1">AI виключить ці продукти з меню</p>
           </div>
 
           {/* Allergies */}
           <div>
-            <p className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-2">
+            <p className="text-xs font-semibold text-ink/50 dark:text-night-muted uppercase tracking-wide mb-2">
               Алергії
             </p>
             <TagInput
@@ -165,23 +165,23 @@ export function FoodPreferencesEditor({ profile, onSaved }: FoodPreferencesEdito
               onChange={setAllergies}
               placeholder="Горіхи, молоко, яйця... (Enter)"
             />
-            <p className="text-xs text-red-400 mt-1">⚠️ AI суворо уникатиме цих продуктів</p>
+            <p className="text-xs text-terracotta-dark dark:text-terracotta-light mt-1">⚠️ AI суворо уникатиме цих продуктів</p>
           </div>
 
           {/* Save button */}
           {error && (
-            <p className="text-xs text-red-500">{error}</p>
+            <p className="text-xs text-danger dark:text-danger-dark">{error}</p>
           )}
           <button
             type="button"
             onClick={handleSave}
             disabled={saving || !hasChanges}
-            className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all ${
+            className={`w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-semibold transition-all ${
               saved
-                ? 'bg-green-50 dark:bg-green-950/40 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800'
+                ? 'bg-sage-light/40 dark:bg-sage/20 border border-sage-light dark:border-sage/40 text-sage-dark dark:text-sage-light'
                 : hasChanges
-                ? 'bg-main-button text-white shadow-sm active:scale-95'
-                : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-400 cursor-not-allowed'
+                ? 'bg-terracotta hover:bg-terracotta-dark text-card shadow-soft active:scale-95'
+                : 'bg-cream dark:bg-night text-ink/40 dark:text-night-muted cursor-not-allowed'
             }`}
           >
             <Save size={15} />
@@ -189,7 +189,7 @@ export function FoodPreferencesEditor({ profile, onSaved }: FoodPreferencesEdito
           </button>
 
           {hasChanges && !saved && (
-            <p className="text-xs text-center text-orange-500">
+            <p className="text-xs text-center text-ink/60 dark:text-night-muted">
               💡 Зміни будуть враховані при наступній генерації меню
             </p>
           )}

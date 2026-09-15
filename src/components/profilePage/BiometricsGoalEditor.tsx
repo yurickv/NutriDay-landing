@@ -22,6 +22,9 @@ const GOAL_OPTIONS = [
 
 type Sex = 'male' | 'female';
 
+const INPUT_CLASS =
+  'w-full rounded-xl border border-ink/10 dark:border-night-ink/10 bg-card dark:bg-night-card px-3 py-2 text-sm text-ink dark:text-night-ink focus:outline-none focus:border-sage focus:ring-2 focus:ring-sage-light/50';
+
 function initialForm(profile: UserProfile | null) {
   return {
     sex: (profile?.sex === 'male' ? 'male' : 'female') as Sex,
@@ -86,8 +89,8 @@ export function BiometricsGoalEditor({
     <form onSubmit={handleSubmit} className="space-y-4">
       {!isEdit && (
         <div>
-          <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100">Налаштуйте профіль</h2>
-          <p className="text-xs text-neutral-500 mt-0.5">Вкажіть свої дані для персоналізованого меню</p>
+          <h2 className="font-heading font-semibold text-base text-ink dark:text-night-ink">Налаштуйте профіль</h2>
+          <p className="text-xs text-ink/60 dark:text-night-muted mt-0.5">Вкажіть свої дані для персоналізованого меню</p>
         </div>
       )}
 
@@ -98,10 +101,10 @@ export function BiometricsGoalEditor({
             key={s}
             type="button"
             onClick={() => setForm((f) => ({ ...f, sex: s }))}
-            className={`flex-1 py-2 rounded-xl text-sm font-semibold border transition-colors ${
+            className={`flex-1 py-2 rounded-xl text-sm font-semibold border active:scale-95 transition-all ${
               form.sex === s
-                ? 'bg-main text-white border-main'
-                : 'bg-white dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 border-neutral-200 dark:border-neutral-700'
+                ? 'bg-sage text-card border-sage'
+                : 'bg-card dark:bg-night-card border-sage-light dark:border-sage/40 text-sage-dark dark:text-sage-light'
             }`}
           >
             {s === 'female' ? 'Жінка' : 'Чоловік'}
@@ -117,7 +120,7 @@ export function BiometricsGoalEditor({
           { key: 'height', label: 'Зріст', placeholder: '170', unit: 'см' },
         ] as const).map(({ key, label, placeholder, unit }) => (
           <div key={key}>
-            <label className="text-xs text-neutral-500 mb-1 block">{label}</label>
+            <label className="text-xs text-ink/60 dark:text-night-muted mb-1 block">{label}</label>
             <div className="relative">
               <input
                 type="number"
@@ -125,9 +128,9 @@ export function BiometricsGoalEditor({
                 placeholder={placeholder}
                 value={form[key]}
                 onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-                className="w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-2 text-sm text-neutral-900 dark:text-neutral-100 pr-7"
+                className={`${INPUT_CLASS} pr-7`}
               />
-              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-neutral-400">{unit}</span>
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-ink/40 dark:text-night-muted">{unit}</span>
             </div>
           </div>
         ))}
@@ -135,11 +138,11 @@ export function BiometricsGoalEditor({
 
       {/* Activity */}
       <div>
-        <label className="text-xs text-neutral-500 mb-1 block">Рівень активності</label>
+        <label className="text-xs text-ink/60 dark:text-night-muted mb-1 block">Рівень активності</label>
         <select
           value={form.activity}
           onChange={(e) => setForm((f) => ({ ...f, activity: e.target.value }))}
-          className="w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-2 text-sm text-neutral-900 dark:text-neutral-100"
+          className={INPUT_CLASS}
         >
           {ACTIVITY_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>{o.label}</option>
@@ -149,11 +152,11 @@ export function BiometricsGoalEditor({
 
       {/* Goal */}
       <div>
-        <label className="text-xs text-neutral-500 mb-1 block">Ціль</label>
+        <label className="text-xs text-ink/60 dark:text-night-muted mb-1 block">Ціль</label>
         <select
           value={form.mainGoal}
           onChange={(e) => setForm((f) => ({ ...f, mainGoal: e.target.value }))}
-          className="w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-2 text-sm text-neutral-900 dark:text-neutral-100"
+          className={INPUT_CLASS}
         >
           {GOAL_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>{o.label}</option>
@@ -161,22 +164,26 @@ export function BiometricsGoalEditor({
         </select>
       </div>
 
-      {error && <p className="text-xs text-red-500 text-center">{error}</p>}
+      {error && <p className="text-xs text-danger dark:text-danger-dark text-center">{error}</p>}
 
       <button
         type="submit"
         disabled={saving}
-        className="w-full bg-main text-white py-3 rounded-xl font-bold text-sm disabled:opacity-60"
+        className={`w-full py-3 rounded-2xl font-semibold text-sm active:scale-95 transition-all disabled:opacity-60 ${
+          savedMsg
+            ? 'bg-sage-light/40 dark:bg-sage/20 border border-sage-light dark:border-sage/40 text-sage-dark dark:text-sage-light'
+            : 'bg-terracotta hover:bg-terracotta-dark text-card shadow-soft'
+        }`}
       >
         {saving ? 'Зберігаємо…' : savedMsg ? '✓ Збережено' : isEdit ? 'Зберегти зміни' : 'Зберегти профіль'}
       </button>
     </form>
   );
 
-  // First-time setup: always-open orange card (matches previous inline form).
+  // First-time setup: always-open card (matches previous inline form).
   if (!isEdit) {
     return (
-      <div className="mx-4 mt-4 rounded-2xl border border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950/30 shadow-[0_2px_8px_rgba(0,0,0,0.08)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.07),_0_6px_24px_rgba(120,120,120,0.25)] p-5">
+      <div className="mx-4 mt-4 rounded-2xl bg-card dark:bg-night-card shadow-soft p-5">
         {formBody}
       </div>
     );
@@ -187,16 +194,16 @@ export function BiometricsGoalEditor({
     <section className="mx-4 mt-4 mb-4">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between rounded-2xl border border-orange-200 dark:border-orange-800/60 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/20 shadow-[0_2px_8px_rgba(0,0,0,0.08)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.07),_0_6px_24px_rgba(120,120,120,0.25)] px-4 py-3.5 text-left"
+        className="w-full flex items-center justify-between rounded-2xl bg-card dark:bg-night-card shadow-soft px-4 py-3.5 text-left"
       >
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-full bg-cream dark:bg-night flex items-center justify-center shrink-0">
             <span className="text-xl">⚙️</span>
           </div>
           <div>
-            <p className="text-sm font-bold text-neutral-900 dark:text-neutral-100">Мої дані та ціль</p>
+            <p className="text-sm font-heading font-semibold text-ink dark:text-night-ink">Мої дані та ціль</p>
             {!open && (
-              <p className="text-xs text-neutral-500 mt-0.5">
+              <p className="text-xs text-ink/60 dark:text-night-muted mt-0.5">
                 {[
                   profile?.weightKg && `${profile.weightKg} кг`,
                   profile?.heightCm && `${profile.heightCm} см`,
@@ -208,18 +215,18 @@ export function BiometricsGoalEditor({
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {!open && (
-            <span className="text-xs font-medium text-orange-600 dark:text-orange-400">
+            <span className="text-xs font-medium text-terracotta dark:text-terracotta-light">
               Змінити
             </span>
           )}
           <ChevronDown
             size={18}
-            className={`text-neutral-400 transition-transform ${open ? 'rotate-180' : ''}`}
+            className={`text-ink/40 dark:text-night-muted transition-transform ${open ? 'rotate-180' : ''}`}
           />
         </div>
       </button>
       {open && (
-        <div className="mt-2 rounded-2xl border border-orange-100 dark:border-orange-900/30 bg-white dark:bg-neutral-900 shadow-[0_2px_8px_rgba(0,0,0,0.08)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.07),_0_6px_24px_rgba(120,120,120,0.25)] p-4">
+        <div className="mt-2 rounded-2xl bg-card dark:bg-night-card shadow-soft p-4">
           {formBody}
         </div>
       )}

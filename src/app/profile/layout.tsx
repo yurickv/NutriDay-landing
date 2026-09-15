@@ -1,10 +1,8 @@
 import { redirect } from 'next/navigation';
 import { checkSessionSubscription, inactiveRedirectTarget } from '@/lib/subscription';
-import { nunito } from '@/lib/fonts/legacy';
 
 // Server guard: blocks access when the subscription is missing or expired.
-// The page renders its own AppShell, so this layout only enforces access.
-// Nunito: базовий шрифт цієї ще не відрестайленої сторінки (був на body).
+// The page renders its own AppShell (which applies font-body), so this layout only enforces access.
 export default async function ProfileLayout({
   children,
 }: {
@@ -13,5 +11,5 @@ export default async function ProfileLayout({
   const { active, userExists } = await checkSessionSubscription();
   if (!active) redirect(inactiveRedirectTarget(userExists));
 
-  return <div className={nunito.className}>{children}</div>;
+  return <>{children}</>;
 }

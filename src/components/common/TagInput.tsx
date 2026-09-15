@@ -37,20 +37,20 @@ export function TagInput({ tags, onChange, placeholder = 'Додати...', maxT
 
   return (
     <div
-      className="flex flex-wrap gap-1.5 p-2 min-h-[44px] rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 cursor-text"
+      className="flex flex-wrap gap-1.5 p-2 min-h-[44px] rounded-xl border border-ink/10 dark:border-night-ink/10 bg-card dark:bg-night-card cursor-text transition-colors focus-within:border-sage focus-within:ring-2 focus-within:ring-sage-light/50"
       onClick={() => inputRef.current?.focus()}
     >
       {tags.map((tag, i) => (
         <span
           key={i}
-          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-orange-50 dark:bg-orange-950/50 border border-orange-200 dark:border-orange-800 text-xs font-medium text-orange-700 dark:text-orange-300"
+          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-sage-light/40 dark:bg-sage/20 text-xs font-medium text-sage-dark dark:text-sage-light"
         >
           {tag}
           {!disabled && (
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); removeTag(i); }}
-              className="text-orange-400 hover:text-orange-600 dark:hover:text-orange-200 transition-colors"
+              className="text-sage-dark/60 dark:text-sage-light/60 hover:text-danger dark:hover:text-danger-dark transition-colors"
               aria-label={`Видалити ${tag}`}
             >
               <X size={11} />
@@ -67,7 +67,7 @@ export function TagInput({ tags, onChange, placeholder = 'Додати...', maxT
           onKeyDown={handleKeyDown}
           onBlur={() => { if (input.trim()) addTag(input); }}
           placeholder={tags.length === 0 ? placeholder : ''}
-          className="flex-1 min-w-[100px] bg-transparent text-xs text-neutral-700 dark:text-neutral-300 placeholder:text-neutral-400 outline-none py-1 px-1"
+          className="flex-1 min-w-[100px] bg-transparent text-xs text-ink dark:text-night-ink placeholder:text-ink/40 dark:placeholder:text-night-muted outline-none py-1 px-1"
         />
       )}
     </div>
