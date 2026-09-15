@@ -23,7 +23,7 @@ export function OfflineIndicator() {
   if (!isOffline) return null;
 
   return (
-    <div className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white text-xs font-medium">
+    <div className="flex items-center gap-2 px-4 py-2 bg-terracotta-light/20 dark:bg-terracotta/15 border border-terracotta-light dark:border-terracotta/40 text-terracotta-dark dark:text-terracotta-light text-xs font-medium">
       <WifiOff size={14} aria-hidden="true" />
       <span>Офлайн — зміни збережуться після підключення</span>
     </div>

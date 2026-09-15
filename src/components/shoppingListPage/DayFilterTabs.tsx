@@ -115,15 +115,15 @@ const TABS: { value: DayFilter; label: string }[] = [
 
 export function DayFilterTabs({ active, onChange }: DayFilterTabsProps) {
   return (
-    <div className="flex gap-2 px-4 py-3">
+    <div className="flex gap-2 px-4 py-3 bg-card dark:bg-night-card border-b border-ink/10 dark:border-night-ink/10">
       {TABS.map((tab) => (
         <button
           key={tab.value}
           onClick={() => onChange(tab.value)}
-          className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-colors ${
+          className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${
             active === tab.value
-              ? 'bg-orange-500 text-white shadow-sm'
-              : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400'
+              ? 'bg-sage text-card shadow-soft'
+              : 'text-ink/60 dark:text-night-muted hover:bg-cream dark:hover:bg-night'
           }`}
         >
           {tab.label}

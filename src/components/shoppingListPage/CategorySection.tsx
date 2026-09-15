@@ -53,18 +53,18 @@ export function CategorySection({
         <span aria-hidden="true" className="text-base">
           {CATEGORY_EMOJI[category]}
         </span>
-        <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 flex-1">
+        <h3 className="text-xs font-heading font-semibold uppercase tracking-wider text-sage-dark dark:text-sage-light flex-1">
           {CATEGORY_LABELS[category]}
         </h3>
         <span
-          className={`text-xs font-semibold ${allDone ? 'text-green-500' : 'text-neutral-400'}`}
+          className={`text-xs font-semibold ${allDone ? 'text-sage-dark dark:text-sage-light' : 'text-ink/50 dark:text-night-muted'}`}
         >
           {purchasedCount}/{items.length}
         </span>
       </div>
 
       {/* Items */}
-      <div className="bg-white dark:bg-neutral-900 rounded-2xl mx-3 overflow-hidden divide-y divide-neutral-100 dark:divide-neutral-800">
+      <div className="bg-card dark:bg-night-card rounded-2xl shadow-soft mx-3 overflow-hidden divide-y divide-ink/10 dark:divide-night-ink/10">
         {items.map((item) => (
           <ShoppingItem key={item.id} item={item} onToggle={onToggle} />
         ))}

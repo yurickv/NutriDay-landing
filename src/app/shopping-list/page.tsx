@@ -33,8 +33,8 @@ export default function ShoppingListPage() {
 
   return (
     <AppShell>
-      <div className="flex items-center justify-between px-4 py-3 bg-white dark:bg-neutral-900 border-b border-neutral-100 dark:border-neutral-800">
-        <h1 className="text-base font-bold text-neutral-900 dark:text-neutral-100">Список покупок</h1>
+      <div className="flex items-center justify-between px-4 py-3 bg-card dark:bg-night-card border-b border-ink/10 dark:border-night-ink/10">
+        <h1 className="font-heading font-semibold text-lg text-ink dark:text-night-ink">Список покупок</h1>
         <ThemeToggle />
       </div>
 
@@ -42,7 +42,7 @@ export default function ShoppingListPage() {
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center space-y-3">
             <div className="text-4xl animate-spin inline-block">🌀</div>
-            <p className="text-sm text-neutral-500">Завантажуємо…</p>
+            <p className="text-sm text-ink/60 dark:text-night-muted">Завантажуємо…</p>
           </div>
         </div>
       )}
@@ -50,10 +50,10 @@ export default function ShoppingListPage() {
       {state === 'error' && (
         <div className="flex flex-col items-center justify-center min-h-[60vh] px-6 gap-4 text-center">
           <span className="text-5xl">😔</span>
-          <p className="text-sm text-neutral-500">Не вдалося завантажити список покупок</p>
+          <p className="text-sm text-ink/60 dark:text-night-muted">Не вдалося завантажити список покупок</p>
           <button
             onClick={() => void fetchList()}
-            className="flex items-center gap-2 text-sm text-orange-500 font-semibold"
+            className="flex items-center gap-2 text-sm text-terracotta hover:text-terracotta-dark font-semibold transition-colors"
           >
             <RefreshCw size={16} />
             Спробувати знову
@@ -63,16 +63,16 @@ export default function ShoppingListPage() {
 
       {state === 'no-list' && (
         <div className="flex flex-col items-center justify-center min-h-[60vh] px-6 gap-4 text-center">
-          <ShoppingCart size={48} className="text-neutral-300 dark:text-neutral-600" />
-          <h1 className="text-lg font-bold text-neutral-700 dark:text-neutral-300">
+          <ShoppingCart size={48} className="text-ink/30 dark:text-night-muted" />
+          <h1 className="font-heading font-semibold text-lg text-ink dark:text-night-ink">
             Список покупок порожній
           </h1>
-          <p className="text-sm text-neutral-400 max-w-xs">
+          <p className="text-sm text-ink/60 dark:text-night-muted max-w-xs">
             Спочатку згенеруйте тижневе меню — список покупок сформується автоматично.
           </p>
           <Link
             href="/menu"
-            className="flex items-center gap-2 bg-orange-500 text-white px-6 py-3 rounded-2xl font-semibold text-sm shadow-sm active:scale-95 transition-transform"
+            className="flex items-center gap-2 bg-terracotta hover:bg-terracotta-dark text-card px-6 py-3 rounded-2xl font-semibold text-sm shadow-soft active:scale-95 transition-all"
           >
             Перейти до меню
           </Link>

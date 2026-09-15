@@ -183,15 +183,15 @@ export function ShoppingListView({ initialList }: ShoppingListViewProps) {
       <div className="px-4 pt-4 pb-2">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
+            <h1 className="font-heading font-semibold text-base text-ink dark:text-night-ink">
               Список покупок
             </h1>
-            <p className="text-xs text-neutral-400 mt-0.5">
+            <p className="text-xs text-ink/60 dark:text-night-muted mt-0.5">
               {purchasedCount} з {totalCount} куплено
             </p>
           </div>
           {allDone && (
-            <div className="flex items-center gap-1.5 text-green-500 text-sm font-semibold">
+            <div className="flex items-center gap-1.5 text-sage-dark dark:text-sage-light text-sm font-semibold">
               <CheckCircle size={18} />
               <span>Готово!</span>
             </div>
@@ -200,9 +200,9 @@ export function ShoppingListView({ initialList }: ShoppingListViewProps) {
 
         {/* Progress bar */}
         {totalCount > 0 && (
-          <div className="mt-3 h-1.5 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden">
+          <div className="mt-3 h-1.5 bg-sage-light/40 dark:bg-night rounded-full overflow-hidden">
             <div
-              className="h-full bg-green-500 rounded-full transition-all duration-300"
+              className="h-full bg-sage rounded-full transition-all duration-300"
               style={{ width: `${(purchasedCount / totalCount) * 100}%` }}
               role="progressbar"
               aria-valuenow={purchasedCount}
@@ -228,7 +228,7 @@ export function ShoppingListView({ initialList }: ShoppingListViewProps) {
         ))}
 
         {filteredItems.length === 0 && (
-          <div className="text-center py-12 text-neutral-400 text-sm">
+          <div className="text-center py-12 text-ink/60 dark:text-night-muted text-sm">
             Немає продуктів для цього фільтра
           </div>
         )}
