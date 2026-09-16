@@ -61,6 +61,20 @@
       transform: scale(1.04);
     }
   }
+
+  /* Коротке «натискання» картки страви при кліку/тапі */
+  --animate-tap-pop: tap-pop 140ms ease-out;
+  @keyframes tap-pop {
+    0% {
+      transform: scale(1);
+    }
+    40% {
+      transform: scale(0.96);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
 }
 
 /* Перемикання теми світла/темна */

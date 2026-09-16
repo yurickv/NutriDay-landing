@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { BottomSheet } from '@/components/common/BottomSheet';
+import { useLastNonNull } from '@/hooks/useLastNonNull';
 import { IngredientsTab } from './IngredientsTab';
 import { RecipeTab } from './RecipeTab';
 import { AIMeal } from '@/types/meals';
@@ -14,10 +15,12 @@ interface MealDetailSheetProps {
 
 type Tab = 'recipe' | 'ingredients';
 
-export function MealDetailSheet({ meal, isOpen, onClose }: MealDetailSheetProps) {
+export function MealDetailSheet({ meal: mealProp, isOpen, onClose }: MealDetailSheetProps) {
   const [tab, setTab] = useState<Tab>('recipe');
+  // Dialog завжди змонтований; контент лишається на час leave-анімації
+  const meal = useLastNonNull(mealProp);
 
-  if (!meal) return null;
+  if (!meal) return <BottomSheet isOpen={false} onClose={onClose}>{null}</BottomSheet>;
 
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose}>

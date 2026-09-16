@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Check, Minus, Plus } from 'lucide-react';
 import { BottomSheet } from '@/components/common/BottomSheet';
+import { useLastNonNull } from '@/hooks/useLastNonNull';
 import { AIMeal } from '@/types/meals';
 
 interface ConsumePortionSheetProps {
@@ -18,14 +19,16 @@ function fullWeight(meal: AIMeal): number {
   return Math.round(meal.servingSize * Math.max(1, meal.servings));
 }
 
-export function ConsumePortionSheet({ meal, isOpen, onClose, onConfirm }: ConsumePortionSheetProps) {
+export function ConsumePortionSheet({ meal: mealProp, isOpen, onClose, onConfirm }: ConsumePortionSheetProps) {
   const [grams, setGrams] = useState(0);
+  // Dialog завжди змонтований; контент лишається на час leave-анімації
+  const meal = useLastNonNull(mealProp);
 
   useEffect(() => {
     if (meal && isOpen) setGrams(fullWeight(meal));
   }, [meal, isOpen]);
 
-  if (!meal) return null;
+  if (!meal) return <BottomSheet isOpen={false} onClose={onClose} title="Скільки з'їдено?">{null}</BottomSheet>;
 
   const planned = fullWeight(meal);
   // calories refer to one servingSize portion → kcal per gram = calories / servingSize

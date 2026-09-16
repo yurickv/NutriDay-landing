@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Check, RefreshCw, Smile } from 'lucide-react';
 import { AIMeal, MealCategory } from '@/types/meals';
 
@@ -18,6 +18,9 @@ interface MealCardProps {
 
 const RATING_EMOJIS: Record<1 | 2 | 3, string> = { 1: '👎', 2: '😐', 3: '😍' };
 const RATING_LABELS: Record<1 | 2 | 3, string> = { 1: 'Не сподобалось', 2: 'Нормально', 3: 'Смачно!' };
+
+/** Тривалість tap-pop у globals.css — шторка відкривається після неї, щоб анімацію не ховав бекдроп */
+const TAP_POP_MS = 110;
 
 const MEAL_LABELS: Record<MealCategory, string> = {
   breakfast: 'Сніданок',
@@ -40,7 +43,28 @@ export function MealCard({
   const [loading, setLoading] = useState(false);
   const [ratingLoading, setRatingLoading] = useState(false);
   const [showRatingPicker, setShowRatingPicker] = useState(false);
+  const [tapped, setTapped] = useState(false);
   const touchStartX = useRef<number | null>(null);
+  const openTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => {
+    if (openTimer.current) clearTimeout(openTimer.current);
+  }, []);
+
+  const handleCardClick = () => {
+    if (openTimer.current) return;
+    const reduceMotion =
+      typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) {
+      onOpenDetail(meal);
+      return;
+    }
+    setTapped(true);
+    openTimer.current = setTimeout(() => {
+      openTimer.current = null;
+      onOpenDetail(meal);
+    }, TAP_POP_MS);
+  };
 
   const handleRate = async (rating: 1 | 2 | 3) => {
     setRatingLoading(true);
@@ -100,8 +124,11 @@ export function MealCard({
       role="article"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
-      onClick={() => onOpenDetail(meal)}
+      onClick={handleCardClick}
+      onAnimationEnd={() => setTapped(false)}
       className={`rounded-xl px-3 py-[11px] flex items-center gap-2.5 cursor-pointer active:scale-[0.98] transition-all select-none shadow-soft ${
+        tapped ? 'motion-safe:animate-tap-pop' : ''
+      } ${
         meal.isConsumed
           ? 'bg-sage-light/60 dark:bg-sage/15 border border-sage/60 dark:border-sage/40'
           : 'bg-card dark:bg-night-card'

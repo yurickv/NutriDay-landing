@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { BottomSheet } from '@/components/common/BottomSheet';
+import { useLastNonNull } from '@/hooks/useLastNonNull';
 import { AIMeal, MealCategory } from '@/types/meals';
 import { RefreshCw } from 'lucide-react';
 
@@ -16,8 +17,8 @@ interface SwapMealPanelProps {
 }
 
 export function SwapMealPanel({
-  meal,
-  mealType,
+  meal: mealProp,
+  mealType: mealTypeProp,
   itemIndex,
   dayLabel,
   isOpen,
@@ -28,6 +29,9 @@ export function SwapMealPanel({
   const [alternatives, setAlternatives] = useState<AIMeal[]>([]);
   const [fetching, setFetching] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  // Dialog завжди змонтований; контент лишається на час leave-анімації
+  const meal = useLastNonNull(mealProp);
+  const mealType = useLastNonNull(mealTypeProp);
 
   // Alternatives are generated on demand (no longer bundled with the weekly menu).
   useEffect(() => {
@@ -59,7 +63,9 @@ export function SwapMealPanel({
     };
   }, [isOpen, meal, mealType, itemIndex, dayLabel]);
 
-  if (!meal || !mealType) return null;
+  if (!meal || !mealType) {
+    return <BottomSheet isOpen={false} onClose={onClose} title="Замінити страву">{null}</BottomSheet>;
+  }
 
   const handleSwap = async (idx: number) => {
     setLoading(idx);
