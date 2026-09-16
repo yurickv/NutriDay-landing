@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { UserProfile } from '@/types/userProfile';
+import { Collapsible } from '@/components/common/Collapsible';
 import { ChevronDown } from 'lucide-react';
 
 const ACTIVITY_OPTIONS = [
@@ -191,10 +192,11 @@ export function BiometricsGoalEditor({
 
   // Existing profile: collapsible edit section.
   return (
-    <section className="mx-4 mt-4 mb-4">
+    <section className="mx-4 mt-4 mb-4 rounded-2xl bg-card dark:bg-night-card shadow-soft overflow-hidden">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between rounded-2xl bg-card dark:bg-night-card shadow-soft px-4 py-3.5 text-left"
+        aria-expanded={open}
+        className="w-full flex items-center justify-between px-4 py-3.5 text-left"
       >
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-cream dark:bg-night flex items-center justify-center shrink-0">
@@ -225,11 +227,9 @@ export function BiometricsGoalEditor({
           />
         </div>
       </button>
-      {open && (
-        <div className="mt-2 rounded-2xl bg-card dark:bg-night-card shadow-soft p-4">
-          {formBody}
-        </div>
-      )}
+      <Collapsible open={open} className="px-4 pb-4 pt-1">
+        {formBody}
+      </Collapsible>
     </section>
   );
 }
