@@ -34,6 +34,7 @@ const ERROR_TEXT: Record<string, string> = {
   'address-not-found': 'Адресу не знайдено, уточніть місто та вулицю',
   reconnect: 'Сесія Сільпо закінчилась, підключіть акаунт знову',
   'not-connected': 'Сільпо не підключено',
+  'stale-list': 'Список покупок оновився, перезавантажте сторінку',
   'silpo-error': 'Сільпо не відповідає, спробуйте ще раз',
 };
 
@@ -55,7 +56,9 @@ function validationText(v: { message: string; context: unknown }): string | null
     return `Частину товарів обмежено залишком (доступно ${String(ctx.stock ?? '?')})`;
   }
   if (v.message.startsWith('timeslot')) return 'Оберіть час доставки при оформленні';
-  if (v.message.startsWith('order.min')) return 'Сума менша за мінімальне замовлення';
+  if (v.message === 'order.cost.min') {
+    return `Сума менша за мінімальне замовлення${ctx.orderCostMin != null ? ` (${String(ctx.orderCostMin)} ₴)` : ''}`;
+  }
   return null;
 }
 

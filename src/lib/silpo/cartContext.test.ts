@@ -3,7 +3,13 @@ import { SilpoToolError } from './types';
 
 vi.mock('./client', () => ({ callTool: vi.fn() }));
 import { callTool } from './client';
-import { chooseTimeslot, resolveCartContext, searchDeliveryType } from './cartContext';
+import { chooseTimeslot, isoNowSeconds, resolveCartContext, searchDeliveryType } from './cartContext';
+
+describe('isoNowSeconds', () => {
+  it('drops milliseconds (Silpo returns 400 otherwise)', () => {
+    expect(isoNowSeconds(new Date('2026-09-18T11:22:33.456Z'))).toBe('2026-09-18T11:22:33Z');
+  });
+});
 
 const slot = (h: number, available = true) => ({
   start: `2026-09-18T${String(h).padStart(2, '0')}:00:00+00:00`,
@@ -82,5 +88,7 @@ describe('resolveCartContext', () => {
       .mockResolvedValueOnce({ success: true, slots: [slot(10)] });
     await resolveCartContext('u');
     expect(vi.mocked(callTool)).toHaveBeenCalledTimes(3);
+    const slotsArgs = vi.mocked(callTool).mock.calls[2][2] as { start: string };
+    expect(slotsArgs.start).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
   });
 });

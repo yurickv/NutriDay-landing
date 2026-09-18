@@ -34,7 +34,9 @@ export async function POST(req: NextRequest) {
     const quantity = typeof r.quantity === 'number' && r.quantity > 0 ? r.quantity : item.quantity;
     items.push({ itemId: item.id, name: item.name, quantity, unit: item.unit });
   }
-  if (items.length === 0) return NextResponse.json({ error: 'No valid items' }, { status: 400 });
+  // None of the ids exist any more: the list was rebuilt (menu swap / catch-up
+  // generation) after the page loaded. The client tells the user to reload.
+  if (items.length === 0) return NextResponse.json({ error: 'stale-list' }, { status: 409 });
 
   const profile = await db.collection('user_profiles').findOne<UserProfile>({ userEmail });
   const prefs = {

@@ -31,11 +31,16 @@ export async function getCartRaw(userEmail: string, cartId: string): Promise<Raw
   return res.cart;
 }
 
+/** Silpo rejects ISO timestamps with milliseconds (400 Bad Request), so use second precision. */
+export function isoNowSeconds(now: Date = new Date()): string {
+  return now.toISOString().replace(/\.\d{3}Z$/, 'Z');
+}
+
 export async function fetchAvailableSlots(userEmail: string, branchId: string, deliveryType: string): Promise<Slot[]> {
   const res = await callTool<SlotsResponse>(userEmail, 'silpo_get_time_slots', {
     branchId,
     deliveryTypes: [deliveryType],
-    start: new Date().toISOString(),
+    start: isoNowSeconds(),
     limit: 40,
   });
   return (res.slots ?? []).filter((s) => s.available);
