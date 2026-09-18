@@ -122,6 +122,8 @@ export function mergeShoppingItems(
     item.isPurchased = prev.isPurchased;
     item.purchasedPeriods = prev.purchasedPeriods ?? [];
     item.purchasedAt = prev.purchasedAt;
+    // The product is already in the user's Silpo cart; a rebuild must not forget that.
+    if (prev.silpo) item.silpo = prev.silpo;
   }
 
   const customItems = previous.filter((item) => item.isCustom);

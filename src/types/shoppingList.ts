@@ -1,5 +1,14 @@
 import { ShoppingCategory } from './meals';
 
+/** Set when the item was pushed into the user's Silpo cart via /api/silpo/cart/add. */
+export interface SilpoCartTag {
+  productId: string;
+  productName: string;
+  /** Packs for piece goods, kilograms for weighted goods. */
+  quantity: number;
+  addedAt: Date;
+}
+
 export interface ShoppingListItem {
   id: string;
   name: string;
@@ -17,6 +26,7 @@ export interface ShoppingListItem {
   purchasedPeriods: string[]; // which periods ('mon-wed', 'thu-sun') are individually marked
   purchasedAt: Date | null;
   isCustom: boolean;
+  silpo?: SilpoCartTag;
 }
 
 export interface ShoppingList {
@@ -26,6 +36,8 @@ export interface ShoppingList {
   weekStartDate: Date;
   items: ShoppingListItem[];
   updatedAt: Date;
+  /** Silpo order ids the user already confirmed or dismissed in the banner. */
+  silpoOrdersHandled?: string[];
 }
 
 export type GroupedShoppingItems = Record<ShoppingCategory, ShoppingListItem[]>;

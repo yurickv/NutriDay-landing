@@ -8,7 +8,8 @@ import { DayFilterTabs, DayFilter, displayQuantity, isVisibleInPeriod, isEffecti
 import { AddCustomItemForm } from './AddCustomItemForm';
 import { OfflineIndicator } from './OfflineIndicator';
 import { SilpoOrderButton } from './SilpoOrderButton';
-import { SilpoOrderSheet, OrderItem } from './SilpoOrderSheet';
+import { SilpoOrderSheet, OrderItem, AddedProduct } from './SilpoOrderSheet';
+import { SilpoOrderBanner } from './SilpoOrderBanner';
 import { useSilpoConnection } from '@/hooks/useSilpoConnection';
 import { ToastContainer, ToastData } from '@/components/common/Toast';
 import { CheckCircle } from 'lucide-react';
@@ -58,6 +59,40 @@ export function ShoppingListView({ initialList }: ShoppingListViewProps) {
     if (silpo.flash === 'connected') addToast('Сільпо підключено', '🛒');
     if (silpo.flash === 'error') addToast('Не вдалося підключити Сільпо', '😔', 'error');
   }, [silpo.flash, addToast]);
+
+  // Mirror the server-side «у кошику Сільпо» tag locally right after a successful add.
+  const handleSilpoAdded = useCallback((added: AddedProduct[]) => {
+    const byItem = new Map(added.map((a) => [a.itemId, a]));
+    const now = new Date();
+    setItems((prev) =>
+      prev.map((item) => {
+        const a = byItem.get(item.id);
+        return a
+          ? { ...item, silpo: { productId: a.productId, productName: a.productName, quantity: a.quantity, addedAt: now } }
+          : item;
+      }),
+    );
+    addToast(`${added.length} товарів додано в кошик Сільпо`, '🛒');
+  }, [addToast]);
+
+  // Banner «Схоже, ви оформили замовлення»: tick confirmed items for the whole week.
+  const handleOrderConfirmed = useCallback((itemIds: string[]) => {
+    const ids = new Set(itemIds);
+    setItems((prev) =>
+      prev.map((item) =>
+        ids.has(item.id)
+          ? { ...item, isPurchased: true, purchasedPeriods: ['mon-wed', 'thu-sun'], purchasedAt: new Date() }
+          : item,
+      ),
+    );
+    addToast(`${itemIds.length} продуктів відмічено купленими`, '✅');
+  }, [addToast]);
+
+  // Products the user removed from the cart in the Silpo app lose their tag.
+  const handleUntagged = useCallback((itemIds: string[]) => {
+    const ids = new Set(itemIds);
+    setItems((prev) => prev.map((item) => (ids.has(item.id) ? { ...item, silpo: undefined } : item)));
+  }, []);
   const offlineQueueRef = useRef<OfflineQueueEntry[]>([]);
   const itemsRef = useRef(items);
   useEffect(() => { itemsRef.current = items; }, [items]);
@@ -178,10 +213,12 @@ export function ShoppingListView({ initialList }: ShoppingListViewProps) {
       isPurchased: isEffectivePurchased(item, filter),
     }));
 
-  // Items the user still has to buy in the current period — candidates for the Silpo cart.
+  // Items the user still has to buy in the current period and hasn't pushed to
+  // the Silpo cart yet — candidates for «Замовити в Сільпо».
   const orderItems: OrderItem[] = filteredItems
-    .filter((i) => !i.isPurchased)
+    .filter((i) => !i.isPurchased && !i.silpo)
     .map((i) => ({ itemId: i.id, name: i.name, quantity: i.quantity, unit: i.unit }));
+  const hasPendingSilpoTags = items.some((i) => i.silpo && !i.isPurchased);
 
   // Group by category
   const grouped = CATEGORY_ORDER.reduce<Record<ShoppingCategory, ShoppingListItem[]>>(
@@ -238,6 +275,11 @@ export function ShoppingListView({ initialList }: ShoppingListViewProps) {
       <DayFilterTabs active={filter} onChange={setFilter} />
 
       {/* Order in Silpo (hidden unless the integration is enabled) */}
+      <SilpoOrderBanner
+        enabled={Boolean(silpo.data?.connected) && hasPendingSilpoTags}
+        onConfirmed={handleOrderConfirmed}
+        onUntagged={handleUntagged}
+      />
       <SilpoOrderButton status={silpo.data} count={orderItems.length} onClick={() => setSilpoOpen(true)} />
 
       {/* Category sections */}
@@ -265,7 +307,7 @@ export function ShoppingListView({ initialList }: ShoppingListViewProps) {
         isOpen={silpoOpen}
         onClose={() => setSilpoOpen(false)}
         items={orderItems}
-        onDone={(msg) => addToast(msg, '🛒')}
+        onAdded={handleSilpoAdded}
       />
       <ToastContainer toasts={toasts} onRemove={removeToast} />
     </div>

@@ -10,11 +10,14 @@ import { track } from '@/lib/analytics';
 
 export interface OrderItem { itemId: string; name: string; quantity: number; unit: string }
 
+/** What was pushed to the Silpo cart, per shopping-list item (mirrors the server-side tag). */
+export interface AddedProduct { itemId: string; productId: string; productName: string; quantity: number }
+
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   items: OrderItem[];
-  onDone: (message: string) => void;
+  onAdded: (added: AddedProduct[]) => void;
 }
 
 interface PreviewContext { city: string | null; deliveryType: string; minOrderCost: number | null }
@@ -78,7 +81,7 @@ function Spinner({ text }: { text: string }) {
   );
 }
 
-export function SilpoOrderSheet({ isOpen, onClose, items, onDone }: Props) {
+export function SilpoOrderSheet({ isOpen, onClose, items, onAdded }: Props) {
   const [step, setStep] = useState<Step>({ kind: 'loading' });
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [chosen, setChosen] = useState<Record<string, SilpoProduct>>({});
@@ -220,7 +223,14 @@ export function SilpoOrderSheet({ isOpen, onClose, items, onDone }: Props) {
       .filter((m) => selected.has(m.itemId))
       .map((m) => {
         const p = chosen[m.itemId] ?? m.product;
-        return { productId: p.id, companyId: p.companyId, branchId: p.branchId, quantity: qty[m.itemId] ?? m.quantity };
+        return {
+          itemId: m.itemId,
+          productId: p.id,
+          productName: p.name,
+          companyId: p.companyId,
+          branchId: p.branchId,
+          quantity: qty[m.itemId] ?? m.quantity,
+        };
       });
     if (products.length === 0) return;
     setStep({ kind: 'adding' });
@@ -237,7 +247,7 @@ export function SilpoOrderSheet({ isOpen, onClose, items, onDone }: Props) {
       }
       track('silpo_cart_added', { products: products.length, total: Math.round(data.totalAfterDiscounts) });
       setStep({ kind: 'done', result: data });
-      onDone(`${products.length} товарів додано в кошик Сільпо`);
+      onAdded(products.map(({ itemId, productId, productName, quantity }) => ({ itemId, productId, productName, quantity })));
     } catch {
       setStep({ kind: 'error', message: ERROR_TEXT['silpo-error'] });
     }

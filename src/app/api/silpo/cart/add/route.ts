@@ -4,16 +4,52 @@ import { callTool } from '@/lib/silpo/client';
 import { getCartRaw, resolveCartContext } from '@/lib/silpo/cartContext';
 import { silpoErrorResponse } from '@/lib/silpo/apiErrors';
 import { SilpoAddResult } from '@/lib/silpo/types';
+import { getDb } from '@/lib/db';
+import { ObjectId } from 'mongodb';
+import { ShoppingListItem, SilpoCartTag } from '@/types/shoppingList';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_PRODUCTS = 60;
 
-interface ProductInput { productId: string; companyId: string; branchId: string; quantity: number }
+interface ProductInput {
+  productId: string;
+  companyId: string;
+  branchId: string;
+  quantity: number;
+  /** Our shopping-list item this product was matched for (tagged after a successful add). */
+  itemId?: string;
+  productName?: string;
+}
 
 function isProduct(v: unknown): v is ProductInput {
   const p = v as ProductInput;
   return !!p && UUID.test(p.productId) && UUID.test(p.companyId) && UUID.test(p.branchId)
-    && typeof p.quantity === 'number' && p.quantity > 0;
+    && typeof p.quantity === 'number' && p.quantity > 0
+    && (p.itemId === undefined || typeof p.itemId === 'string')
+    && (p.productName === undefined || typeof p.productName === 'string');
+}
+
+/** Remember on each list item that it now sits in the user's Silpo cart. */
+async function tagListItems(userEmail: string, products: ProductInput[]): Promise<void> {
+  const tagged = products.filter((p) => p.itemId);
+  if (tagged.length === 0) return;
+  const db = await getDb();
+  const list = await db.collection('shopping_lists').findOne<{ _id: ObjectId; items: ShoppingListItem[] }>(
+    { userEmail }, { sort: { weekStartDate: -1 } },
+  );
+  if (!list) return;
+  const known = new Set(list.items.map((i) => i.id));
+  const now = new Date();
+  for (const p of tagged) {
+    if (!known.has(p.itemId as string)) continue;
+    const tag: SilpoCartTag = {
+      productId: p.productId, productName: (p.productName ?? '').slice(0, 200), quantity: p.quantity, addedAt: now,
+    };
+    await db.collection('shopping_lists').updateOne(
+      { _id: list._id, 'items.id': p.itemId },
+      { $set: { 'items.$.silpo': tag, updatedAt: now } },
+    );
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -37,6 +73,8 @@ export async function POST(req: NextRequest) {
         quantity: p.quantity,
       })),
     });
+
+    await tagListItems(userEmail, products);
 
     const cart = await getCartRaw(userEmail, context.ctx.cartId);
     const result: SilpoAddResult = {

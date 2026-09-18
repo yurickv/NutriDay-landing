@@ -41,7 +41,11 @@ export function ShoppingItem({ item, onToggle }: ShoppingItemProps) {
         >
           {item.name}
         </span>
-        {item.mealNames.length > 0 && (
+        {item.silpo && !item.isPurchased ? (
+          <span className="text-xs text-sage-dark dark:text-sage-light truncate block">
+            🛒 у кошику Сільпо · {item.silpo.productName}
+          </span>
+        ) : item.mealNames.length > 0 && (
           <span className="text-xs text-ink/50 dark:text-night-muted truncate block">
             {item.mealNames.slice(0, 2).join(', ')}
             {item.mealNames.length > 2 ? ` +${item.mealNames.length - 2}` : ''}
