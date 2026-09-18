@@ -1,4 +1,4 @@
-# EasyMenu — План розробки: Тижневе меню, Список покупок та PWA
+# Sytno — План розробки: Тижневе меню, Список покупок та PWA
 
 > **Статус**: Фаза 1 ✅ | Фаза 2 ✅ | Фаза 3 ✅ | Фаза 4 ✅ | Фаза 5 ✅ | Власні страви ✅ | Масштабованість & безпека ✅ | OWASP-аудит ✅ | Промпт v2 ✅ | UI Redesign ✅ | Округлення ваг + гібридний БЖВ власних страв ✅ | Аналітика воронки (PostHog+GA4) ✅ | Фаза 6–7 — в черзі
 > **Пріоритет**: Висока
@@ -11,6 +11,7 @@
 Після проходження онбордингу (вага, зріст, вік, стать, рівень активності, цілі) користувач потрапляє до кабінету `/menu`. OpenAI генерує персоналізоване тижневе меню на основі його даних і зберігає в MongoDB. Додаток є PWA і призначений переважно для жінок, що хочуть схуднути, використовуючи смартфон.
 
 **Ключові принципи**:
+
 - Рецепти та меню генерує OpenAI — ніякої преднаповненої бази рецептів
 - Всі виклики OpenAI — тільки через серверну сторону (env-ключ не розкривається клієнту)
 - Безпечний підхід до схуднення: без негативного фреймінгу, min 1200 ккал/день
@@ -53,6 +54,7 @@
   updatedAt: Date
 }
 ```
+
 **Індекс**: `{ userEmail: 1 }` (unique)
 
 ---
@@ -91,6 +93,7 @@
 ```
 
 **AIMeal** (повністю вбудований, без посилань):
+
 ```js
 {
   name: string,                     // "Вівсяна каша з ягодами"
@@ -130,6 +133,7 @@
 ```
 
 **CustomEntry** (власна з'їдена страва, `src/types/meals.ts`):
+
 ```js
 {
   id: string,                       // UUID (серверний)
@@ -285,6 +289,7 @@
   loggedAt: Date
 }
 ```
+
 **Індекс**: `{ userEmail: 1, date: 1 }`
 
 ---
@@ -303,6 +308,7 @@
   updatedAt: Date
 }
 ```
+
 **Індекс**: `{ userEmail: 1 }` unique. Токени ніколи не потрапляють на клієнт; усі виклики Silpo MCP — з сервера (`src/lib/silpo/client.ts`).
 
 ### `silpo_oauth_states` — pending PKCE-стани
@@ -310,6 +316,7 @@
 ```js
 { state: string, userEmail: string, verifierEnc: string, returnTo: '/shopping-list' | '/profile', createdAt: Date }
 ```
+
 **Індекси**: `{ state: 1 }` unique; TTL `createdAt` 600 с. Стан одноразовий (`findOneAndDelete` у callback).
 
 ---
@@ -321,12 +328,14 @@
 **Вхідні дані**: `UserProfile` + поточний місяць (для сезонності) + рейтинги минулих страв
 
 **Промпт (system)**:
+
 - Роль: дієтолог-нутриціолог
 - Мова відповіді: українська
 - Формат: валідний JSON (схема нижче)
 - Правила: збалансоване харчування для схуднення, різноманітність, реальні страви
 
 **Промпт (user)**:
+
 ```
 Склади 7-денне меню (сніданок, обід, вечеря, 1 перекус) для:
 Стать: {sex}, Вік: {age}, Вага: {weight}кг, Зріст: {height}см
@@ -344,6 +353,7 @@
 ```
 
 **Сезонні підказки в промпті** (авто-підставляються):
+
 - Зима (12-2): буряк, морква, капуста, яблука, хурма
 - Весна (3-5): редиска, шпинат, зелена цибуля
 - Літо (6-8): помідори, огірки, кабачки, ягоди, перець
@@ -352,16 +362,27 @@
 **Захист**: `goalCalories = Math.max(1200, calculatedGoal)` — ніколи нижче 1200 ккал для жінок.
 
 **JSON-схема відповіді**:
+
 ```json
 {
   "days": [
     {
       "dayLabel": "Понеділок",
       "meals": {
-        "breakfast": { /* повний AIMeal з quickAlternatives */ },
-        "lunch": { /* AIMeal */ },
-        "dinner": { /* AIMeal */ },
-        "snacks": [{ /* AIMeal */ }]
+        "breakfast": {
+          /* повний AIMeal з quickAlternatives */
+        },
+        "lunch": {
+          /* AIMeal */
+        },
+        "dinner": {
+          /* AIMeal */
+        },
+        "snacks": [
+          {
+            /* AIMeal */
+          }
+        ]
       }
     }
   ]
@@ -369,6 +390,7 @@
 ```
 
 **Обробка після отримання відповіді**:
+
 1. Парсинг + структурна валідація JSON
 2. Підрахунок `totalCalories` і `totalPrepMinutes` для кожного дня
 3. Обробка `isMultiDayPrep` — копіювання snapshot на наступні дні
@@ -378,6 +400,7 @@
 7. Виклик `shoppingListBuilder`
 
 **API маршрут**: `POST /api/menu/generate`
+
 - Rate limit: максимум **3 генерації на тиждень** на користувача
 - Retry: 3 спроби з exponential backoff (1s → 2s → 4s)
 - Fallback: якщо AI недоступний → повернути останнє active меню
@@ -389,6 +412,7 @@
 ## Управління харчовими вподобаннями
 
 ### `PUT /api/profile/food-preferences`
+
 ```json
 {
   "favoriteFoods": ["гречка", "курятина", "броколі"],
@@ -399,6 +423,7 @@
 ```
 
 ### UI (сторінка `/profile`):
+
 - `TagInput` для улюблених/небажаних продуктів
 - Чекбокси дієтичних переваг
 - Кнопка "Зберегти та перегенерувати меню"
@@ -407,14 +432,14 @@
 
 ## TypeScript типи
 
-| Файл | Що містить |
-|------|-----------|
-| `src/types/meals.ts` | `AIMeal`, `MealCategory`, `ShoppingCategory`, `DayMeals` |
-| `src/types/weeklyMenu.ts` | `WeeklyMenu`, `MenuDay` |
-| `src/types/shoppingList.ts` | `ShoppingList`, `ShoppingListItem`, `SilpoCartTag`, `GroupedShoppingItems` |
-| `src/lib/silpo/types.ts` | `SilpoProduct`, `SilpoCartContext`, `SilpoMatch`, `SilpoAddResult`, `SilpoConnectionDoc`, класи помилок `SilpoAuthError`/`SilpoToolError`/… |
-| `src/types/engagement.ts` | `Tip`, `UserStreak`, `StreakBadge`, `WaterLog`, `WeightLog`, `FavoriteMeal` |
-| `src/types/userProfile.ts` | `UserProfile` (розширює `OnboardingData`) |
+| Файл                        | Що містить                                                                                                                                  |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/types/meals.ts`        | `AIMeal`, `MealCategory`, `ShoppingCategory`, `DayMeals`                                                                                    |
+| `src/types/weeklyMenu.ts`   | `WeeklyMenu`, `MenuDay`                                                                                                                     |
+| `src/types/shoppingList.ts` | `ShoppingList`, `ShoppingListItem`, `SilpoCartTag`, `GroupedShoppingItems`                                                                  |
+| `src/lib/silpo/types.ts`    | `SilpoProduct`, `SilpoCartContext`, `SilpoMatch`, `SilpoAddResult`, `SilpoConnectionDoc`, класи помилок `SilpoAuthError`/`SilpoToolError`/… |
+| `src/types/engagement.ts`   | `Tip`, `UserStreak`, `StreakBadge`, `WaterLog`, `WeightLog`, `FavoriteMeal`                                                                 |
+| `src/types/userProfile.ts`  | `UserProfile` (розширює `OnboardingData`)                                                                                                   |
 
 ---
 
@@ -491,7 +516,8 @@ src/
 │   │   ├── AddCustomItemForm.tsx
 │   │   ├── OfflineIndicator.tsx        ← індикатор офлайн-режиму
 │   │   ├── SilpoOrderButton.tsx        ← «Замовити в Сільпо (N)» / тізер «Підключити» (рендериться лише коли фіча увімкнена)
-│   │   ├── SilpoOrderSheet.tsx         ← шторка: адреса → підбір → превʼю (чекбокси, степер, «Замінити») → результат з лінками
+│   │   ├── SilpoOrderSheet.tsx         ← шторка: адреса → підбір → превʼю (чекбокси, степер, «Замінити», тап по фото → деталі) → результат з лінками
+│   │   ├── SilpoProductDetail.tsx      ← деталі товару в шторці: збільшене фото/галерея, ціна, опис, склад, БЖВ (GET /api/silpo/product)
 │   │   └── SilpoOrderBanner.tsx        ← «Схоже, ви оформили замовлення №… у Сільпо. Відмітити N продуктів?»
 │   ├── profilePage/
 │   │   ├── FoodPreferencesEditor.tsx
@@ -536,6 +562,7 @@ src/
     │   ├── quantity.ts                 ← г/мл/шт → упаковки або кг (кратно step), displayRatio-парсер
     │   ├── matchProducts.ts            ← find_products_batch (≤30) + ранжування gpt-4.1-mini + фолбек
     │   ├── orderCheck.ts               ← зіставлення замовлень Сільпо з тегами → підказка у банері
+    │   ├── productDetails.ts           ← нормалізація payload silpo_get_product_details у SilpoProductDetails (стійка до невідомих полів)
     │   ├── appLink.ts                  ← Universal Link (iOS) / intent:// (Android) для відкриття застосунку Сільпо
     │   └── apiErrors.ts                ← мапа помилок → HTTP-коди
     ├── analytics/                      ← фасад track() (PostHog + GA4)
@@ -547,41 +574,41 @@ src/
 
 ## API маршрути
 
-| Метод | Маршрут | Опис |
-|-------|---------|------|
-| POST | `/api/menu/generate` | Генерація меню (rate limited: 3/тиждень) |
-| GET | `/api/menu/weekly` | Поточний тиждень |
-| POST | `/api/menu/meal/swap` | Замінити страву (масштабує калорії + перераховує `totalCalories` дня) |
-| GET | `/api/menu/meal/alternatives` | Лінива генерація альтернатив для одної страви |
-| PATCH | `/api/menu/meal/consume` | Відмітити страву з'їденою |
-| PATCH | `/api/menu/meal/rate` | Рейтинг страви (1/2/3) |
-| POST | `/api/menu/complete-day` | Відмітити день |
-| POST | `/api/menu/food/parse` | Гібридна оцінка БЖВ: LLM-розклад на інгредієнти → таблиця, fallback на per100 |
-| POST | `/api/menu/food/compute` | Детермінований перерахунок БЖВ з інгредієнтів (без OpenAI, для правок у формі) |
-| POST/DELETE | `/api/menu/meal/custom` | Додати/видалити власну з'їдену страву (inline у weekly_menus) |
-| GET | `/api/shopping-list` | Список покупок |
-| PATCH | `/api/shopping-list` | Toggle куплено |
-| POST | `/api/shopping-list` | Додати свій товар |
-| GET | `/api/water` | Сьогоднішнє споживання |
-| POST | `/api/water` | Зафіксувати порцію |
-| GET | `/api/streak` | Дані стріку |
-| GET | `/api/tips` | Щоденний лайфхак |
-| GET/POST | `/api/weight` | Трекер ваги |
-| GET/POST/DELETE | `/api/favorites` | Улюблені страви |
-| GET/PUT | `/api/profile` | Профіль |
-| PUT | `/api/profile/food-preferences` | Вподобання |
-| POST | `/api/push/subscribe` | Push підписка |
-| POST | `/api/push/unsubscribe` | Видалити підписку |
-| GET | `/api/silpo/connect?returnTo=` | 302 на OAuth Сільпо (PKCE); 404 якщо фіча вимкнена |
-| GET | `/api/silpo/callback` | Обмін коду на токени → 302 `returnTo?silpo=connected\|error` |
-| GET | `/api/silpo/status` | `{ enabled, connected, status, cart: {city, street, deliveryType} }` |
-| DELETE | `/api/silpo/connection` | Відключити (best-effort revoke + видалення токенів) |
-| POST | `/api/silpo/match` | `{ items: [{itemId, quantity}] }` → підібрані товари з цінами; 409 `no-cart` / `stale-list` |
-| POST | `/api/silpo/cart/options` | `{ address }` → варіанти доставки (додому / найближчий самовивіз) |
-| POST | `/api/silpo/cart/create` | Створити кошик Сільпо за адресою та опцією |
-| POST | `/api/silpo/cart/add` | Додати товари в кошик Сільпо + проставити тег `silpo` на продукти списку |
-| GET | `/api/silpo/orders/check` | Замовлення Сільпо з нашими товарами → підказки для банера; знімає осиротілі теги |
-| POST | `/api/silpo/orders/confirm` | `{ orderId, itemIds, action: confirm\|dismiss }` → галочки на тиждень / приховати банер |
+| Метод           | Маршрут                         | Опис                                                                                        |
+| --------------- | ------------------------------- | ------------------------------------------------------------------------------------------- |
+| POST            | `/api/menu/generate`            | Генерація меню (rate limited: 3/тиждень)                                                    |
+| GET             | `/api/menu/weekly`              | Поточний тиждень                                                                            |
+| POST            | `/api/menu/meal/swap`           | Замінити страву (масштабує калорії + перераховує `totalCalories` дня)                       |
+| GET             | `/api/menu/meal/alternatives`   | Лінива генерація альтернатив для одної страви                                               |
+| PATCH           | `/api/menu/meal/consume`        | Відмітити страву з'їденою                                                                   |
+| PATCH           | `/api/menu/meal/rate`           | Рейтинг страви (1/2/3)                                                                      |
+| POST            | `/api/menu/complete-day`        | Відмітити день                                                                              |
+| POST            | `/api/menu/food/parse`          | Гібридна оцінка БЖВ: LLM-розклад на інгредієнти → таблиця, fallback на per100               |
+| POST            | `/api/menu/food/compute`        | Детермінований перерахунок БЖВ з інгредієнтів (без OpenAI, для правок у формі)              |
+| POST/DELETE     | `/api/menu/meal/custom`         | Додати/видалити власну з'їдену страву (inline у weekly_menus)                               |
+| GET             | `/api/shopping-list`            | Список покупок                                                                              |
+| PATCH           | `/api/shopping-list`            | Toggle куплено                                                                              |
+| POST            | `/api/shopping-list`            | Додати свій товар                                                                           |
+| GET             | `/api/water`                    | Сьогоднішнє споживання                                                                      |
+| POST            | `/api/water`                    | Зафіксувати порцію                                                                          |
+| GET             | `/api/streak`                   | Дані стріку                                                                                 |
+| GET             | `/api/tips`                     | Щоденний лайфхак                                                                            |
+| GET/POST        | `/api/weight`                   | Трекер ваги                                                                                 |
+| GET/POST/DELETE | `/api/favorites`                | Улюблені страви                                                                             |
+| GET/PUT         | `/api/profile`                  | Профіль                                                                                     |
+| PUT             | `/api/profile/food-preferences` | Вподобання                                                                                  |
+| POST            | `/api/push/subscribe`           | Push підписка                                                                               |
+| POST            | `/api/push/unsubscribe`         | Видалити підписку                                                                           |
+| GET             | `/api/silpo/connect?returnTo=`  | 302 на OAuth Сільпо (PKCE); 404 якщо фіча вимкнена                                          |
+| GET             | `/api/silpo/callback`           | Обмін коду на токени → 302 `returnTo?silpo=connected\|error`                                |
+| GET             | `/api/silpo/status`             | `{ enabled, connected, status, cart: {city, street, deliveryType} }`                        |
+| DELETE          | `/api/silpo/connection`         | Відключити (best-effort revoke + видалення токенів)                                         |
+| POST            | `/api/silpo/match`              | `{ items: [{itemId, quantity}] }` → підібрані товари з цінами; 409 `no-cart` / `stale-list` |
+| POST            | `/api/silpo/cart/options`       | `{ address }` → варіанти доставки (додому / найближчий самовивіз)                           |
+| POST            | `/api/silpo/cart/create`        | Створити кошик Сільпо за адресою та опцією                                                  |
+| POST            | `/api/silpo/cart/add`           | Додати товари в кошик Сільпо + проставити тег `silpo` на продукти списку                    |
+| GET             | `/api/silpo/orders/check`       | Замовлення Сільпо з нашими товарами → підказки для банера; знімає осиротілі теги            |
+| POST            | `/api/silpo/orders/confirm`     | `{ orderId, itemIds, action: confirm\|dismiss }` → галочки на тиждень / приховати банер     |
 
 Усі `/api/silpo/*` з ланцюжком викликів Сільпо мають `export const maxDuration = 60` (Vercel Hobby, дефолт 10 с обривав підбір).
 
@@ -589,30 +616,30 @@ src/
 
 ## UX / UI (мобільний)
 
-| Елемент | Деталі |
-|---------|--------|
-| **AppShell** | Full-screen, `padding-bottom: env(safe-area-inset-bottom)` |
-| **DayTabBar** | `scroll-snap-type:x mandatory`, auto-scroll активного дня |
-| **BottomSheet** | Слайд знизу, `max-height:85vh`, Headless UI Dialog |
-| **MealCard** | Emoji + назва + ккал + міні БЖВ; **swipe left** → swap, **swipe right** → consume ✓, **long press** → save ❤️ |
-| **MealCard consumed** | Зелений фон `bg-green-50`, badge "✓ з'їдено", назва закреслена |
-| **DayMealProgress** | "2 з 4 прийомів ✓" під заголовком дня |
-| **DayPrepTimeBadge** | "Швидкий день ⚡" (всі ≤20хв) або "Підготовчий 🍳" |
-| **CalorieProgressBar** | Sticky зверху, колір: зелений/жовтий/червоний |
-| **MacroProgressBar** | Б: Xг/Xг · Ж: Xг/Xг · В: Xг/Xг |
-| **WeightProgressCard** | Міні-спарклайн "-1.2 кг за 3 тижні" (тижневий тренд!) |
-| **MealCard rating** | Кнопка 😊 на картці поруч зі swap — з'являється коли страва з'їдена; тап розкриває inline-ряд 👎 😐 😍; після вибору показується обрана емодзі |
-| **ServingsSelector** | +/- кнопки в IngredientsTab, пропорційний перерахунок |
-| **DayFilterTabs** | Shopping list: "Пн-Ср" / "Чт-Нд" / "Весь тиждень" |
-| **OfflineIndicator** | Помаранчева смужка зверху у офлайн-режимі |
-| **Toast** | Мотиваційні: без негативу, "Повернулась! Це вже перемога 🎉" при пропуску |
-| **Haptic feedback** | Vibration API при consume, rate, streak |
-| **Pull-to-refresh** | На головній сторінці меню |
-| **Tap targets** | Мін 44×44px для всіх інтерактивних елементів |
-| **a11y** | `aria-labels` для емодзі, screen reader для прогрес-барів |
-| **Dark mode** | Всі компоненти: `dark:` класи; перемикач `ThemeToggle` (☀️/🌙) у хедері кожної захищеної сторінки; стан зберігається в `localStorage` (`nd_theme`) |
-| **Кольори секцій** | Breakfast `#3B82F6` (синій), Lunch `#F97316` (оранж), Dinner `#8B5CF6` (фіолет), Snack `#10B981` (зелений); CSS-змінні в `:root`/`.dark` |
-| **Кольори** | Orange `#f97316`, Yellow `#f4b619`, Red `#eb3c5a`; тіні карток: light `shadow-[0_2px_8px_rgba(0,0,0,0.08)]`, dark `shadow-[0_0_0_1px_rgba(255,255,255,0.07),_0_6px_24px_rgba(120,120,120,0.25)]` |
+| Елемент                | Деталі                                                                                                                                                                                           |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **AppShell**           | Full-screen, `padding-bottom: env(safe-area-inset-bottom)`                                                                                                                                       |
+| **DayTabBar**          | `scroll-snap-type:x mandatory`, auto-scroll активного дня                                                                                                                                        |
+| **BottomSheet**        | Слайд знизу, `max-height:85vh`, Headless UI Dialog                                                                                                                                               |
+| **MealCard**           | Emoji + назва + ккал + міні БЖВ; **swipe left** → swap, **swipe right** → consume ✓, **long press** → save ❤️                                                                                    |
+| **MealCard consumed**  | Зелений фон `bg-green-50`, badge "✓ з'їдено", назва закреслена                                                                                                                                   |
+| **DayMealProgress**    | "2 з 4 прийомів ✓" під заголовком дня                                                                                                                                                            |
+| **DayPrepTimeBadge**   | "Швидкий день ⚡" (всі ≤20хв) або "Підготовчий 🍳"                                                                                                                                               |
+| **CalorieProgressBar** | Sticky зверху, колір: зелений/жовтий/червоний                                                                                                                                                    |
+| **MacroProgressBar**   | Б: Xг/Xг · Ж: Xг/Xг · В: Xг/Xг                                                                                                                                                                   |
+| **WeightProgressCard** | Міні-спарклайн "-1.2 кг за 3 тижні" (тижневий тренд!)                                                                                                                                            |
+| **MealCard rating**    | Кнопка 😊 на картці поруч зі swap — з'являється коли страва з'їдена; тап розкриває inline-ряд 👎 😐 😍; після вибору показується обрана емодзі                                                   |
+| **ServingsSelector**   | +/- кнопки в IngredientsTab, пропорційний перерахунок                                                                                                                                            |
+| **DayFilterTabs**      | Shopping list: "Пн-Ср" / "Чт-Нд" / "Весь тиждень"                                                                                                                                                |
+| **OfflineIndicator**   | Помаранчева смужка зверху у офлайн-режимі                                                                                                                                                        |
+| **Toast**              | Мотиваційні: без негативу, "Повернулась! Це вже перемога 🎉" при пропуску                                                                                                                        |
+| **Haptic feedback**    | Vibration API при consume, rate, streak                                                                                                                                                          |
+| **Pull-to-refresh**    | На головній сторінці меню                                                                                                                                                                        |
+| **Tap targets**        | Мін 44×44px для всіх інтерактивних елементів                                                                                                                                                     |
+| **a11y**               | `aria-labels` для емодзі, screen reader для прогрес-барів                                                                                                                                        |
+| **Dark mode**          | Всі компоненти: `dark:` класи; перемикач `ThemeToggle` (☀️/🌙) у хедері кожної захищеної сторінки; стан зберігається в `localStorage` (`nd_theme`)                                               |
+| **Кольори секцій**     | Breakfast `#3B82F6` (синій), Lunch `#F97316` (оранж), Dinner `#8B5CF6` (фіолет), Snack `#10B981` (зелений); CSS-змінні в `:root`/`.dark`                                                         |
+| **Кольори**            | Orange `#f97316`, Yellow `#f4b619`, Red `#eb3c5a`; тіні карток: light `shadow-[0_2px_8px_rgba(0,0,0,0.08)]`, dark `shadow-[0_0_0_1px_rgba(255,255,255,0.07),_0_6px_24px_rgba(120,120,120,0.25)]` |
 
 ---
 
@@ -652,12 +679,14 @@ src/
 ## Функції залучення
 
 ### Стрік-система
+
 - Стрік рахується якщо **≥3 з 4** прийомів їжі consumed (не обов'язково 100%)
 - `isCompleted` дня = авто при досягненні порогу
 - Бейджі: 3 / 7 / 14 / 30 / 60 / 100 днів
 - **Без покарань**: пропуск не обнуляє жорстко — "Повернулась! Це вже перемога 🎉"
 
 ### Трекер ваги (ключовий мотиватор)
+
 - Нагадування 1 раз на тиждень (п'ятниця зранку)
 - Показувати: тижневий/місячний тренд, не щоденні коливання
 - `WeightProgressCard`: "-1.2 кг за 3 тижні" — найпотужніший мотиватор
@@ -665,6 +694,7 @@ src/
 - **Не показувати** різку зміну як "провал"
 
 ### Рейтинг страв → персоналізація AI
+
 - Кнопка 😊 на `MealCard` (поруч зі swap) — видима коли страва з'їдена і ще не оцінена; тап розкриває inline-ряд 👎 😐 😍 прямо на картці (без модалки)
 - Після вибору — обрана емодзі залишається на картці як індикатор
 - Передається в промпт наступної генерації:
@@ -672,20 +702,24 @@ src/
   - Низький рейтинг → "не повторювати"
 
 ### Улюблені страви
+
 - ❤️ кнопка на MealCard (long press або іконка)
 - При swap → показувати улюблені першими
 - "Повторити минулий тиждень" — якщо було вдале меню
 
 ### Щоденний лайфхак
+
 - `GET /api/tips?date=YYYY-MM-DD` → `dateHash % count` (той самий хак весь день)
 - Контекстний вибір категорії: hydration якщо мало води, motivation якщо стрік перервано
 
 ### Трекер води
+
 - CSS прогрес-коло, кнопки +200/250/350/500мл
 - Оптимістичне оновлення + POST `/api/water`
 - localStorage офлайн-fallback
 
 ### Мотиваційні повідомлення (Toast — без негативу)
+
 - Виконання дня: "Чудово! X днів поспіль 🔥"
 - Перший прийом: "Доброго ранку! Ціль {goalCalories} ккал"
 - Бейдж: анімація розблокування
@@ -693,12 +727,14 @@ src/
 - Ціль води: "Водний баланс — ✓"
 
 ### Розумні нагадування (Tier 2, Фаза 6)
+
 - "Борщ на завтра — підготуй інгредієнти сьогодні ввечері" (multi-day prep)
 - "5-денний стрік! Не зупиняйся 💪"
 - "Залишилось 800мл до цілі з водою"
 - "Сьогодні легкий день — всі страви за 15 хв!"
 
 ### Тижневий звіт (Tier 2, Фаза 7)
+
 - Щонеділі: днів дотримання, середні ккал vs ціль, топ-3 страви, динаміка ваги
 - Мотиваційне повідомлення від AI
 - Шерінг картинки для Instagram Stories
@@ -726,12 +762,14 @@ src/
 ## Безпека та граничні випадки
 
 ### Захист від нездорових харчових патернів
+
 - `goalCalories = Math.max(1200, tdee - deficit)` — жорсткий мінімум для жінок
 - Якщо BMI < 18.5 → м'яке попередження + рекомендація консультації
 - Мова без негативного фреймінгу: "трохи більше — це нормально, завтра новий день!"
 - Стрік: не карати за пропуск — позитивне підкріплення повернення
 
 ### AI rate limiting та обробка помилок
+
 - Максимум **3 генерації/тиждень** на користувача (зберігати лічильник в `user_profiles`)
 - Retry: 3 спроби, exponential backoff (1s / 2s / 4s)
 - Fallback: показати останнє `active` меню, якщо AI недоступний
@@ -739,12 +777,14 @@ src/
 - `max_tokens` budget встановити в API виклику
 
 ### Multi-day prep + swap конфлікт
+
 - Якщо юзер тапає swap на страві з `isMultiDayPrep` → попередження:
   > "Цю страву готується в Понеділок на 3 дні. Замінити лише сьогодні чи всі 3 дні?"
 - Варіанти: замінити один день / замінити всі пов'язані дні
 - Після swap → перерахунок shopping list
 
 ### Зміна порцій (`servings`)
+
 - ServingsSelector в IngredientsTab: кнопки 1 / 2 / 3
 - Відображення інгредієнтів: `quantity * servings`
 - Калорії у CartCard: `calories * servings`
@@ -752,6 +792,7 @@ src/
 - Multi-day prep: "Борщ на 3 дні = 6 порцій"
 
 ### Offline shopping list (IndexedDB)
+
 - При відмітці "куплено" → зберегти в IndexedDB з `purchasedAt: Date.now()`
 - При поверненні онлайн → batch sync до сервера
 - Conflict resolution: `last-write-wins` за таймстемпом
@@ -798,19 +839,21 @@ track('silpo_cart_added', { products, total });
 1. **TDEE gap**: при першому вході в `/menu` → обчислити за формулою (буде надана) та зберегти в `user_profiles`
 
 2. **Middleware**: оновити `src/middleware.ts`:
+
    ```ts
-   matcher: ['/menu/:path*', '/shopping-list/:path*', '/profile/:path*']
+   matcher: ['/menu/:path*', '/shopping-list/:path*', '/profile/:path*'];
    ```
 
 3. **Session identity**: `readSessionUserId()` → email → `userEmail` у всіх колекціях
 
 4. **MongoDB nested arrays** (consume/rate meal):
+
    ```js
    db.weekly_menus.updateOne(
      { _id: id, userEmail },
-     { $set: { "days.$[day].meals.lunch.isConsumed": true } },
-     { arrayFilters: [{ "day.date": targetDate }] }
-   )
+     { $set: { 'days.$[day].meals.lunch.isConsumed': true } },
+     { arrayFilters: [{ 'day.date': targetDate }] },
+   );
    ```
 
 5. **quickAlternatives у промпті**: збільшує розмір відповіді і вартість — встановити `max_tokens` і виміряти реальний token usage перед production
@@ -826,6 +869,7 @@ track('silpo_cart_added', { products, total });
 ## Фази реалізації
 
 ### ✅ Фаза 1 — Foundation + AI Menu (MVP)
+
 - [x] TypeScript типи з `isConsumed`, `rating`, `quickAlternatives`, `servings` в `AIMeal`
 - [x] `src/middleware.ts` — нові маршрути
 - [x] `AppShell` + `BottomNavBar` + `src/app/menu/layout.tsx`
@@ -845,6 +889,7 @@ track('silpo_cart_added', { products, total });
 ---
 
 ### ✅ Фаза 2 — Список покупок + Offline
+
 - [x] `shoppingListBuilder.ts` — з `forDays` агрегацією
 - [x] `GET/PATCH/POST /api/shopping-list` — `src/app/api/shopping-list/route.ts`
 - [x] `ShoppingListView` + `DayFilterTabs` + `CategorySection` + `ShoppingItem`
@@ -859,6 +904,7 @@ track('silpo_cart_added', { products, total });
 ---
 
 ### ✅ Фаза 3 — Залучення + Трекер ваги
+
 - [x] `weight_logs` collection + `GET/POST /api/weight`
 - [x] `WeightProgressCard` (головна) + `WeightLogSection` (профіль)
 - [x] Автоперерахунок TDEE при зміні ваги
@@ -881,6 +927,7 @@ track('silpo_cart_added', { products, total });
 ---
 
 ### ✅ Фаза 4 — Профіль + харчові переваги
+
 - [x] `src/app/profile/page.tsx` (повноцінна сторінка з BMR/TDEE, бейджами, FoodPreferencesEditor)
 - [x] `FoodPreferencesEditor` — колапсована секція, чекбокси дієти + TagInput для улюблених/небажаних/алергій
 - [x] `TagInput` — тег-інпут (Enter/кома додає, Backspace видаляє)
@@ -894,6 +941,7 @@ track('silpo_cart_added', { products, total });
 ---
 
 ### ✅ Фаза 5 — PWA
+
 - [x] Іконки 192px + 512px PNG (+ apple-touch-icon 180px)
 - [x] `public/manifest.json` — shortcuts до /menu і /shopping-list
 - [x] Мета-теги в `src/app/layout.tsx` — Viewport + metadata (manifest, appleWebApp, icons)
@@ -909,6 +957,7 @@ track('silpo_cart_added', { products, total });
 ---
 
 ### ✅ Фаза 6 — Push + Smart notifications + Polish
+
 - [ ] Server-side push (`web-push` + cron)
 - [ ] Розумні контекстні нагадування (multi-day prep, streak, вода)
 - [ ] Офлайн-обробка в service worker (shell caching)
@@ -920,6 +969,7 @@ track('silpo_cart_added', { products, total });
 ---
 
 ### ✅ Фаза 7 — Weekly report + Social
+
 - [ ] Тижневий звіт (компонент + AI-генерований текст)
 - [ ] Кошторис тижня (орієнтовна вартість списку покупок для UA ринку)
 - [ ] Шерінг картинки результату (Instagram Stories формат)
@@ -933,6 +983,7 @@ track('silpo_cart_added', { products, total });
 користувачів. Деплой-таргет: Vercel / serverless.
 
 ### Фаза A — критична інфраструктура
+
 - **Індекси MongoDB** — `src/lib/ensureIndexes.ts` (єдине джерело правди), авто-створення
   раз на інстанс із `getDb()`; ідемпотентне. Покриває гарячий шлях (`sessions.id`,
   `users.email`, `*.userEmail` тощо) + TTL на `sessions.expiresAt` і `magic_links.expiresAt`.
@@ -943,6 +994,7 @@ track('silpo_cart_added', { products, total });
   за `signature` (дедуп ретраїв/гонок + аудит-лог).
 
 ### Фаза B — продуктивність
+
 - **Прибрано N+1** у `meal/consume` і `meal/custom` — completion дня рахується локально
   з уже завантаженого меню, без повторного читання (≈4-6 → 2-3 запити).
 - **`water_logs` append-only** (див. модель вище) — усунуто безмежне зростання масиву
@@ -951,6 +1003,7 @@ track('silpo_cart_added', { products, total });
   лише поточний (`deleteMany`).
 
 ### Фаза C — безпека акаунтів
+
 - **Ковзний TTL сесій** + `clearAllSessions()` (`src/lib/auth/session.ts`); роути
   `/api/auth/logout` і `/api/auth/logout-all` + кнопки «Вийти»/«Вийти на всіх пристроях» у профілі.
 - **Email із сесії в `subscription/init`** — залогінений користувач не може писати в чужий акаунт.
@@ -965,16 +1018,16 @@ track('silpo_cart_added', { products, total });
 
 ## Критичні файли для змін
 
-| Файл | Зміна | Статус |
-|------|-------|--------|
-| `src/app/menu/page.tsx` | Замінити заглушку | ✅ Виконано |
-| `src/middleware.ts` | Додати `/shopping-list/*`, `/profile/*` | ✅ Виконано |
-| `src/app/layout.tsx` | PWA мета-теги | ⏳ Фаза 5 |
-| `src/lib/db.ts` | Паттерн для всіх нових API маршрутів | ✅ Використовується |
-| `src/lib/auth/session.ts` | `readSessionUserId()` → email; + ковзний TTL та `clearAllSessions()` | ✅ |
-| `src/types/onboarding.ts` | Джерело для `UserProfile` | ✅ UserProfile extends OnboardingData |
-| `next.config.ts` | next-pwa конфіг (`dynamicStartUrl: false`); CSP: `images.silpo.ua` в `img-src` і `connect-src` | ✅ |
-| `.env` | `OPENAI_API_KEY`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `SILPO_MCP_CLIENT_ID`, `SILPO_TOKEN_ENC_KEY` | ✅ (Silpo-змінні = флаг фічі; без них секції/кнопки не рендеряться) |
+| Файл                      | Зміна                                                                                                   | Статус                                                              |
+| ------------------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `src/app/menu/page.tsx`   | Замінити заглушку                                                                                       | ✅ Виконано                                                         |
+| `src/middleware.ts`       | Додати `/shopping-list/*`, `/profile/*`                                                                 | ✅ Виконано                                                         |
+| `src/app/layout.tsx`      | PWA мета-теги                                                                                           | ⏳ Фаза 5                                                           |
+| `src/lib/db.ts`           | Паттерн для всіх нових API маршрутів                                                                    | ✅ Використовується                                                 |
+| `src/lib/auth/session.ts` | `readSessionUserId()` → email; + ковзний TTL та `clearAllSessions()`                                    | ✅                                                                  |
+| `src/types/onboarding.ts` | Джерело для `UserProfile`                                                                               | ✅ UserProfile extends OnboardingData                               |
+| `next.config.ts`          | next-pwa конфіг (`dynamicStartUrl: false`); CSP: `images.silpo.ua` в `img-src` і `connect-src`          | ✅                                                                  |
+| `.env`                    | `OPENAI_API_KEY`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `SILPO_MCP_CLIENT_ID`, `SILPO_TOKEN_ENC_KEY` | ✅ (Silpo-змінні = флаг фічі; без них секції/кнопки не рендеряться) |
 
 ---
 
@@ -996,16 +1049,18 @@ track('silpo_cart_added', { products, total });
 
 ---
 
-*Документ оновлювати в міру реалізації фаз. Виконані пункти позначати `[x]`.*
+_Документ оновлювати в міру реалізації фаз. Виконані пункти позначати `[x]`._
 
 ---
 
 ## 🔧 Changelog — ціль харчування впливає на норму калорій + редагування у профілі (2026-05-31)
 
 ### Проблема
+
 Ціль харчування (`mainGoal`, обирається на `onboarding/main-goal`) **ніде не впливала на денну норму** (`goalCalories`). Розрахунок дублювався у 3 місцях, і всі використовували плоский дефіцит `TDEE − 500` замість корекції під ціль — для набору ваги це навіть мінусувало калорії. `mainGoal` потрапляв лише в текст промпта генерації, але не в число калорій. До того ж біометрію/ціль **не можна було змінити** після першого налаштування (форма у профілі показувалась лише за відсутності профілю).
 
 ### Формула (узгоджено)
+
 ```
 BMR (Mifflin-St Jeor):  чол: 10×вага + 6.25×зріст − 5×вік + 5
                         жін: 10×вага + 6.25×зріст − 5×вік − 161
@@ -1017,6 +1072,7 @@ TDEE = BMR × коефіцієнт_активності
 ```
 
 ### Зміни
+
 1. **Єдине джерело правди — новий `src/lib/calories.ts`**: `calcBmr()`, `calcCalories()` → `{ bmr, tdee, goalCalories }`, `goalFactor()`, `GOAL_FACTORS`, `normalizeSex()` («Чоловік/Жінка» → `male/female`). Усуває 3 дубльовані копії формули.
 2. **Підключення модуля** (прибрано локальні формули):
    - `src/app/api/profile/route.ts` — POST + PUT; **PUT тепер перераховує і при зміні `mainGoal`**, не лише біометрії.
@@ -1025,10 +1081,12 @@ TDEE = BMR × коефіцієнт_активності
 3. **Редагування у профілі — новий `src/components/profilePage/BiometricsGoalEditor.tsx`**: стать, вік, вага, зріст, активність **+ селектор цілі** (5 опцій як на `main-goal`). Два режими: форма налаштування (профілю нема) і **згортувана секція «⚙️ Мої дані та ціль»** (профіль є — раніше read-only). Зберігає через `PUT /api/profile`, зведення оновлюється наживо. У `src/app/profile/page.tsx` inline-форму замінено на компонент (доступний завжди); ціль показується словами (`GOAL_LABELS`) поряд із нормою.
 
 ### Перевірка
+
 - `npx tsc --noEmit` → exit 0.
 - Зміна `lose_weight → gain_weight` при тій самій біометрії → `goalCalories` стрибає з `TDEE×0.85` на `TDEE×1.15`; поріг 1200 не пробивається.
 
 ### Відоме обмеження (поза цією зміною)
+
 - `src/app/api/onboarding/route.ts` — заглушка (no-op `{ success: true }`) → `users.onboarding` не заповнюється, профіль фактично налаштовується через сторінку профілю. Каверза: онбординг до автентифікації (немає email-ключа). Потенційний окремий крок. _(Лог тіла з PII прибрано — див. OWASP-changelog 2026-06-11.)_
 
 ---
@@ -1036,15 +1094,19 @@ TDEE = BMR × коефіцієнт_активності
 ## 🔧 Changelog — список покупок: коректні суми по періодах + синхронізація з меню (2026-05-31)
 
 ### Проблема
+
 Три баги у списку покупок:
+
 1. **Продукти, яких немає в меню.** Список будувався один раз при генерації і не оновлювався при свопі страви — інгредієнти старої страви лишались (привиди), нової — були відсутні.
 2. **Вага не відповідала сумі інгредієнтів страв.** Частково тому, що у вкладках періодів показувалась тижнева вага (наслідок бага 3); решта — фрагментація за одиницями/назвами (див. обмеження).
 3. **«Весь тиждень» ≠ Пн–Ср + Чт–Нд** (могло бути і більше, і менше). Перемикач періодів лише **показував/ховав** елементи, а `quantity` завжди дорівнювала тижневому тоталу. Інгредієнт, потрібний в обох половинах, рахувався двічі (суми половин > тиждень); а елементи з міткою дня, що не збігалась із захардкодженим списком (різні апострофи в «П'ятниця»), випадали з обох половин (тиждень > суми половин).
 
 ### Корінь
+
 Список — **снапшот**, а період був **фільтром show/hide**, не ре-агрегацією. Поденні кількості схлопувались в один тотал при білді й на клієнті не відновлювались. А зміни меню (своп) список взагалі не зачіпали.
 
 ### Зміни
+
 1. **Поденна розбивка — `ShoppingListItem.quantityByDay: number[]`** (`src/types/shoppingList.ts`, [0]=Пн…[6]=Нд). `buildShoppingList` (`src/lib/menu/shoppingListBuilder.ts`) накопичує кількість по дню; тижневий тотал рахується з уже **округлених** поденних значень → Пн–Ср + Чт–Нд = тиждень **точно**, без дрейфу ±0.1.
 2. **Суми по періоду за індексом дня** — `periodQuantity()` / `isVisibleInPeriod()` у `src/components/shoppingListPage/DayFilterTabs.tsx` (прибрано `matchesDayFilter` + захардкоджені списки днів). Звірка за **індексом**, не за лейблом → проблема апострофа зникла. `ShoppingListView` показує кількість саме за обраний період (`{ ...item, quantity: periodQuantity(...) }`).
 3. **Ре-синк при свопі** — `src/app/api/menu/meal/swap/route.ts` перебудовує список з оновленого меню. `mergeShoppingItems()` зберігає позначки «куплено» (ключ `назва+одиниця`) і ручні товари «своє».
@@ -1052,13 +1114,16 @@ TDEE = BMR × коефіцієнт_активності
 5. Ручні товари (`POST /api/shopping-list`) → `quantityByDay: []`, показуються в усіх вкладках (не прив'язані до дня меню).
 
 ### Інваріант (збережено в авто-пам'ять)
+
 Список покупок = похідний снапшот меню. **Будь-яка мутація меню → перебудова списку** (`buildShoppingList` + `mergeShoppingItems`). Робить `generate` (свіжо, без merge) і `swap` (merge). `consume`/`rate` не потребують (інгредієнти не міняються). Нові роути-редактори меню мають робити те саме.
 
 ### Перевірка
+
 - `npx tsc --noEmit` → exit 0.
 - Інваріант `Пн–Ср + Чт–Нд === тиждень` — 100k рандомних векторів кількостей, 0 розбіжностей.
 
 ### Відоме обмеження (наступний крок — баг 2, друга частина)
+
 **Канонізація одиниць і назв НЕ зроблена**: «Цибуля 1 шт» і «Цибуля 50 г» досі окремі рядки (ключ агрегації = `назва+одиниця`), «помідори»/«томати» не зливаються, немасові одиниці (`ст.л.`, `склянка`) у грами не зводяться. Це причина залишкових розбіжностей ваги по конкретному продукту. Period-overlap частину бага 2 вже закрито.
 
 ---
@@ -1066,6 +1131,7 @@ TDEE = BMR × коефіцієнт_активності
 ## 🔧 Changelog — Промпт v2: кілька страв за прийом + рецепти з кроками (2026-06-01)
 
 ### Мотивація
+
 1. **Якість рецептів**: AI генерував опис страви суцільним текстом — кроки приготування не відділялись і не нумерувались. Потрібні рецепти з кроками з нового рядка для складних страв (≥3 інгредієнтів або термічна обробка).
 2. **Реалістичність прийомів їжі**: одна страва на сніданок або обід — занадто спрощена модель. Реальний сніданок = вівсянка + яблуко; обід = основне + гарнір + салат. Потрібно декілька карток страв під кожним прийомом.
 3. **Тестування промпту**: тимчасово прибрати ліміт генерації, щоб зручно ітерувати промпт без очікування нового тижня.
@@ -1073,17 +1139,22 @@ TDEE = BMR × коефіцієнт_активності
 ### Зміни
 
 #### 1. Rate limit тимчасово відключено
+
 **`src/app/api/menu/generate/route.ts`**:
+
 ```ts
 // Було:
 const MAX_GENERATIONS_PER_WEEK = 3;
 // Стало:
 const MAX_GENERATIONS_PER_WEEK = 999; // тимчасово необмежено для тестування промпту
 ```
+
 > Повернути `3` після затвердження фінального промпту.
 
 #### 2. Тип `DayMeals` — всі прийоми стали масивами
+
 **`src/types/meals.ts`**:
+
 ```ts
 // Було:
 export interface DayMeals {
@@ -1100,9 +1171,11 @@ export interface DayMeals {
   snacks: AIMeal[];
 }
 ```
+
 Тепер усі чотири прийоми є масивами, що дозволяє AI повертати 1–2 страви на сніданок і 2–3 на обід/вечерю. Паттерн `snacks` вже був масивом — тепер однорідна модель.
 
 #### 3. `generateMenuWithAI.ts` — рефакторинг парсингу та промпту
+
 **`src/lib/menu/generateMenuWithAI.ts`**:
 
 - **Новий хелпер `normalizeArray(raw)`**: приймає масив або одиночний об'єкт (для зворотньої сумісності зі старими меню в БД) і завжди повертає `AIMeal[]`.
@@ -1122,6 +1195,7 @@ export interface DayMeals {
   - `\\n` у TypeScript-рядку генерує `\n` у рядку промпту — модель бачить правильний JSON-ескейп.
 
 #### 4. Рефакторинг індексу страви в API та UI: `snackIndex` → `itemIndex`
+
 До цих змін `snackIndex` використовувався лише для перекусів (`snacks[]`). Оскільки тепер усі прийоми є масивами, потрібен уніфікований індекс для будь-якої страви в будь-якому прийомі.
 
 **Перейменовано в усіх файлах**: `snackIndex` → `itemIndex`. Логіка ідентична — індекс усередині масиву конкретного прийому.
@@ -1140,20 +1214,25 @@ export interface DayMeals {
 | `src/components/menuPage/WeeklyMenuView.tsx` | Глобальна заміна `snackIndex` → `itemIndex`; lookup: `mealArr = mealType==='snack' ? meals.snacks : meals[mealType]` |
 
 #### 5. `DayView` — секції рендеряться через `.map`
+
 **`src/components/menuPage/DayView.tsx`**:
+
 - `calcConsumedMacros` і `allMeals` використовують `[...breakfast, ...lunch, ...dinner, ...snacks]`.
 - Кожна секція (Сніданок / Обід / Вечеря / Перекус) рендерить масив карток через `.map` із `space-y-2`.
 - Секція прихована (`{arr.length > 0 && ...}`), якщо масив порожній.
 
 #### 6. Агрегатори — flatten скрізь
-| Файл | Зміна |
-|------|-------|
-| `src/lib/menu/shoppingListBuilder.ts` | `[...breakfast, ...lunch, ...dinner, ...snacks]` |
-| `src/app/api/menu/generate/route.ts` | Те саме — при зборі `highRated`/`lowRated` |
+
+| Файл                                    | Зміна                                              |
+| --------------------------------------- | -------------------------------------------------- |
+| `src/lib/menu/shoppingListBuilder.ts`   | `[...breakfast, ...lunch, ...dinner, ...snacks]`   |
+| `src/app/api/menu/generate/route.ts`    | Те саме — при зборі `highRated`/`lowRated`         |
 | `src/app/api/menu/meal/custom/route.ts` | Те саме — при перевірці порогу завершення дня (≥3) |
 
 ### Структура MongoDB після змін
+
 Поле `meals` у `weekly_menus.days[]` тепер:
+
 ```js
 meals: {
   breakfast: [AIMeal, AIMeal],     // 1–2 страви
@@ -1162,13 +1241,16 @@ meals: {
   snacks:    [AIMeal]              // 1 страва
 }
 ```
+
 **Зворотня сумісність**: `normalizeArray()` у `mapDays` перетворює одиночний об'єкт (старі меню) у масив при читанні — клієнт завжди отримує масиви.
 
 ### Перевірка
+
 - `npx tsc --noEmit` → exit 0.
 - RecipeTab вже використовує `whitespace-pre-line` — `\n` у `description` рендеряться як переноси рядків без додаткових змін UI.
 
 ### Відомі наступні кроки
+
 - Після затвердження якості промпту повернути `MAX_GENERATIONS_PER_WEEK = 3`.
 - Після перегенерації нового меню старі документи в MongoDB (з `breakfast: AIMeal`) залишаються валідними завдяки `normalizeArray` — міграція не потрібна.
 
@@ -1177,12 +1259,15 @@ meals: {
 ## 🎨 Changelog — UI Redesign: картки страв, секції, теми (2026-06-01)
 
 ### Мотивація
+
 Редизайн сторінки `/menu` за HTML-референсом: чітка колірна ідентифікація прийомів їжі, помітний стан "з'їдено", кращі тіні для обох тем, зручніший перемикач теми на всіх сторінках.
 
 ### Зміни
 
 #### 1. CSS-змінні для кольорів (`src/app/globals.css`)
+
 Додано змінні в `:root` та `.dark`:
+
 ```css
 /* :root */
 --color-meal-breakfast: #3B82F6;
@@ -1195,6 +1280,7 @@ meals: {
 ```
 
 #### 2. `MealCard.tsx` — повний редизайн
+
 - **Нова структура**: `[emoji] [тіло: назва + ккал + макро + badges] [горизонтальний ряд кнопок]`
 - **Ккал** — великий жирний шрифт (`text-[17px]`) кольором секції; менше 200 ккал → `text-sm`
 - **Стан consumed**: `bg-green-50 border-green-200` (світла) / `bg-green-900/20` (темна), назва закреслена, badge "✓ з'їдено"
@@ -1203,23 +1289,28 @@ meals: {
 - **Тіні**: light `shadow-[0_2px_8px_rgba(0,0,0,0.08)]`; dark `shadow-[0_0_0_1px_rgba(255,255,255,0.07),_0_6px_24px_rgba(120,120,120,0.25)]`
 
 #### 3. `DayView.tsx` — шапки секцій
+
 Новий `SectionHeader` компонент (поза основним компонентом):
+
 - Кольорова точка (`●`) кольору секції
 - **Жирна назва** (`text-sm font-bold`) тим самим кольором
 - Підсумок ккал секції + "· з'їдено ✓" коли вся секція закрита
 
 #### 4. `DayTabBar.tsx` — вкладки днів
+
 - **Виконаний день**: `✓` inline перед скороченою назвою дня (`✓ Пн`), зелений або білий (на активній вкладці)
 - **Сьогодні**: `ring-2 ring-green-500` навколо вкладки замість зеленої точки знизу
 - Фіксована висота вкладок — нічого не звисає знизу
 
 #### 5. `ThemeToggle` — спільний компонент
+
 - Виокремлено в `src/components/common/ThemeToggle.tsx`
 - Стан `localStorage` (`nd_theme: 'light' | 'dark'`); при першому завантаженні — `prefers-color-scheme`
 - Додано в хедер усіх трьох захищених сторінок: `/menu`, `/shopping-list`, `/profile`
 - `/shopping-list` отримав постійний хедер "Список покупок" + кнопка теми
 
 ### Перевірка
+
 - `npx tsc --noEmit` → exit 0.
 
 ---
@@ -1227,7 +1318,9 @@ meals: {
 ## 🔧 Changelog — Детермінований розрахунок калорій/БЖВ з таблиці продуктів (2026-06-04)
 
 ### Проблема
+
 `gpt-4.1-mini` систематично помилявся у калорійності страв:
+
 - плутав «на 100 г» та «на порцію»;
 - «вигадував» числа, ігноруючи фактичну вагу інгредієнтів у рецепті;
 - застосовував білок одного інгредієнта до всієї складної тушкованої страви.
@@ -1235,6 +1328,7 @@ meals: {
 Результат — відхилення ±200–400 ккал/день від цілі, неправдиві значення БЖВ, 2 з 7 днів часто виходили сильно нижче цільової норми.
 
 ### Рішення
+
 **Перенести розрахунок калорій/БЖВ із LLM у детермінований код.** LLM лише генерує страви з інгредієнтами та рецептами; числа `calories/protein/fat/carbs` рахуються з таблиці продуктів за фактичними вагами інгредієнтів.
 
 ---
@@ -1245,6 +1339,7 @@ meals: {
 
 **`toGrams(quantity, unit, name) → number`**
 Конвертує (кількість, одиниця, назва) у грами:
+
 - `г` / `мл` → пряма конвертація (1 мл ≈ 1 г)
 - `ч.л.` → ×5 г; `ст.л.` → ×15 г
 - `шт` → таблиця за назвою: яйце ≈ 55 г, картопля ≈ 120 г, морква/буряк ≈ 90 г, помідор/огірок/перець ≈ 100 г, банан/яблуко/груша ≈ 150 г, цибуля ≈ 70 г, часник ≈ 5 г; невідоме `шт` → 0 (dev-warn)
@@ -1261,6 +1356,7 @@ meals: {
 #### 2. `src/lib/menu/generateMenuWithAI.ts`
 
 **Промпт — видалено:**
+
 - `CALORIES (most important):` — 5 правил про точне влучення в ціль ккал
 - `PORTION WEIGHT (critical for calorie accuracy):` — узгодженість calories/ingredients/servingSize
 
@@ -1268,6 +1364,7 @@ meals: {
 LLM використовує цільову калорійність лише як орієнтир для розміру порцій; числа не рахує.
 
 **Промпт — новий блок `MEAL STRUCTURE` (обов'язковий):**
+
 - Перша страва в сніданку/обіді/вечері — обов'язково з суттєвим протеїновим джерелом (м'ясо, риба, яйця, сир, йогурт ≥100 г, бобові); фрукт/хліб/крохмальне — не перша страва
 - Обід — обов'язково окремий гарнір із круп/пасти (гречка, рис, макарони, пшоно тощо)
 - Якщо в улюблених — фастфуд / кондитерські / жирні продукти: включати, але ≤20% від добової норми ккал
@@ -1279,6 +1376,7 @@ LLM використовує цільову калорійність лише я
 **`normalizeMeal()`:** тепер викликає `computeMealNutrition(ingredients)` замість `raw.calories/protein/fat/carbs`.
 
 **Нова функція `scaleDayToTarget(meals, targetCalories)`:**
+
 ```
 k = targetCalories / Σ(meal.calories × meal.servings)
 |k - 1| ≤ 3% → нічого не робити
@@ -1286,16 +1384,19 @@ k клампується [0.5, 2.0] (dev-warn при крайніх значен
 Для кожної страви: calories, protein, fat, carbs, servingSize × k (round)
 ingredient.quantity × k: шт → max(1, round), г/мл → max(5, round)
 ```
+
 Зберігає `calories/servingSize` ratio — `ConsumePortionSheet` рахує ккал/г коректно.
 
 **Нова функція `adjustDeficientDays(days, targetCalories)`:**
 Якщо після scaling день < 88% цілі (k був обрізаний до 2.0):
+
 - Шукає донора: спочатку ±1 день, потім будь-який з 7
 - Слоти за пріоритетом: `lunch → breakfast → dinner`; потрібно ≥2 страви у донора і лише 1 у дефіцитного
 - Копіює найменшу-за-калоріями страву (салат/гарнір) — donor незмінний
 - Повторно запускає `scaleDayToTarget`
 
 **Рефакторинг `mapDays()` → 4-прохідний pipeline:**
+
 ```
 Pass 1  normalize: parse JSON + computeMealNutrition
 Pass 2  scaleDayToTarget для всіх 7 днів (окрема петля)
@@ -1304,20 +1405,24 @@ Pass 4  totalCalories / totalPrepMinutes
 ```
 
 **`generateMealAlternatives()`:**
+
 - Промпт: явно передається цільова калорійність (`~${meal.calories} ккал`); LLM просять регулювати вагу інгредієнтів у грамах для влучення в ціль; схема JSON включає повну структуру `ingredients` (раніше модель повертала страви без інгредієнтів)
 - Масштабування через `scaleMealToCalories(alt, meal.calories)` — виделено в окрему функцію
 
 ---
 
 ### Чому вирішує «2 з 7 дефіцитних»
+
 Нові правила `MEAL STRUCTURE` примушують LLM щодня включати м'ясо/рибу/яйця + кашу/пасту — всі ці продукти 100% є в `FOOD_TABLE`. `computeMealNutrition` рахує точніше → k зазвичай < 1.5 → масштабування дає ±3%. `adjustDeficientDays` лишається страховкою для крайніх випадків (> 12% дефіцит після scaling).
 
 ### Зворотня сумісність
+
 - `AIMeal` тип незмінний — поля `calories/protein/fat/carbs` залишились (тепер рахуються кодом)
 - Фронтенд — без змін
 - Старі меню в MongoDB — `normalizeMeal` перерахує макро з інгредієнтів при читанні
 
 ### Перевірка
+
 - `npx tsc --noEmit` → exit 0
 - Після генерації: `days[].totalCalories` ∈ `[goalCalories × 0.97, goalCalories × 1.03]`
 - Dev-консоль: `[foodNutrition] no match for ingredient: "..."` → сигнал розширити `FOOD_TABLE`
@@ -1328,22 +1433,28 @@ Pass 4  totalCalories / totalPrepMinutes
 ## 🔧 Changelog — Виправлення свопу: інгредієнти в альтернативах + регулювання калорій (2026-06-04)
 
 ### Проблеми
+
 1. **LLM повертав альтернативи без інгредієнтів**: промпт `generateMealAlternatives` посилався на `<AIMeal>` без визначення схеми — модель не знала, що потрібне поле `ingredients`. Через це `computeMealNutrition` повертала 0 ккал і масштабування не спрацьовувало.
 2. **`totalCalories` дня не оновлювався після свопу**: `swap/route.ts` перезаписував лише страву, а `days[].totalCalories` лишався зі старим значенням до наступного рефетчу меню.
 
 ### Зміни
 
 #### 1. Промпт `generateMealAlternatives` — повна схема + цільові калорії
+
 **`src/lib/menu/generateMenuWithAI.ts`**:
+
 - Замінено `<AIMeal>` на явну JSON-схему зі структурою `ingredients` (аналогічно до `SYSTEM_PROMPT` тижневого меню)
 - Додано цільову калорійність у промпт: `~${meal.calories} ккал на порцію`; LLM просять регулювати вагу інгредієнтів у грамах для влучення в ціль
 - Fallback коли `meal.calories === 0`: орієнтир на `servingSize` г
 
 #### 2. `scaleMealToCalories()` — виділена в окрему exported функцію
+
 **`src/lib/menu/generateMenuWithAI.ts`**:
+
 ```ts
-export function scaleMealToCalories(meal: AIMeal, targetCalories: number): void
+export function scaleMealToCalories(meal: AIMeal, targetCalories: number): void;
 ```
+
 - Рахує `k = targetCalories / meal.calories`
 - Масштабує `calories`, `protein`, `fat`, `carbs`, `servingSize`, `ingredients[].quantity`
 - `шт` → `max(1, round(q × k))`; `г/мл` → `max(5, round(q × k))`
@@ -1351,17 +1462,22 @@ export function scaleMealToCalories(meal: AIMeal, targetCalories: number): void
 - Замінює інлайн-блок у `generateMealAlternatives`; використовується і в `swap/route.ts`
 
 #### 3. `swap/route.ts` — масштабування + перерахунок `totalCalories`
+
 **`src/app/api/menu/meal/swap/route.ts`**:
+
 - Після формування `swappedMeal` — виклик `scaleMealToCalories(swappedMeal, originalMeal.calories)` перед записом у БД
 - `totalCalories` дня перераховується з усіх страв (consumed + unconsumed) і зберігається в одному `$set` разом зі страваою та `updatedAt`
 
 #### 4. `foodNutrition.ts` — нові продукти
+
 **`src/lib/menu/foodNutrition.ts`**:
+
 - **Кус-кус**: protein 13, fat 1.7, carbs 72 (keywords: `кус-кус`, `кускус`, `кус кус`)
 - **Пшенична крупа**: protein 13, fat 2, carbs 68 (keywords: `пшенична крупа`, `пшенична каша` тощо)
 - **Курячі грудки** (розширення існуючого запису "Куряче філе"): додано `курячі грудки`, `курячих грудок`, `курячу грудку`
 
 ### Перевірка
+
 - `npx tsc --noEmit` → exit 0
 - Альтернативи тепер містять `ingredients` → `computeMealNutrition` дає ненульові калорії → `scaleMealToCalories` коректно масштабує
 - Після свопу `days[].totalCalories` у MongoDB відразу відповідає сумі страв дня
@@ -1371,6 +1487,7 @@ export function scaleMealToCalories(meal: AIMeal, targetCalories: number): void
 ## 🔧 Changelog — Інкрементальна генерація меню (сьогодні → решта тижня частинами) (2026-06-10)
 
 ### Проблема
+
 На iPhone (PWA, «Додати на головний екран») генерація меню падала з generic
 «Сталася помилка. Перевірте підключення до інтернету.» (`src/app/menu/page.tsx`).
 Корінь: **один виклик OpenAI на весь тиждень** (до 3 спроб, до 16384 токенів)
@@ -1379,6 +1496,7 @@ export function scaleMealToCalories(meal: AIMeal, targetCalories: number): void
 помилку (не справжню причину).
 
 ### Рішення
+
 Генерувати лише **сьогоднішній день** синхронно (швидко, ~10-20с — великий запас
 до 60с), а решту тижня (до неділі) **догенеровувати окремими фоновими запитами по
 ≤3 дні**. Дні до сьогодні в поточному тижні (Пн/Вт, якщо сьогодні Ср) пропускаються
@@ -1389,11 +1507,14 @@ export function scaleMealToCalories(meal: AIMeal, targetCalories: number): void
 ### Зміни
 
 #### 1. `weekly_menus` — нове поле
+
 **`src/types/weeklyMenu.ts`**: `pendingDayIndices?: number[]` (0=Пн…6=Нд — дні
 поточного тижня, що ще не згенеровані).
 
 #### 2. `generateMenuWithAI` — параметризація по днях
+
 **`src/lib/menu/generateMenuWithAI.ts`**:
+
 - Сигнатура: `generateMenuWithAI(profile, highRated, lowRated, dayIndices = [0..6], priorMeals = [])`.
 - `buildPrompt` / `buildSystemPrompt(dayLabels)` тепер просять РІВНО задані дні у
   заданому порядку (раніше жорстко «7 днів, Понеділок–Неділя»).
@@ -1408,12 +1529,15 @@ export function scaleMealToCalories(meal: AIMeal, targetCalories: number): void
   готування працює і через межі батчів. (Снідки/прості страви — різноманітні.)
 
 #### 3. `POST /api/menu/generate` — лише сьогодні
+
 **`src/app/api/menu/generate/route.ts`**: `todayIdx = getTodayWeekdayIndex()`,
 генерує `dayIndices = [todayIdx]`, зберігає `pendingDayIndices = [todayIdx+1 … 6]`
 (порожній масив, якщо сьогодні Неділя).
 
 #### 4. `POST /api/menu/generate-rest` — новий маршрут
+
 **`src/app/api/menu/generate-rest/route.ts`** (`maxDuration = 60`):
+
 - Auth `checkSessionSubscription()` (401/402). Якщо `pendingDayIndices` порожній → `{ pendingDayIndices: [] }`.
 - **Claim до 3 днів з оптимістичним lock'ом**: `updateOne({ _id, pendingDayIndices: pending }, { $set: { pendingDayIndices: remaining } })`; якщо `matchedCount === 0` (паралельний запит уже забрав) → повертає `pending` без генерації.
 - Збирає `priorMeals` зі страв обіду/вечері вже згенерованих днів, викликає
@@ -1424,20 +1548,24 @@ export function scaleMealToCalories(meal: AIMeal, targetCalories: number): void
 - Відповідь: `{ pendingDayIndices: remaining }`.
 
 #### 5. `shoppingListBuilder` — індекс дня з дати
+
 **`src/lib/menu/shoppingListBuilder.ts`**: `dayIndex` тепер
 `(new Date(day.date).getDay() + 6) % 7`, а не позиція в масиві — `quantityByDay`
 коректний навіть коли `days` починається не з Понеділка (частковий тиждень).
 
 #### 6. Клієнт — catch-up
+
 **`src/app/menu/page.tsx`**: ефект, що поки `menu.pendingDayIndices?.length`,
 шле `POST /api/menu/generate-rest`, потім `fetchMenu()` і повторює (з retry на
 помилки, `useRef`-захист від дублів). Банер «🌀 Доганяємо решту тижня…» над
 `WeeklyMenuView`. Самовідновлюється при перезавантаженні сторінки з незавершеним меню.
 
 #### 7. Косметика
+
 **`src/components/menuPage/GenerateMenuLoader.tsx`**: «15–30 секунд» → «10–20 секунд».
 
 ### Перевірка
+
 - `npx tsc --noEmit` → exit 0
 - Генерація: спершу швидко з'являється лише сьогоднішній день (за датою), далі
   автоматично підтягуються наступні по ≤3, `pendingDayIndices` спадає до `[]`.
@@ -1458,12 +1586,14 @@ export function scaleMealToCalories(meal: AIMeal, targetCalories: number): void
 ### 🔴 Критичні / Високі
 
 #### 1. Підробка ціни платежу — суму диктував клієнт
+
 `POST /api/liqpay/checkout` брав `amount` із тіла запиту і **підписував його як є**;
 callback активував підписку лише за `status`, не звіряючи суму. Юзер міг заплатити
 1 ₴ за місячний план.
+
 - **Новий `src/lib/plans.ts`** — єдине серверне джерело цін (`week: 199`, `month: 399`)
-  + `isPlanId()`, `getPlanPrice()`. Клієнт використовує лише для відображення.
-  *(Ціни й склад планів змінено 2026-08-11 — див. changelog «Знижкова воронка» внизу.)*
+  - `isPlanId()`, `getPlanPrice()`. Клієнт використовує лише для відображення.
+    _(Ціни й склад планів змінено 2026-08-11 — див. changelog «Знижкова воронка» внизу.)_
 - `liqpay/checkout/route.ts` — `amount`/`currency` **не читаються з клієнта**, а
   виводяться з `planId` через `PLANS`; невалідний `planId` → 400.
 - `liqpay/callback/route.ts` — захист у глибину: якщо підписана LiqPay сума менша за
@@ -1472,6 +1602,7 @@ callback активував підписку лише за `status`, не зві
   `amount` більше не надсилає (усунено дубльовані ціни).
 
 #### 2. Застаріла Next.js (15.3.8) з активними CVE
+
 `npm install next@15.5.19`. Закрито всі high рантайму (SSRF через middleware,
 обхід middleware/proxy в App Router, cache-poisoning, content-injection, RSC DoS).
 Залишок audit — транзитивна `postcss` (moderate, build-time CSS) всередині next та
@@ -1481,23 +1612,27 @@ build-залежності `next-pwa` (workbox/rollup/serialize-javascript) — 
 ### 🟠 Середні
 
 #### 3. Відсутні security-заголовки
+
 `next.config.ts` — `async headers()` на всі роути: HSTS, `X-Frame-Options: DENY`,
 `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`. CSP
 застосовується **лише в production** (у dev ламала б Turbopack/HMR), `'self'` +
 дозволений `liqpay.ua` для checkout-форми, `frame-ancestors 'none'`.
 
 #### 4. Onboarding-stub логував PII
+
 `src/app/api/onboarding/route.ts` приймав будь-який JSON і писав `console.log` тіла
 (вік/вага/стать/цілі). Переписано на безпечний no-op `{ success: true }` без
 парсингу/логування (клієнт `creating-plan` чекає лише `response.ok`).
 
 #### 5. Витік внутрішніх помилок клієнту
+
 `callback`, `subscription/init`, `magic-link/request` повертали `error?.message`
 у відповідь. Замінено на generic `'Server error'`; деталі лишаються в `console.error`.
 
 ### 🟡 Низькі
 
 #### 6. Перевірка типів body-параметрів (NoSQL-інʼєкція)
+
 **Новий `src/lib/validation.ts`** — `isMealType`, `isNonEmptyString`, `safeItemIndex`.
 Окрім id у фільтрах виявлено ширший вектор: `mealType`/`itemIndex` підставлялися в
 **Mongo update-path** (`days.X.meals.${mealType}.${itemIndex}…`) без валідації.
@@ -1507,10 +1642,12 @@ build-залежності `next-pwa` (workbox/rollup/serialize-javascript) — 
 (`entryId`/`dayLabel` — рядки, бо йдуть у `$pull`).
 
 #### 7. Constant-time порівняння підпису
+
 `liqpay/callback` — `expected !== signature` замінено на `crypto.timingSafeEqual`
 (`signaturesMatch()` з ранньою перевіркою довжини); timing-leak усунено.
 
 #### 8. AI-роути за активною підпискою
+
 `POST /api/menu/food/parse` витрачав OpenAI лише за валідною сесією, не звіряючи
 підписку → прострочений юзер міг генерувати витрати. Переведено на
 `checkSessionSubscription()` (401/402). Перевірено решту: `meal/alternatives` вже був
@@ -1519,6 +1656,7 @@ build-залежності `next-pwa` (workbox/rollup/serialize-javascript) — 
 сесійній авторизації.
 
 ### Перевірено й коректно (без змін)
+
 Сесії (httpOnly/secure/sameSite cookie, server-side гарди в кожному роуті);
 magic-link (random 32B, зберігається лише хеш, one-time, TTL 20хв, POST-підтвердження);
 секрети (`.env` у `.gitignore`, в історії не було); немає `eval`/`dangerouslySetInnerHTML`/
@@ -1526,11 +1664,13 @@ magic-link (random 32B, зберігається лише хеш, one-time, TTL 
 (unique-індекс на `signature`).
 
 ### Перевірка
+
 - `npx tsc --noEmit` → exit 0 (після обох партій).
 - `npm audit --omit=dev`: `next`-специфічні рантайм-CVE зникли (лишилась лише
   транзитивна `postcss`-moderate + build-time next-pwa).
 
 ### Відкриті (необовʼязкові, наступний цикл)
+
 - CSP без `nonce` — зараз `script-src 'unsafe-inline'`; за потреби посилити через
   nonce-pipeline.
 - `next-pwa` тягне вразливі build-залежності — оновлення лише major-бампом
@@ -1541,6 +1681,7 @@ magic-link (random 32B, зберігається лише хеш, one-time, TTL 
 ## 🔧 Changelog — Округлення ваг інгредієнтів + гібридний БЖВ власних страв (2026-06-22)
 
 ### Проблеми
+
 1. **«Брудні» ваги інгредієнтів.** `scaleDayToTarget` масштабував страви множником `k`
    й округлював ваги через `round(quantity × k)` (мін. 5) → числа на кшталт 83 г, 147 г,
    а сума → `servingSize` 342 г.
@@ -1549,6 +1690,7 @@ magic-link (random 32B, зберігається лише хеш, one-time, TTL 
    підрахунку меню через `FOOD_TABLE`).
 
 ### Рішення (узгоджено)
+
 1. Округлення ваг до 10 **з перерахунком** макро (поріг: великі до 10, дрібні точно).
 2. **Гібрид**: LLM розкладає страву на інгредієнти → детермінований підрахунок через
    `FOOD_TABLE`; відкат на `per100` при низькому покритті таблицею. + **редагований**
@@ -1560,12 +1702,14 @@ magic-link (random 32B, зберігається лише хеш, one-time, TTL 
 ### Зміни
 
 #### 1. `src/lib/menu/foodNutrition.ts` — детальний підрахунок + per100
+
 - **`computeNutritionDetailed(ingredients)`** → `{ calories, protein, fat, carbs, totalGrams, matchedGrams }`:
   макро **+ покриття** (`matchedGrams/totalGrams` — скільки ваги страви розпізнано в таблиці).
 - **`computeMealNutrition`** — тепер тонка обгортка над `computeNutritionDetailed` (DRY).
 - **`per100FromTotals(totals, grams)`** → `NutritionPer100` — виводить склад на 100 г з абсолютних значень (для re-scale у формі).
 
 #### 2. `src/lib/menu/generateMenuWithAI.ts` — округлення ваг до 10
+
 - **`roundQuantity(quantity, unit)`**: `г`/`мл` ≥ 20 → найближчі **10** (мін. 10);
   `г`/`мл` < 20 → мін. **5** (спеції/олія не спотворюються); `шт` → ціле (мін. 1).
 - **`roundAndRecomputeMeal(meal)`**: округлює ваги інгредієнтів → **перераховує**
@@ -1577,12 +1721,14 @@ magic-link (random 32B, зберігається лише хеш, one-time, TTL 
   (раніше при `k∉[0.5,2.0]` або `|k−1|≤3%` був no-op і ваги лишались «брудними»).
 
 #### 3. `POST /api/menu/food/compute` — новий детермінований ендпоінт
+
 **`src/app/api/menu/food/compute/route.ts`**: `{ ingredients }` →
 `{ calories, protein, fat, carbs, grams, per100 }` через `computeNutritionDetailed`.
 **Без OpenAI**; gate — валідна сесія (`readSessionUserId`), **не** підписка (немає AI-вартості).
 UI перераховує БЖВ при правках інгредієнтів без AI-витрат.
 
 #### 4. `src/lib/menu/parseCustomFood.ts` — гібрид
+
 - **Промпт**: LLM розкладає страву на `ingredients[]` (схема як у меню) **і** дає власну
   `per100` як запасний варіант. Один виклик `gpt-4o-mini`.
 - **Рішення в коді**: покриття таблицею ≥ **0.6** і `calories > 0` → детермінований
@@ -1590,28 +1736,34 @@ UI перераховує БЖВ при правках інгредієнтів 
 - `ParsedFood` розширено: `ingredients: MealIngredient[]`, `method`.
 
 #### 5. `CustomEntry` + `ingredients`
+
 - **`src/types/meals.ts`**: `ingredients?: MealIngredient[]` (розклад при `method='ingredients'`).
 - **`meal/custom` POST** санітизує й зберігає `ingredients` inline у `weekly_menus`.
 
 #### 6. `src/components/menuPage/AddCustomFoodSheet.tsx` — редагований розклад
+
 Крок 2 — **два режими**:
+
 - **Режим інгредієнтів** (`method='ingredients'`): редагований список (правка ваги/назви,
   видалення, додавання) → дебаунс-виклик `/api/menu/food/compute` → оновлює БЖВ і `per100`;
   загальна вага = сума інгредієнтів; підсумкові калорії/БЖВ read-only.
 - **Режим оцінки/ручний** (`method='estimate'` або «ввести вручну»): як раніше — степер ваги
-  + редаговані БЖВ через `per100`.
+  - редаговані БЖВ через `per100`.
 
 #### 7. Dev-обхід перевірки підписки для owner-email
+
 **`src/lib/subscription.ts`**: `checkSessionSubscription()` повертає `{ active: true }`
 для `yurickv@gmail.com`, але **тільки коли `NODE_ENV !== 'production'`** (локальний
 `next dev` на localhost). У проді (`NODE_ENV === 'production'`) обхід не діє — пейвол
 не послаблюється. Зручність розробки без реальної підписки/LiqPay.
 
 ### Перевірка
+
 - `npx tsc --noEmit` → exit 0 (після кожного завдання й на змердженому `main`).
 - Ручна перевірка користувачем — працює як треба.
 
 ### Інваріант
+
 Округлення+перерахунок — окремий **безумовний** прохід наприкінці pipeline генерації;
 `meal.calories === computeMealNutrition(округлені інгредієнти)`. Список покупок будується
 з уже округлених ваг меню — узгоджений автоматично, окремих змін не потребує.
@@ -1621,11 +1773,13 @@ UI перераховує БЖВ при правках інгредієнтів 
 ## 📊 Changelog — Аналітика воронки та атрибуція джерел (PostHog + GA4) (2026-06-30)
 
 ### Мотивація
+
 Сервіс задеплоєно в прод (`nutriday.com.ua`), трафік іде з Instagram і партнерського
 сайту. Потрібно було відстежувати: **звідки** прийшов користувач (джерела), **куди дійшов**
 по сторінках (зокрема ~16-кроковий onboarding) і **де зупинився перед оплатою**.
 
 ### Рішення (узгоджено після грилінг-сесії)
+
 **PostHog Cloud (EU) + GA4 паралельно**, обидва годуються з **одного** виклику `track()`.
 PostHog — «мозок» продуктових воронок і drop-off; GA4 — маркетингова атрибуція/Google Ads.
 Власний сервіс аналітики відкинуто (дорого за часом, найгірша глибина на старті).
@@ -1638,10 +1792,12 @@ PostHog — «мозок» продуктових воронок і drop-off; GA
 > Мітки для SMM: `docs/UTM_CONVENTION.md`
 
 ### Ключовий нюанс воронки
+
 Оплата в NutriDay відбувається **до логіну** (email → LiqPay → magic-link → сесія). Email
 стає відомий уже на `/payment/plan`, тож анонімний шлях «склеюється» з людиною ще до сесії.
 
 ### Архітектура (нове — `src/lib/analytics/`, замінило `src/lib/analytics.ts`)
+
 - **`index.ts`** — фасад: `track(event, props, options?)` фан-аутить у `posthog.capture()`
   і `gtag('event', …)`; `identify` (PostHog — чистий email; GA4 — лише `sha256(email)`,
   ніколи raw email); `resetIdentity`; `capturePageview`. `TrackOptions` (`insertId`,
@@ -1662,6 +1818,7 @@ PostHog — «мозок» продуктових воронок і drop-off; GA
 - **`src/components/analytics/TrackEvent.tsx`** — fire-once-on-mount хелпер.
 
 ### Події воронки (нові, поверх наявних in-app)
+
 `$pageview` (ручний) → `onboarding_started` → `onboarding_completed` (на **останньому**
 кроці онбордингу, не на маунті `/payment/plan`) → `payment_email_entered` →
 `payment_consents_checked` → `checkout_started` (+`identify`) → `redirected_to_liqpay` →
@@ -1669,6 +1826,7 @@ PostHog — «мозок» продуктових воронок і drop-off; GA
 (як сегмент, не крок воронки). Кожна подія несе проп `env`.
 
 ### Надійність оплати + дедуп
+
 - Клієнтський `payment_succeeded` на `/payment/result` (Фаза 1, закриває воронку одразу).
 - **Авторитетний серверний** `payment_succeeded/failed` — у `liqpay/callback` і в
   реконсиляції `magic-link/consume` (Фаза 2), лише на переході статусу
@@ -1678,32 +1836,38 @@ PostHog — «мозок» продуктових воронок і drop-off; GA
   дедупиться за `transaction_id`.
 
 ### Атрибуція джерел
+
 `utm_*` ловляться PostHog (person-level `$initial_utm_source`) і GA4 автоматично; додатково
 дублюємо first-touch у `localStorage` (`nd_attribution`) і в запис `users`
 (`utmSource/Medium/Campaign`) через `subscription/init` — щоб серверна подія оплати несла
 джерело незалежно від cookie/девайсу. Конвенція міток — `docs/UTM_CONVENTION.md`.
 
 ### Змінені файли (інтеграція)
+
 `layout.tsx`, `onboarding/page.tsx`, `onboarding/creating-plan/page.tsx`,
 `payment/plan/page.tsx` (події + `identify` + `ph-no-capture` на email-інпуті + UTM у init),
 `payment/result/page.tsx`, `auth/confirm/page.tsx`, `api/subscription/init/route.ts`,
 `api/liqpay/callback/route.ts`, `api/auth/magic-link/consume/route.ts` (повертає `email`).
 
 ### Тестування (нове — проєкт тепер має Vitest)
+
 Додано **Vitest** (`npm test`) для pure-logic: `env`, `ga4`, `attribution`, `payment`,
 `posthog.server` — **24 тести**. Інтеграція (SDK/route) — через `npx tsc --noEmit` + ручний
-staging *Live Events* чек-лист. ENV — у `.env.example`. ESLint у проєкті не налаштований.
+staging _Live Events_ чек-лист. ENV — у `.env.example`. ESLint у проєкті не налаштований.
 
 ### Env (потрібно заповнити в `.env`, приклад — `.env.example`)
+
 `NEXT_PUBLIC_POSTHOG_KEY` (Project token `phc_…`), `NEXT_PUBLIC_POSTHOG_HOST`
 (`https://eu.i.posthog.com`), `POSTHOG_API_KEY` (той самий `phc_…`), `NEXT_PUBLIC_GA_ID`,
 `NEXT_PUBLIC_ANALYTICS_ENV` (`staging`/`prod`). Без ключа аналітика мовчить (console-only).
 
 ### Перевірка
+
 - `npm test` → 24 passed; `npx tsc --noEmit` → exit 0 (на гілці й на змердженому `main`).
 - Злито в `main` (merge `850d9f1`, феча-гілку видалено).
 
 ### Лишилось вручну (поза кодом)
+
 Завести PostHog-проєкт (+ окремий staging) і GA4-property, вписати ключі в `.env`; зібрати
 воронку + дашборд у PostHog UI (порядок кроків — як вище); позначити `purchase` ключовою
 подією в GA4; тегувати всі лінки за `docs/UTM_CONVENTION.md`. Фаза 3 (відкладена): GA4
@@ -1714,11 +1878,13 @@ Measurement Protocol, session replay, A/B через feature flags, Google Conse
 ## 💸 Changelog — Знижкова воронка: скретч-сюрприз, 10-хв вікно, план на 12 тижнів (2026-08-11)
 
 ### Флоу
+
 Квіз (лоадер D3) → **`/payment/surprise`** («Маємо сюрприз для тебе» + canvas-скретч-картка:
 юзер стирає покриття пальцем/мишкою, при ~40% відкривається «−60% на плани Sytno») →
 `/payment/plan` зі знижковими цінами і таймером.
 
 ### Вікно знижки — серверне, не декоративне
+
 - `src/lib/discount.ts` + `POST/GET /api/discount`: скретч ставить **httpOnly-куку**
   `nd_discount_until` (дедлайн `зараз + 10 хв` рахує сервер; кука живе 24 год).
 - POST ідемпотентний — повторний скретч **не** перезапускає таймер; згоріла знижка не
@@ -1731,35 +1897,40 @@ Measurement Protocol, session replay, A/B через feature flags, Google Conse
   з підписаного пейлоада.
 
 ### Плани і ціни (`src/lib/plans.ts`)
-| План | Повна (перекреслена) | Зі знижкою | % | Днів | ₴/день |
-|---|---|---|---|---|---|
-| `week` Тиждень | 398 ₴ | **199 ₴** | −50% | 7 | 28,4 |
-| `month` Місяць (дефолт, «Найпопулярніший») | 798 ₴ | **359 ₴** | −55% | 30 | 12,0 |
-| `quarter` 12 тижнів (**новий**) | 1998 ₴ | **800 ₴** | −60% | 84 | 9,5 |
+
+| План                                       | Повна (перекреслена) | Зі знижкою | %    | Днів | ₴/день |
+| ------------------------------------------ | -------------------- | ---------- | ---- | ---- | ------ |
+| `week` Тиждень                             | 398 ₴                | **199 ₴**  | −50% | 7    | 28,4   |
+| `month` Місяць (дефолт, «Найпопулярніший») | 798 ₴                | **359 ₴**  | −55% | 30   | 12,0   |
+| `quarter` 12 тижнів (**новий**)            | 1998 ₴               | **800 ₴**  | −60% | 84   | 9,5    |
 
 `PlanInfo` розширено: `shortTitle`, `discountAmount`, `discountPct`, `days`.
 `subscription.ts`: `planDurationDays('quarter') = 84`.
 
 ### Сторінка оплати (`/payment/plan`)
+
 - Стікі-хедер сторінки: **Sytno** зліва, справа таймер (після 0:00 лишається `00:00`
   приглушеним) + кнопка «Візьми свій план» (скрол до оплати). Заголовок «Ваш кабінет»
   прибрано (`OnboardingLayout.title` тепер опційний; `wide` → картка 1128px).
 - Картки планів у стилі референсу: коротка назва, перекреслена повна ціна + знижкова
-  + бейдж −%, внизу велика **ціна за день**; бейдж «НАЙПОПУЛЯРНІШИЙ» на місячному.
+  - бейдж −%, внизу велика **ціна за день**; бейдж «НАЙПОПУЛЯРНІШИЙ» на місячному.
 - Кнопка оплати — «Забрати план» (макс. ширина 440px, як і всі CTA квізу).
 
 ### Згоди переїхали з оплати у квіз
+
 - Оферта — **імпліцитно** на першому кроці (`gender`): дрібний текст «Вибравши свою
   стать і продовживши, ви погоджуєтеся…» з лінками на `/oferta` (чекбокса немає).
 - Персональні дані — чекбокс на D2 (`your_profile`); там же стріляє
   `payment_consents_checked`. На сторінці оплати згод більше немає (лише email).
 
 ### Аналітика
+
 Нова подія `discount_revealed` (скретч відкрив знижку). `checkout_started` несе
 ефективну суму. Порядок воронки змінився: `payment_consents_checked` тепер ДО
 `checkout_started` (з D2) — врахувати в PostHog-воронках.
 
 ### Нові/змінені файли
+
 Нові: `src/lib/discount.ts`, `src/app/api/discount/route.ts`,
 `src/app/payment/surprise/page.tsx`, `src/components/payment/ScratchCard.tsx`.
 Змінені: `plans.ts`, `subscription.ts`, `liqpay/{checkout,callback}`,
@@ -1767,6 +1938,7 @@ Measurement Protocol, session replay, A/B через feature flags, Google Conse
 (редірект на surprise), `OnboardingLayout.tsx`, `analytics/events.ts`.
 
 ### Верифікація
+
 `npx tsc --noEmit` exit 0; `npm test` 56/56; smoke: POST/GET `/api/discount`
 (ідемпотентність підтверджена), сендбокс-оплата має йти зі знижковою сумою у вікні
 і повною після.
@@ -1780,6 +1952,7 @@ Measurement Protocol, session replay, A/B через feature flags, Google Conse
 `docs/silpo/SUPPORT_EMAIL_DRAFT.md` (надіслано 2026-09-18 на mcp@silpo.club, відповідь очікується).
 
 ### Що робить
+
 Юзер один раз підключає акаунт Сільпо (OAuth 2.1 + PKCE, вхід за телефоном на auth.silpo.ua) у
 профілі або з тізера на `/shopping-list`. Далі кнопка **«Замовити в Сільпо (N)»** відкриває шторку:
 підбір товарів під некуплені й ще не додані продукти поточного фільтра → превʼю з фото, фасуванням,
@@ -1794,6 +1967,7 @@ Measurement Protocol, session replay, A/B через feature flags, Google Conse
 Сільпо, замовлення немає) знімаються автоматично.
 
 ### Факти про Silpo MCP (перевірено наживо)
+
 - `https://mcp.silpo.ua/mcp`, JSON-RPC `tools/call` через fetch, без SDK; 40 тулів. Авторизація лише
   від імені юзера (без токена 401 навіть на `initialize`); DCR публічного клієнта підтримується.
   Dev `client_id=KK9l9ouVJm5rjMvA` (localhost), prod `mcU32RW84GhaPCve`
@@ -1807,6 +1981,7 @@ Measurement Protocol, session replay, A/B через feature flags, Google Conse
 - Юридично: AI Factory — хакатон, комерційної оферти нема; фіча ізольована й вимикається env-флагом.
 
 ### Ключові рішення
+
 - Ранжування кандидатів через `gpt-4.1-mini` (перший результат пошуку часто хибний: «кисломолочний
   сир» → дитячий сирок); при недоступності LLM — перший доступний кандидат і позначка «підбір спрощений».
 - Матч не персистимо, живе в стані шторки. Клієнт передає `{ itemId, quantity }`, назви/одиниці сервер
@@ -1815,6 +1990,7 @@ Measurement Protocol, session replay, A/B через feature flags, Google Conse
 - Лого Сільпо не використовуємо до письмової згоди — лише слово.
 
 ### Прод-інциденти першого релізу (усі виправлено того ж дня)
+
 1. **«Сільпо не відповідає»** — Vercel Hobby, дефолтний таймаут 10 с ≈ тривалість підбору →
    `maxDuration = 60` на всіх `/api/silpo/*`; шторка тепер показує деталь (`HTTP 504` тощо).
 2. **Немає фото товарів** — спочатку `img-src` без `images.silpo.ua`, потім з'ясувалось, що SW
@@ -1825,6 +2001,7 @@ Measurement Protocol, session replay, A/B через feature flags, Google Conse
    перекодовано в RGBA через `sharp`.
 
 ### Верифікація
+
 `npx tsc --noEmit` exit 0; `npm test` 160/160 (нові: crypto, oauth (RFC 7636 вектор), client
 (рефреш на 401), quantity, cartContext, setupCart, matchProducts, orderCheck, appLink). Live-smoke на
 проді: status → match (11/14 позицій, ~6 с) → add 1 товару → remove; `orders/check` знімає фейковий
@@ -1832,6 +2009,7 @@ Measurement Protocol, session replay, A/B через feature flags, Google Conse
 застосунок Сільпо, фото після фіксу CSP.
 
 ### Відкрито
+
 - Відповідь Сільпо (підтримка MCP після хакатону, окремий client_id, бренд).
 - Фолбек-пошук за спрощеною назвою для unmatched («Йогурт натуральний», «Гречана крупа»).
 - Правила ранжування: уникати обробленої/панірованої риби та великих упаковок.
