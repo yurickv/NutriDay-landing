@@ -7,6 +7,10 @@ import { CategorySection } from './CategorySection';
 import { DayFilterTabs, DayFilter, displayQuantity, isVisibleInPeriod, isEffectivePurchased, computePurchasedUpdate } from './DayFilterTabs';
 import { AddCustomItemForm } from './AddCustomItemForm';
 import { OfflineIndicator } from './OfflineIndicator';
+import { SilpoOrderButton } from './SilpoOrderButton';
+import { SilpoOrderSheet, OrderItem } from './SilpoOrderSheet';
+import { useSilpoConnection } from '@/hooks/useSilpoConnection';
+import { ToastContainer, ToastData } from '@/components/common/Toast';
 import { CheckCircle } from 'lucide-react';
 
 const CATEGORY_ORDER: ShoppingCategory[] = [
@@ -42,6 +46,18 @@ interface ShoppingListViewProps {
 export function ShoppingListView({ initialList }: ShoppingListViewProps) {
   const [items, setItems] = useState<ShoppingListItem[]>(initialList.items);
   const [filter, setFilter] = useState<DayFilter>('all');
+  const silpo = useSilpoConnection();
+  const [silpoOpen, setSilpoOpen] = useState(false);
+  const [toasts, setToasts] = useState<ToastData[]>([]);
+  const addToast = useCallback((message: string, emoji?: string, type: ToastData['type'] = 'success') => {
+    setToasts((prev) => [...prev, { id: crypto.randomUUID(), message, emoji, type }]);
+  }, []);
+  const removeToast = useCallback((id: string) => setToasts((prev) => prev.filter((t) => t.id !== id)), []);
+
+  useEffect(() => {
+    if (silpo.flash === 'connected') addToast('Сільпо підключено', '🛒');
+    if (silpo.flash === 'error') addToast('Не вдалося підключити Сільпо', '😔', 'error');
+  }, [silpo.flash, addToast]);
   const offlineQueueRef = useRef<OfflineQueueEntry[]>([]);
   const itemsRef = useRef(items);
   useEffect(() => { itemsRef.current = items; }, [items]);
@@ -162,6 +178,11 @@ export function ShoppingListView({ initialList }: ShoppingListViewProps) {
       isPurchased: isEffectivePurchased(item, filter),
     }));
 
+  // Items the user still has to buy in the current period — candidates for the Silpo cart.
+  const orderItems: OrderItem[] = filteredItems
+    .filter((i) => !i.isPurchased)
+    .map((i) => ({ itemId: i.id, name: i.name, quantity: i.quantity, unit: i.unit }));
+
   // Group by category
   const grouped = CATEGORY_ORDER.reduce<Record<ShoppingCategory, ShoppingListItem[]>>(
     (acc, cat) => {
@@ -216,6 +237,9 @@ export function ShoppingListView({ initialList }: ShoppingListViewProps) {
       {/* Day filter */}
       <DayFilterTabs active={filter} onChange={setFilter} />
 
+      {/* Order in Silpo (hidden unless the integration is enabled) */}
+      <SilpoOrderButton status={silpo.data} count={orderItems.length} onClick={() => setSilpoOpen(true)} />
+
       {/* Category sections */}
       <div className="flex-1 pb-4">
         {CATEGORY_ORDER.map((cat) => (
@@ -236,6 +260,14 @@ export function ShoppingListView({ initialList }: ShoppingListViewProps) {
 
       {/* Add custom item */}
       <AddCustomItemForm onAdd={handleAddCustom} />
+
+      <SilpoOrderSheet
+        isOpen={silpoOpen}
+        onClose={() => setSilpoOpen(false)}
+        items={orderItems}
+        onDone={(msg) => addToast(msg, '🛒')}
+      />
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </div>
   );
 }
