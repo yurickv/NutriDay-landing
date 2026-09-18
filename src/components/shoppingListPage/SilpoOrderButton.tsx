@@ -14,7 +14,7 @@ export function SilpoOrderButton({ status, count, onClick }: Props) {
 
   if (!status.connected) {
     return (
-      <div className="px-4 pb-2">
+      <div className="px-4 pt-3 pb-2">
         <a
           href={`/api/silpo/connect?returnTo=${encodeURIComponent('/shopping-list')}`}
           className="flex items-center justify-between rounded-2xl border border-ink/10 dark:border-night-ink/10 bg-card dark:bg-night-card px-4 py-3 text-sm"
@@ -33,7 +33,7 @@ export function SilpoOrderButton({ status, count, onClick }: Props) {
   if (count === 0) return null;
 
   return (
-    <div className="px-4 pb-2">
+    <div className="px-4 pt-3 pb-2">
       <button
         onClick={onClick}
         className="w-full flex items-center justify-center gap-2 rounded-2xl bg-terracotta hover:bg-terracotta-dark text-card font-semibold py-3 text-sm shadow-soft active:scale-95 transition-all"

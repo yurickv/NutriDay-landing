@@ -98,7 +98,7 @@ export default function SilpoConnectSettings() {
           </div>
           <a
             href={connectHref('/profile')}
-            className="mt-3 w-full rounded-2xl bg-terracotta hover:bg-terracotta-dark text-card font-semibold shadow-soft active:scale-95 transition-all py-2.5 text-sm flex items-center justify-center gap-2"
+            className="mt-4 w-full rounded-2xl bg-terracotta hover:bg-terracotta-dark text-card font-semibold shadow-soft active:scale-95 transition-all py-2.5 text-sm flex items-center justify-center gap-2"
           >
             {data.status === 'expired' ? 'Підключити знову' : 'Підключити Сільпо'}
           </a>

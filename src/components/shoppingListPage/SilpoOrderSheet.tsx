@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, ExternalLink, Minus, Plus, RefreshCw } from 'lucide-react';
 import { BottomSheet } from '@/components/common/BottomSheet';
 import { quantityStep } from '@/lib/silpo/quantity';
@@ -88,7 +88,16 @@ export function SilpoOrderSheet({ isOpen, onClose, items, onDone }: Props) {
   const [pickedOption, setPickedOption] = useState<DeliveryOption | null>(null);
   const [busy, setBusy] = useState(false);
 
+  // The parent rebuilds `items` on every render (toasts, toggles), so the match
+  // must not depend on the array identity: read the latest items through a ref
+  // and only (re)run when the sheet transitions from closed to open.
+  const itemsRef = useRef(items);
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
+
   const runMatch = useCallback(async () => {
+    const items = itemsRef.current;
     setStep({ kind: 'loading' });
     track('silpo_match_requested', { items: items.length });
     try {
@@ -115,10 +124,12 @@ export function SilpoOrderSheet({ isOpen, onClose, items, onDone }: Props) {
     } catch {
       setStep({ kind: 'error', message: ERROR_TEXT['silpo-error'] });
     }
-  }, [items]);
+  }, []);
 
+  const wasOpen = useRef(false);
   useEffect(() => {
-    if (isOpen) void runMatch();
+    if (isOpen && !wasOpen.current) void runMatch();
+    wasOpen.current = isOpen;
   }, [isOpen, runMatch]);
 
   const lookupOptions = async () => {
@@ -433,9 +444,19 @@ export function SilpoOrderSheet({ isOpen, onClose, items, onDone }: Props) {
                 </a>
               )}
               {!step.result.checkoutWebLink && !step.result.checkoutMobileLink && (
-                <p className="text-xs text-ink/50 dark:text-night-muted">
-                  Відкрийте застосунок або сайт Сільпо, щоб завершити замовлення.
-                </p>
+                <>
+                  <a
+                    href="https://silpo.ua"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`${PRIMARY_BTN} flex items-center justify-center gap-2`}
+                  >
+                    Відкрити Сільпо <ExternalLink size={14} />
+                  </a>
+                  <p className="text-xs text-ink/50 dark:text-night-muted">
+                    Товари вже у вашому кошику Сільпо. Завершіть замовлення на сайті або в застосунку.
+                  </p>
+                </>
               )}
               <button onClick={onClose} className="text-sm text-ink/50 dark:text-night-muted py-2">
                 Закрити
