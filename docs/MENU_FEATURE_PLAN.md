@@ -173,9 +173,16 @@
       forDays: string[],            // ["Понеділок", "Вівторок"] — лейбли днів для відображення
       isPurchased: boolean,
       purchasedAt: Date | null,     // для conflict resolution при офлайн-синхронізації
-      isCustom: boolean
+      isCustom: boolean,
+      silpo?: {                     // 2026-09-18: продукт уже покладено в кошик Сільпо (див. changelog «Інтеграція Silpo MCP»)
+        productId: string,          // id товару Сільпо
+        productName: string,
+        quantity: number,           // упаковки, або кг для вагових
+        addedAt: Date
+      }
     }
   ],
+  silpoOrdersHandled?: string[],    // orderId замовлень Сільпо, для яких юзер уже натиснув «Відмітити»/«Ні» у банері
   updatedAt: Date
 }
 ```
@@ -282,6 +289,31 @@
 
 ---
 
+### `silpo_connections` — OAuth-токени Сільпо (2026-09-18)
+
+```js
+{
+  userEmail: string,
+  accessTokenEnc: string,         // AES-256-GCM, ключ SILPO_TOKEN_ENC_KEY; формат iv.tag.data (base64url)
+  refreshTokenEnc: string | null,
+  expiresAt: Date,                // access-токен живе 30 днів; рефреш за 5 хв до кінця або на 401
+  scope: string | null,
+  status: 'active' | 'expired',   // expired → UI просить підключити знову
+  connectedAt: Date,
+  updatedAt: Date
+}
+```
+**Індекс**: `{ userEmail: 1 }` unique. Токени ніколи не потрапляють на клієнт; усі виклики Silpo MCP — з сервера (`src/lib/silpo/client.ts`).
+
+### `silpo_oauth_states` — pending PKCE-стани
+
+```js
+{ state: string, userEmail: string, verifierEnc: string, returnTo: '/shopping-list' | '/profile', createdAt: Date }
+```
+**Індекси**: `{ state: 1 }` unique; TTL `createdAt` 600 с. Стан одноразовий (`findOneAndDelete` у callback).
+
+---
+
 ## OpenAI інтеграція
 
 ### `src/lib/menu/generateMenuWithAI.ts`
@@ -379,7 +411,8 @@
 |------|-----------|
 | `src/types/meals.ts` | `AIMeal`, `MealCategory`, `ShoppingCategory`, `DayMeals` |
 | `src/types/weeklyMenu.ts` | `WeeklyMenu`, `MenuDay` |
-| `src/types/shoppingList.ts` | `ShoppingList`, `ShoppingListItem`, `GroupedShoppingItems` |
+| `src/types/shoppingList.ts` | `ShoppingList`, `ShoppingListItem`, `SilpoCartTag`, `GroupedShoppingItems` |
+| `src/lib/silpo/types.ts` | `SilpoProduct`, `SilpoCartContext`, `SilpoMatch`, `SilpoAddResult`, `SilpoConnectionDoc`, класи помилок `SilpoAuthError`/`SilpoToolError`/… |
 | `src/types/engagement.ts` | `Tip`, `UserStreak`, `StreakBadge`, `WaterLog`, `WeightLog`, `FavoriteMeal` |
 | `src/types/userProfile.ts` | `UserProfile` (розширює `OnboardingData`) |
 
@@ -456,11 +489,15 @@ src/
 │   │   ├── CategorySection.tsx
 │   │   ├── ShoppingItem.tsx
 │   │   ├── AddCustomItemForm.tsx
-│   │   └── OfflineIndicator.tsx        ← індикатор офлайн-режиму
+│   │   ├── OfflineIndicator.tsx        ← індикатор офлайн-режиму
+│   │   ├── SilpoOrderButton.tsx        ← «Замовити в Сільпо (N)» / тізер «Підключити» (рендериться лише коли фіча увімкнена)
+│   │   ├── SilpoOrderSheet.tsx         ← шторка: адреса → підбір → превʼю (чекбокси, степер, «Замінити») → результат з лінками
+│   │   └── SilpoOrderBanner.tsx        ← «Схоже, ви оформили замовлення №… у Сільпо. Відмітити N продуктів?»
 │   ├── profilePage/
 │   │   ├── FoodPreferencesEditor.tsx
 │   │   ├── DietaryPreferences.tsx
 │   │   ├── WeightLogSection.tsx        ← повний графік ваги
+│   │   ├── SilpoConnectSettings.tsx    ← секція «🛒 Сільпо»: підключити / підключено + адреса кошика / відключити
 │   │   └── NotificationSettings.tsx
 │   └── common/
 │       ├── BottomSheet.tsx             ← @headlessui/react Dialog
@@ -479,6 +516,7 @@ src/
 │   ├── useFavorites.ts                 ← нова
 │   ├── useDailyTip.ts                  ← sessionStorage кеш
 │   ├── usePushNotifications.ts
+│   ├── useSilpoConnection.ts           ← статус з'єднання Сільпо + flash `?silpo=connected|error` після OAuth
 │   └── useAnalytics.ts                 ← event tracking
 │
 └── lib/
@@ -486,9 +524,21 @@ src/
     │   ├── generateMenuWithAI.ts       ← OpenAI + retry + rate limit
     │   ├── parseCustomFood.ts          ← gpt-4o-mini: розклад на інгредієнти → FOOD_TABLE, fallback per100
     │   ├── foodNutrition.ts            ← FOOD_TABLE + computeNutritionDetailed/computeMealNutrition + per100FromTotals
-    │   ├── shoppingListBuilder.ts      ← агрегація + quantityByDay + mergeShoppingItems (ре-синк)
+    │   ├── shoppingListBuilder.ts      ← агрегація + quantityByDay + mergeShoppingItems (ре-синк, переносить і тег `silpo`)
     │   └── streakUpdater.ts
-    ├── analytics.ts                    ← track() функція
+    ├── silpo/                          ← інтеграція Silpo MCP (2026-09-18), усе server-only крім quantity/appLink
+    │   ├── oauth.ts                    ← PKCE S256, authorize URL, exchange/refresh/revoke, флаг isSilpoEnabled()
+    │   ├── crypto.ts                   ← AES-256-GCM для токенів
+    │   ├── connections.ts              ← репозиторій silpo_connections / silpo_oauth_states
+    │   ├── client.ts                   ← callTool(): JSON-RPC tools/call, рефреш на 401, 429 → SilpoRateLimitError
+    │   ├── cartContext.ts              ← resolveCartContext(): кошик + СВІЖИЙ таймслот (без нього пошук віддає 0 товарів)
+    │   ├── setupCart.ts                ← адреса → find_address → delivery types → найближча філія → create cart
+    │   ├── quantity.ts                 ← г/мл/шт → упаковки або кг (кратно step), displayRatio-парсер
+    │   ├── matchProducts.ts            ← find_products_batch (≤30) + ранжування gpt-4.1-mini + фолбек
+    │   ├── orderCheck.ts               ← зіставлення замовлень Сільпо з тегами → підказка у банері
+    │   ├── appLink.ts                  ← Universal Link (iOS) / intent:// (Android) для відкриття застосунку Сільпо
+    │   └── apiErrors.ts                ← мапа помилок → HTTP-коди
+    ├── analytics/                      ← фасад track() (PostHog + GA4)
     └── push/
         └── sendPushNotification.ts
 ```
@@ -522,6 +572,18 @@ src/
 | PUT | `/api/profile/food-preferences` | Вподобання |
 | POST | `/api/push/subscribe` | Push підписка |
 | POST | `/api/push/unsubscribe` | Видалити підписку |
+| GET | `/api/silpo/connect?returnTo=` | 302 на OAuth Сільпо (PKCE); 404 якщо фіча вимкнена |
+| GET | `/api/silpo/callback` | Обмін коду на токени → 302 `returnTo?silpo=connected\|error` |
+| GET | `/api/silpo/status` | `{ enabled, connected, status, cart: {city, street, deliveryType} }` |
+| DELETE | `/api/silpo/connection` | Відключити (best-effort revoke + видалення токенів) |
+| POST | `/api/silpo/match` | `{ items: [{itemId, quantity}] }` → підібрані товари з цінами; 409 `no-cart` / `stale-list` |
+| POST | `/api/silpo/cart/options` | `{ address }` → варіанти доставки (додому / найближчий самовивіз) |
+| POST | `/api/silpo/cart/create` | Створити кошик Сільпо за адресою та опцією |
+| POST | `/api/silpo/cart/add` | Додати товари в кошик Сільпо + проставити тег `silpo` на продукти списку |
+| GET | `/api/silpo/orders/check` | Замовлення Сільпо з нашими товарами → підказки для банера; знімає осиротілі теги |
+| POST | `/api/silpo/orders/confirm` | `{ orderId, itemIds, action: confirm\|dismiss }` → галочки на тиждень / приховати банер |
+
+Усі `/api/silpo/*` з ланцюжком викликів Сільпо мають `export const maxDuration = 60` (Vercel Hobby, дефолт 10 с обривав підбір).
 
 ---
 
@@ -566,7 +628,14 @@ src/
    - `<link rel="manifest">`, `<meta name="theme-color">`
    - `apple-touch-icon`, `apple-mobile-web-app-capable`
 
-3. **Service Worker**: `@ducanh2912/next-pwa`, `disable` в dev
+3. **Service Worker**: `@ducanh2912/next-pwa`, `disable` в dev, `dynamicStartUrl: false`
+   (2026-09-18: дефолтний маршрут `start-url` падав з `_async_to_generator is not defined` —
+   SWC-хелпери не потрапляють у `sw.js`).
+   **Пастка CSP + SW**: правило `static-image-assets` перехоплює будь-який `*.png|webp…` незалежно
+   від домену і перезапитує його через `fetch()` із воркера, а такий fetch керується `connect-src`,
+   не `img-src`. Тому зовнішній домен картинок (наприклад `images.silpo.ua`) треба додавати в **обидві**
+   директиви в `next.config.ts`. Симптом інакше: у dev працює (PWA вимкнена), у чистому браузері працює,
+   у користувача з давно активним SW фото немає, у консолі `workbox…: Fetch API cannot load … violates CSP`.
 
 4. **Offline для shopping list**:
    - Service Worker кешує останній shopping list
@@ -714,6 +783,12 @@ track('push_permission_granted');
 track('push_permission_denied');
 track('servings_changed', { mealName, newServings });
 track('weekly_summary_viewed');
+// Silpo (2026-09-18)
+track('silpo_connected');
+track('silpo_disconnected');
+track('silpo_match_requested', { items });
+track('silpo_match_result', { matched, unmatched });
+track('silpo_cart_added', { products, total });
 ```
 
 ---
@@ -898,8 +973,8 @@ track('weekly_summary_viewed');
 | `src/lib/db.ts` | Паттерн для всіх нових API маршрутів | ✅ Використовується |
 | `src/lib/auth/session.ts` | `readSessionUserId()` → email; + ковзний TTL та `clearAllSessions()` | ✅ |
 | `src/types/onboarding.ts` | Джерело для `UserProfile` | ✅ UserProfile extends OnboardingData |
-| `next.config.ts` | next-pwa конфіг | ⏳ Фаза 5 |
-| `.env` | `OPENAI_API_KEY`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | ⚠️ OPENAI_API_KEY — потрібно заповнити |
+| `next.config.ts` | next-pwa конфіг (`dynamicStartUrl: false`); CSP: `images.silpo.ua` в `img-src` і `connect-src` | ✅ |
+| `.env` | `OPENAI_API_KEY`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `SILPO_MCP_CLIENT_ID`, `SILPO_TOKEN_ENC_KEY` | ✅ (Silpo-змінні = флаг фічі; без них секції/кнопки не рендеряться) |
 
 ---
 
@@ -1695,3 +1770,69 @@ Measurement Protocol, session replay, A/B через feature flags, Google Conse
 `npx tsc --noEmit` exit 0; `npm test` 56/56; smoke: POST/GET `/api/discount`
 (ідемпотентність підтверджена), сендбокс-оплата має йти зі знижковою сумою у вікні
 і повною після.
+
+---
+
+## 🛒 Changelog — Інтеграція Silpo MCP: «Замовити в Сільпо» зі списку покупок (2026-09-18)
+
+Спека: `docs/superpowers/specs/2026-09-18-silpo-cart-integration-design.md`, план:
+`docs/superpowers/plans/2026-09-18-silpo-cart-integration.md`, лист у Сільпо:
+`docs/silpo/SUPPORT_EMAIL_DRAFT.md` (надіслано 2026-09-18 на mcp@silpo.club, відповідь очікується).
+
+### Що робить
+Юзер один раз підключає акаунт Сільпо (OAuth 2.1 + PKCE, вхід за телефоном на auth.silpo.ua) у
+профілі або з тізера на `/shopping-list`. Далі кнопка **«Замовити в Сільпо (N)»** відкриває шторку:
+підбір товарів під некуплені й ще не додані продукти поточного фільтра → превʼю з фото, фасуванням,
+ціною, степером кількості та «Замінити» (до 5 альтернатив з того ж пошуку) → «Додати в кошик Сільпо»
+→ екран результату (сума до оплати, мінімальне замовлення, лінки «Оформити на сайті / в застосунку»,
+або «Відкрити Сільпо», що відкриває мобільний застосунок). Оплата — виключно на стороні Сільпо.
+
+Після додавання продукти списку отримують тег **«🛒 у кошику Сільпо»** (поле `items[].silpo`), а при
+наступному відкритті списку `GET /api/silpo/orders/check` зіставляє історію замовлень Сільпо з тегами
+і показує банер «Схоже, ви оформили замовлення №… Відмітити N продуктів купленими?» — галочки лише
+після підтвердження юзера (рішення: без авто-відміток). Осиротілі теги (товар видалено в застосунку
+Сільпо, замовлення немає) знімаються автоматично.
+
+### Факти про Silpo MCP (перевірено наживо)
+- `https://mcp.silpo.ua/mcp`, JSON-RPC `tools/call` через fetch, без SDK; 40 тулів. Авторизація лише
+  від імені юзера (без токена 401 навіть на `initialize`); DCR публічного клієнта підтримується.
+  Dev `client_id=KK9l9ouVJm5rjMvA` (localhost), prod `mcU32RW84GhaPCve`
+  (`https://nutriday.com.ua/api/silpo/callback`). Реєстрація: `scripts/silpo-register-client.mjs <APP_URL>`.
+- Токен 30 днів + refresh. Пошук `silpo_find_products_batch` прив'язаний до філії **і таймслоту**:
+  з простроченим слотом мовчки 0 товарів → `resolveCartContext` завжди бере актуальний слот і
+  оновлює його в кошику. `silpo_get_time_slots` віддає **400 на ISO-час з мілісекундами**.
+- Вагові товари: `step`/`quantity` у кг. Порожній кошик має `totalAfterDiscounts = 9` (сервісний збір).
+  `checkoutWebLink/MobileLink` = null, поки сума < `minOrderCost` (199 ₴ самовивіз / 699 ₴ доставка).
+- Замовлення: `silpo_get_my_online_orders` → `orderId, number, status, createdAt, products[].id/removed`.
+- Юридично: AI Factory — хакатон, комерційної оферти нема; фіча ізольована й вимикається env-флагом.
+
+### Ключові рішення
+- Ранжування кандидатів через `gpt-4.1-mini` (перший результат пошуку часто хибний: «кисломолочний
+  сир» → дитячий сирок); при недоступності LLM — перший доступний кандидат і позначка «підбір спрощений».
+- Матч не персистимо, живе в стані шторки. Клієнт передає `{ itemId, quantity }`, назви/одиниці сервер
+  бере з БД. Підбір стартує лише при відкритті шторки (масив items перебудовується батьком на кожен
+  рендер — на цьому був баг «екран результату зникав»).
+- Лого Сільпо не використовуємо до письмової згоди — лише слово.
+
+### Прод-інциденти першого релізу (усі виправлено того ж дня)
+1. **«Сільпо не відповідає»** — Vercel Hobby, дефолтний таймаут 10 с ≈ тривалість підбору →
+   `maxDuration = 60` на всіх `/api/silpo/*`; шторка тепер показує деталь (`HTTP 504` тощо).
+2. **Немає фото товарів** — спочатку `img-src` без `images.silpo.ua`, потім з'ясувалось, що SW
+   перезапитує картинки через `fetch()` і потрібен ще `connect-src` (див. розділ «PWA налаштування»).
+3. **`_async_to_generator is not defined` у `sw.js`** — маршрут `start-url` next-pwa; вимкнено
+   `dynamicStartUrl`. Локальна перевірка: у зібраному `public/sw.js` немає цього хелпера.
+4. **`favicon.ico` з RGB-PNG кадрами** ламав `next build` («The PNG is not in RGBA format!») —
+   перекодовано в RGBA через `sharp`.
+
+### Верифікація
+`npx tsc --noEmit` exit 0; `npm test` 160/160 (нові: crypto, oauth (RFC 7636 вектор), client
+(рефреш на 401), quantity, cartContext, setupCart, matchProducts, orderCheck, appLink). Live-smoke на
+проді: status → match (11/14 позицій, ~6 с) → add 1 товару → remove; `orders/check` знімає фейковий
+тег; браузерний e2e користувача: підключення/відключення, превʼю, додавання в кошик, перехід у
+застосунок Сільпо, фото після фіксу CSP.
+
+### Відкрито
+- Відповідь Сільпо (підтримка MCP після хакатону, окремий client_id, бренд).
+- Фолбек-пошук за спрощеною назвою для unmatched («Йогурт натуральний», «Гречана крупа»).
+- Правила ранжування: уникати обробленої/панірованої риби та великих упаковок.
+- Локальний `.env` дивиться на той самий Atlas-кластер, що й прод — варто завести окрему dev-базу.
