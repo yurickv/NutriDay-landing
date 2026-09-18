@@ -13,6 +13,9 @@ interface OrdersResponse { orders?: SilpoOrder[] }
 interface MyCartResponse { exists: boolean; shoppingCartId: string | null }
 type ListDoc = { _id: ObjectId; items: ShoppingListItem[]; silpoOrdersHandled?: string[] };
 
+// Vercel Hobby max: orders + cart id + cart contents are three Silpo calls.
+export const maxDuration = 60;
+
 /**
  * Called when the shopping list opens. Finds Silpo orders that contain products
  * we pushed to the cart (→ banner suggestions) and drops tags for products the

@@ -9,6 +9,10 @@ import { silpoErrorResponse } from '@/lib/silpo/apiErrors';
 
 const MAX_ITEMS = 60;
 
+// Vercel Hobby max. Cart context (3–4 Silpo calls) + batch search + LLM ranking
+// takes ~10 s, which is exactly the default function timeout.
+export const maxDuration = 60;
+
 export async function POST(req: NextRequest) {
   const userEmail = await readSessionUserId();
   if (!userEmail) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

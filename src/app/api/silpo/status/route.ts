@@ -5,6 +5,9 @@ import { getConnection } from '@/lib/silpo/connections';
 import { getCartSummary } from '@/lib/silpo/cartContext';
 import { SilpoAuthError } from '@/lib/silpo/types';
 
+// Vercel Hobby max: two Silpo calls for the cart summary.
+export const maxDuration = 30;
+
 export async function GET() {
   const userEmail = await readSessionUserId();
   if (!userEmail) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

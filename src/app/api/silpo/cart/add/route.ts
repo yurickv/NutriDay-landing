@@ -11,6 +11,9 @@ import { ShoppingListItem, SilpoCartTag } from '@/types/shoppingList';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_PRODUCTS = 60;
 
+// Vercel Hobby max: cart context + add + re-read is several sequential Silpo calls.
+export const maxDuration = 60;
+
 interface ProductInput {
   productId: string;
   companyId: string;

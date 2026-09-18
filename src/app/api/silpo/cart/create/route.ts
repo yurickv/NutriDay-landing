@@ -4,6 +4,9 @@ import { createCart, DeliveryOption, ResolvedAddress } from '@/lib/silpo/setupCa
 import { getCartSummary } from '@/lib/silpo/cartContext';
 import { silpoErrorResponse } from '@/lib/silpo/apiErrors';
 
+// Vercel Hobby max: time slots + create cart + re-read summary.
+export const maxDuration = 60;
+
 function isAddress(v: unknown): v is ResolvedAddress {
   const a = v as ResolvedAddress;
   return !!a && typeof a.latitude === 'number' && typeof a.longitude === 'number';

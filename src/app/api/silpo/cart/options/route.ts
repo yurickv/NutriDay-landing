@@ -3,6 +3,9 @@ import { readSessionUserId } from '@/lib/auth/session';
 import { lookupDeliveryOptions } from '@/lib/silpo/setupCart';
 import { silpoErrorResponse } from '@/lib/silpo/apiErrors';
 
+// Vercel Hobby max: geocoding + delivery types + full branch list (500 rows).
+export const maxDuration = 60;
+
 export async function POST(req: NextRequest) {
   const userEmail = await readSessionUserId();
   if (!userEmail) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
