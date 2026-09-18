@@ -28,7 +28,7 @@ type Step =
   | { kind: 'preview'; matches: SilpoMatch[]; unmatched: SilpoUnmatched[]; llmUsed: boolean; context: PreviewContext }
   | { kind: 'adding' }
   | { kind: 'done'; result: SilpoAddResult }
-  | { kind: 'error'; message: string; reconnect?: boolean };
+  | { kind: 'error'; message: string; detail?: string; reconnect?: boolean };
 
 const ERROR_TEXT: Record<string, string> = {
   'rate-limit': 'Сільпо тимчасово перевантажене, спробуйте за хвилину',
@@ -43,6 +43,28 @@ const ERROR_TEXT: Record<string, string> = {
 
 function errorText(code: string | undefined): string {
   return ERROR_TEXT[code ?? ''] ?? ERROR_TEXT['silpo-error'];
+}
+
+interface ApiFailure { code?: string; detail?: string }
+
+/**
+ * Reads a failed response. Our API answers JSON `{ error, message? }`; a platform
+ * timeout or crash answers plain text, which we surface as `HTTP <status>` so the
+ * user (and we) can tell the two apart instead of one generic message.
+ */
+async function readFailure(res: Response): Promise<ApiFailure> {
+  const text = await res.text();
+  try {
+    const j = JSON.parse(text) as { error?: string; message?: string };
+    const detail = j.message ?? (j.error && !ERROR_TEXT[j.error] ? j.error : undefined);
+    return { code: j.error, detail };
+  } catch {
+    return { code: undefined, detail: `HTTP ${res.status}` };
+  }
+}
+
+function withDetail(text: string, detail?: string): string {
+  return detail ? `${text} (${detail})` : text;
 }
 
 function fmt(n: number): string {
@@ -109,15 +131,16 @@ export function SilpoOrderSheet({ isOpen, onClose, items, onAdded }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ items: items.map((i) => ({ itemId: i.itemId, quantity: i.quantity })) }),
       });
-      const data = (await res.json()) as { error?: string } & Extract<Step, { kind: 'preview' }>;
-      if (res.status === 409 && data.error === 'no-cart') {
-        setStep({ kind: 'address', options: null, address: null, error: null });
-        return;
-      }
       if (!res.ok) {
-        setStep({ kind: 'error', message: errorText(data.error), reconnect: data.error === 'reconnect' });
+        const f = await readFailure(res);
+        if (res.status === 409 && f.code === 'no-cart') {
+          setStep({ kind: 'address', options: null, address: null, error: null });
+          return;
+        }
+        setStep({ kind: 'error', message: errorText(f.code), detail: f.detail, reconnect: f.code === 'reconnect' });
         return;
       }
+      const data = (await res.json()) as Extract<Step, { kind: 'preview' }>;
       track('silpo_match_result', { matched: data.matches.length, unmatched: data.unmatched.length });
       setSelected(new Set(data.matches.map((m) => m.itemId)));
       setChosen(Object.fromEntries(data.matches.map((m) => [m.itemId, m.product])));
@@ -143,9 +166,14 @@ export function SilpoOrderSheet({ isOpen, onClose, items, onAdded }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ address: addressText }),
       });
-      const data = (await res.json()) as { error?: string; address?: ResolvedAddress; options?: DeliveryOption[] };
-      if (!res.ok || !data.options) {
-        setStep({ kind: 'address', options: null, address: null, error: errorText(data.error) });
+      if (!res.ok) {
+        const f = await readFailure(res);
+        setStep({ kind: 'address', options: null, address: null, error: withDetail(errorText(f.code), f.detail) });
+        return;
+      }
+      const data = (await res.json()) as { address?: ResolvedAddress; options?: DeliveryOption[] };
+      if (!data.options || data.options.length === 0) {
+        setStep({ kind: 'address', options: null, address: null, error: ERROR_TEXT['no-delivery'] });
         return;
       }
       setPickedOption(data.options[0]);
@@ -167,8 +195,8 @@ export function SilpoOrderSheet({ isOpen, onClose, items, onAdded }: Props) {
         body: JSON.stringify({ address: step.address, option: pickedOption }),
       });
       if (!res.ok) {
-        const data = (await res.json()) as { error?: string };
-        setStep({ ...step, error: errorText(data.error) });
+        const f = await readFailure(res);
+        setStep({ ...step, error: withDetail(errorText(f.code), f.detail) });
         return;
       }
       await runMatch();
@@ -240,11 +268,12 @@ export function SilpoOrderSheet({ isOpen, onClose, items, onAdded }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ products }),
       });
-      const data = (await res.json()) as SilpoAddResult & { error?: string };
       if (!res.ok) {
-        setStep({ kind: 'error', message: errorText(data.error), reconnect: data.error === 'reconnect' });
+        const f = await readFailure(res);
+        setStep({ kind: 'error', message: errorText(f.code), detail: f.detail, reconnect: f.code === 'reconnect' });
         return;
       }
+      const data = (await res.json()) as SilpoAddResult;
       track('silpo_cart_added', { products: products.length, total: Math.round(data.totalAfterDiscounts) });
       setStep({ kind: 'done', result: data });
       onAdded(products.map(({ itemId, productId, productName, quantity }) => ({ itemId, productId, productName, quantity })));
@@ -479,6 +508,9 @@ export function SilpoOrderSheet({ isOpen, onClose, items, onAdded }: Props) {
           <div className="py-10 text-center space-y-4">
             <span className="text-5xl">😔</span>
             <p className="text-sm text-ink/70 dark:text-night-muted">{step.message}</p>
+            {step.detail && (
+              <p className="text-xs text-ink/40 dark:text-night-muted/70 font-mono break-all">{step.detail}</p>
+            )}
             {step.reconnect ? (
               <a
                 href={`/api/silpo/connect?returnTo=${encodeURIComponent('/shopping-list')}`}
