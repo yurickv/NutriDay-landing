@@ -29,4 +29,10 @@ export type AnalyticsEvent =
   | 'redirected_to_liqpay'
   | 'payment_succeeded'
   | 'payment_failed'
-  | 'login_completed';
+  | 'login_completed'
+  // Silpo integration
+  | 'silpo_connected'
+  | 'silpo_disconnected'
+  | 'silpo_match_requested'
+  | 'silpo_match_result'
+  | 'silpo_cart_added';
