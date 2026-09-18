@@ -50,6 +50,12 @@ const INDEXES: IndexSpec[] = [
   { collection: 'rate_limits', keys: { expiresAt: 1 }, options: { expireAfterSeconds: 0 } },
   // Payment idempotency: identical LiqPay callbacks share a signature.
   { collection: 'payment_events', keys: { signature: 1 }, options: { unique: true } },
+
+  // --- Silpo integration ---------------------------------------------------
+  { collection: 'silpo_connections', keys: { userEmail: 1 }, options: { unique: true } },
+  { collection: 'silpo_oauth_states', keys: { state: 1 }, options: { unique: true } },
+  // Pending OAuth states die after 10 minutes.
+  { collection: 'silpo_oauth_states', keys: { createdAt: 1 }, options: { expireAfterSeconds: 600 } },
 ];
 
 export async function ensureIndexes(db: Db): Promise<void> {
