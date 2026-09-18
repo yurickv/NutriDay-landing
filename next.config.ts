@@ -13,7 +13,8 @@ const contentSecurityPolicy = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' https://*.googletagmanager.com https://eu-assets.i.posthog.com",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://*.google-analytics.com https://*.googletagmanager.com",
+  // images.silpo.ua: product photos in the «Замовити в Сільпо» preview.
+  "img-src 'self' data: blob: https://*.google-analytics.com https://*.googletagmanager.com https://images.silpo.ua",
   "font-src 'self' data:",
   "connect-src 'self' https://www.liqpay.ua https://eu.i.posthog.com https://eu-assets.i.posthog.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com",
   "frame-src https://www.liqpay.ua",
