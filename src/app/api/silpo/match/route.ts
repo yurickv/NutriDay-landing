@@ -60,6 +60,9 @@ export async function POST(req: NextRequest) {
         city: context.ctx.address.city,
         deliveryType: context.ctx.deliveryType,
         minOrderCost: context.ctx.minOrderCost,
+        // Lets the client ask /api/silpo/product for details without re-resolving the cart.
+        branchId: context.ctx.branchId,
+        timeslot: context.ctx.timeslot,
       },
     });
   } catch (err) {

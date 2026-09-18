@@ -79,6 +79,19 @@ export interface SilpoValidation {
   context: unknown;
 }
 
+/** Normalised `silpo_get_product_details` payload for the detail view. */
+export interface SilpoProductDetails {
+  name: string;
+  images: string[];
+  price: number | null;
+  displayRatio: string | null;
+  weighted: boolean;
+  available: boolean;
+  description: string | null;
+  /** Flat "label: value" rows (composition, brand, country, storage, nutrition…). */
+  attributes: Array<{ label: string; value: string }>;
+}
+
 export interface SilpoAddResult {
   totalAfterDiscounts: number;
   minOrderCost: number | null;

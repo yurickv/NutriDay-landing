@@ -1,12 +1,34 @@
 'use client';
 
-import { ShoppingCart, ChevronRight } from 'lucide-react';
+import { ShoppingCart, ChevronRight, ExternalLink } from 'lucide-react';
 import type { SilpoStatus } from '@/hooks/useSilpoConnection';
+import { silpoOpenLink } from '@/lib/silpo/appLink';
 
 interface Props {
   status: SilpoStatus | null;
   count: number;
   onClick: () => void;
+}
+
+/** «Кошик Сільпо ↗»: opens the Silpo app when installed (Universal Link / intent://), else the site. */
+function SilpoCartLink({ compact }: { compact: boolean }) {
+  const href = silpoOpenLink(typeof navigator !== 'undefined' ? navigator.userAgent : '');
+  const isIntent = href.startsWith('intent://');
+  return (
+    <a
+      href={href}
+      target={isIntent ? undefined : '_blank'}
+      rel="noopener noreferrer"
+      className={`flex items-center justify-center gap-1.5 rounded-2xl border border-ink/10 dark:border-night-ink/10 bg-card dark:bg-night-card text-sm font-semibold text-ink dark:text-night-ink active:scale-95 transition-all ${
+        compact ? 'px-4 py-3' : 'w-full px-4 py-3'
+      }`}
+      aria-label="Відкрити кошик Сільпо"
+    >
+      <ShoppingCart size={16} className="text-sage-dark dark:text-sage-light" />
+      {compact ? 'Кошик' : 'Кошик Сільпо'}
+      <ExternalLink size={14} className="text-ink/40 dark:text-night-muted" />
+    </a>
+  );
 }
 
 export function SilpoOrderButton({ status, count, onClick }: Props) {
@@ -30,16 +52,24 @@ export function SilpoOrderButton({ status, count, onClick }: Props) {
     );
   }
 
-  if (count === 0) return null;
+  // Everything is already in the cart (or bought): only the shortcut to the Silpo cart.
+  if (count === 0) {
+    return (
+      <div className="px-4 pt-3 pb-2">
+        <SilpoCartLink compact={false} />
+      </div>
+    );
+  }
 
   return (
-    <div className="px-4 pt-3 pb-2">
+    <div className="px-4 pt-3 pb-2 flex gap-2">
       <button
         onClick={onClick}
-        className="w-full flex items-center justify-center gap-2 rounded-2xl bg-terracotta hover:bg-terracotta-dark text-card font-semibold py-3 text-sm shadow-soft active:scale-95 transition-all"
+        className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-terracotta hover:bg-terracotta-dark text-card font-semibold py-3 text-sm shadow-soft active:scale-95 transition-all"
       >
         <ShoppingCart size={18} /> Замовити в Сільпо ({count})
       </button>
+      <SilpoCartLink compact />
     </div>
   );
 }

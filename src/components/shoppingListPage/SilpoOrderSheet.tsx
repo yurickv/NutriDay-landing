@@ -5,6 +5,7 @@ import { AlertTriangle, ExternalLink, Minus, Plus, RefreshCw } from 'lucide-reac
 import { BottomSheet } from '@/components/common/BottomSheet';
 import { quantityStep } from '@/lib/silpo/quantity';
 import { silpoOpenLink } from '@/lib/silpo/appLink';
+import { SilpoProductDetail } from './SilpoProductDetail';
 import type { SilpoAddResult, SilpoMatch, SilpoProduct, SilpoUnmatched } from '@/lib/silpo/types';
 import type { DeliveryOption, ResolvedAddress } from '@/lib/silpo/setupCart';
 import { track } from '@/lib/analytics';
@@ -21,7 +22,13 @@ interface Props {
   onAdded: (added: AddedProduct[]) => void;
 }
 
-interface PreviewContext { city: string | null; deliveryType: string; minOrderCost: number | null }
+interface PreviewContext {
+  city: string | null;
+  deliveryType: string;
+  minOrderCost: number | null;
+  branchId: string;
+  timeslot: { start: string; end: string };
+}
 
 type Step =
   | { kind: 'loading' }
@@ -110,6 +117,8 @@ export function SilpoOrderSheet({ isOpen, onClose, items, onAdded }: Props) {
   const [chosen, setChosen] = useState<Record<string, SilpoProduct>>({});
   const [qty, setQty] = useState<Record<string, number>>({});
   const [altOpen, setAltOpen] = useState<string | null>(null);
+  // Tapping a product photo opens the detail view (enlarged photo + card details) inside the sheet.
+  const [detail, setDetail] = useState<{ match: SilpoMatch; product: SilpoProduct } | null>(null);
   const [addressText, setAddressText] = useState('');
   const [pickedOption, setPickedOption] = useState<DeliveryOption | null>(null);
   const [busy, setBusy] = useState(false);
@@ -147,6 +156,7 @@ export function SilpoOrderSheet({ isOpen, onClose, items, onAdded }: Props) {
       setChosen(Object.fromEntries(data.matches.map((m) => [m.itemId, m.product])));
       setQty(Object.fromEntries(data.matches.map((m) => [m.itemId, m.quantity])));
       setAltOpen(null);
+      setDetail(null);
       setStep({ kind: 'preview', matches: data.matches, unmatched: data.unmatched, llmUsed: data.llmUsed, context: data.context });
     } catch {
       setStep({ kind: 'error', message: ERROR_TEXT['silpo-error'] });
@@ -336,7 +346,16 @@ export function SilpoOrderSheet({ isOpen, onClose, items, onAdded }: Props) {
           </div>
         )}
 
-        {preview && (
+        {preview && detail && (
+          <SilpoProductDetail
+            product={detail.product}
+            forLabel={`${detail.match.itemName} ${fmt(detail.match.itemQuantity)} ${detail.match.itemUnit}`}
+            context={{ branchId: preview.context.branchId, deliveryType: preview.context.deliveryType, timeslot: preview.context.timeslot }}
+            onBack={() => setDetail(null)}
+          />
+        )}
+
+        {preview && !detail && (
           <div className="py-3">
             <p className="text-xs text-ink/50 dark:text-night-muted mb-3">
               {preview.context.deliveryType === 'SelfPickup' ? 'Самовивіз' : 'Доставка'}
@@ -365,12 +384,19 @@ export function SilpoOrderSheet({ isOpen, onClose, items, onAdded }: Props) {
                         className="mt-1 accent-sage w-4 h-4"
                         aria-label={`Включити ${p.name}`}
                       />
-                      {p.image ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={p.image} alt="" className="w-12 h-12 rounded-xl object-cover bg-cream flex-shrink-0" />
-                      ) : (
-                        <div className="w-12 h-12 rounded-xl bg-cream dark:bg-night flex-shrink-0" />
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => setDetail({ match: m, product: p })}
+                        className="w-12 h-12 rounded-xl overflow-hidden bg-cream dark:bg-night flex-shrink-0 active:scale-95 transition-transform"
+                        aria-label={`Детальніше про ${p.name}`}
+                      >
+                        {p.image ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={p.image} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-xl" aria-hidden="true">🛒</span>
+                        )}
+                      </button>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-ink dark:text-night-ink leading-snug">{p.name}</p>
                         <p className="text-xs text-ink/50 dark:text-night-muted">
