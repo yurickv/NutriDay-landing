@@ -20,12 +20,12 @@ function SilpoCartLink({ compact }: { compact: boolean }) {
       target={isIntent ? undefined : '_blank'}
       rel="noopener noreferrer"
       className={`flex items-center justify-center gap-1.5 rounded-2xl border border-ink/10 dark:border-night-ink/10 bg-card dark:bg-night-card text-sm font-semibold text-ink dark:text-night-ink active:scale-95 transition-all ${
-        compact ? 'px-4 py-3' : 'w-full px-4 py-3'
+        compact ? 'px-3 py-3 whitespace-nowrap' : 'w-full px-4 py-3'
       }`}
       aria-label="Відкрити кошик Сільпо"
     >
       <ShoppingCart size={16} className="text-sage-dark dark:text-sage-light" />
-      {compact ? 'Кошик' : 'Кошик Сільпо'}
+      Кошик Сільпо
       <ExternalLink size={14} className="text-ink/40 dark:text-night-muted" />
     </a>
   );
