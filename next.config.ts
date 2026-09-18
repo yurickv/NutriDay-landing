@@ -16,7 +16,10 @@ const contentSecurityPolicy = [
   // images.silpo.ua: product photos in the «Замовити в Сільпо» preview.
   "img-src 'self' data: blob: https://*.google-analytics.com https://*.googletagmanager.com https://images.silpo.ua",
   "font-src 'self' data:",
-  "connect-src 'self' https://www.liqpay.ua https://eu.i.posthog.com https://eu-assets.i.posthog.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com",
+  // images.silpo.ua is ALSO needed here: the service worker re-fetches every
+  // `*.png` through fetch(), and fetch() from a worker is governed by connect-src,
+  // not img-src. Without it product photos are blocked for SW-controlled pages.
+  "connect-src 'self' https://www.liqpay.ua https://eu.i.posthog.com https://eu-assets.i.posthog.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://images.silpo.ua",
   "frame-src https://www.liqpay.ua",
   "form-action 'self' https://www.liqpay.ua",
   "base-uri 'self'",
@@ -82,6 +85,12 @@ export default isProd
   ? withPWA({
       dest: "public",
       register: true,
+      // next-pwa emits a "start-url" runtime route whose async `cacheWillUpdate`
+      // plugin is compiled against SWC helpers (_async_to_generator/_ts_generator)
+      // that never make it into sw.js, so it throws at runtime (ReferenceError in
+      // the console, "no-response" for "/"). Disabling the dynamic start URL drops
+      // that route; we don't rely on start-url caching.
+      dynamicStartUrl: false,
       workboxOptions: {
         skipWaiting: true,
         disableDevLogs: true,
