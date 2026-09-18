@@ -294,7 +294,13 @@ export function SilpoOrderSheet({ isOpen, onClose, items, onAdded }: Props) {
   };
 
   return (
-    <BottomSheet isOpen={isOpen} onClose={onClose} title="Замовити в Сільпо">
+    <BottomSheet
+      isOpen={isOpen}
+      // While the product detail is open, the X button and a tap on the backdrop
+      // only go back to the list; the sheet itself closes on the next close.
+      onClose={() => (detail ? setDetail(null) : onClose())}
+      title={detail ? 'Товар' : 'Замовити в Сільпо'}
+    >
       <div className="px-5 pb-6">
         {step.kind === 'loading' && <Spinner text="Підбираємо товари у вашому Сільпо…" />}
         {step.kind === 'adding' && <Spinner text="Додаємо в кошик…" />}

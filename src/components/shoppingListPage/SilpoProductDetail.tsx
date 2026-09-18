@@ -87,7 +87,9 @@ export function SilpoProductDetail({ product, forLabel, context, onBack }: Props
       </h3>
       <p className="text-sm text-ink/60 dark:text-night-muted mt-0.5">
         {product.displayRatio ?? ''} · {fmt(product.price)} ₴{product.weighted ? '/кг' : ''}
-        {product.oldPrice ? <span className="ml-1 line-through text-ink/40">{fmt(product.oldPrice)} ₴</span> : null}
+        {product.oldPrice ? (
+          <span className="ml-1 line-through text-ink/40 dark:text-night-muted/80">{fmt(product.oldPrice)} ₴</span>
+        ) : null}
       </p>
       <p className="text-xs text-ink/50 dark:text-night-muted mt-0.5">для: {forLabel}</p>
 
