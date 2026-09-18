@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, ExternalLink, Minus, Plus, RefreshCw } from 'lucide-react';
 import { BottomSheet } from '@/components/common/BottomSheet';
 import { quantityStep } from '@/lib/silpo/quantity';
+import { silpoOpenLink } from '@/lib/silpo/appLink';
 import type { SilpoAddResult, SilpoMatch, SilpoProduct, SilpoUnmatched } from '@/lib/silpo/types';
 import type { DeliveryOption, ResolvedAddress } from '@/lib/silpo/setupCart';
 import { track } from '@/lib/analytics';
@@ -484,14 +485,22 @@ export function SilpoOrderSheet({ isOpen, onClose, items, onAdded }: Props) {
               )}
               {!step.result.checkoutWebLink && !step.result.checkoutMobileLink && (
                 <>
-                  <a
-                    href="https://silpo.ua"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`${PRIMARY_BTN} flex items-center justify-center gap-2`}
-                  >
-                    Відкрити Сільпо <ExternalLink size={14} />
-                  </a>
+                  {/* Opens the Silpo app when installed: Universal Link on iOS, intent:// on Android
+                      (intent links must navigate the current tab, so no target=_blank there). */}
+                  {(() => {
+                    const href = silpoOpenLink(typeof navigator !== 'undefined' ? navigator.userAgent : '');
+                    const isIntent = href.startsWith('intent://');
+                    return (
+                      <a
+                        href={href}
+                        target={isIntent ? undefined : '_blank'}
+                        rel="noopener noreferrer"
+                        className={`${PRIMARY_BTN} flex items-center justify-center gap-2`}
+                      >
+                        Відкрити Сільпо <ExternalLink size={14} />
+                      </a>
+                    );
+                  })()}
                   <p className="text-xs text-ink/50 dark:text-night-muted">
                     Товари вже у вашому кошику Сільпо. Завершіть замовлення на сайті або в застосунку.
                   </p>
