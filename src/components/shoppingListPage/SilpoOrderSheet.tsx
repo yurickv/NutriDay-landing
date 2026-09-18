@@ -404,7 +404,13 @@ export function SilpoOrderSheet({ isOpen, onClose, items, onAdded }: Props) {
                         )}
                       </button>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-ink dark:text-night-ink leading-snug">{p.name}</p>
+                        <button
+                          type="button"
+                          onClick={() => setDetail({ match: m, product: p })}
+                          className="text-left text-sm font-medium text-ink dark:text-night-ink leading-snug hover:text-terracotta dark:hover:text-terracotta-light transition-colors"
+                        >
+                          {p.name}
+                        </button>
                         <p className="text-xs text-ink/50 dark:text-night-muted">
                           {p.displayRatio ?? ''} · {fmt(p.price)} ₴{p.weighted ? '/кг' : ''} · для: {m.itemName} {fmt(m.itemQuantity)} {m.itemUnit}
                         </p>
