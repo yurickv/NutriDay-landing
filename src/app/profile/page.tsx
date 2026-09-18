@@ -9,6 +9,7 @@ import { useStreak } from '@/hooks/useStreak';
 import { UserProfile } from '@/types/userProfile';
 import NotificationSettings from '@/components/profilePage/NotificationSettings';
 import InstallAppSettings from '@/components/profilePage/InstallAppSettings';
+import SilpoConnectSettings from '@/components/profilePage/SilpoConnectSettings';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
 
 const GOAL_LABELS: Record<string, string> = {
@@ -145,6 +146,9 @@ export default function ProfilePage() {
         </p>
         <InstallAppSettings />
       </section>
+
+      {/* Сільпо (рендериться лише коли інтеграцію увімкнено env-ключами) */}
+      <SilpoConnectSettings />
 
       {/* В розробці */}
       <section className="mx-4 mb-4">
